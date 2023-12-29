@@ -1,3 +1,65 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.hexagon-glow {
+    display: inline-flex;
+    /* or other display as necessary */
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.7));
+    /* Glowing effect */
+}
+
+/* styles.css */
+.hexagon {
+    width: 60px;
+    /* Smaller width */
+    height: 34.64px;
+    /* Smaller height, maintaining the hexagon ratio */
+    background-color: rgb(16, 185, 129);
+    /* Hexagon color */
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.hexagon::before,
+.hexagon::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    border-left: 30px solid transparent;
+    /* Half of the new width */
+    border-right: 30px solid transparent;
+    /* Half of the new width */
+}
+
+.hexagon::before {
+    bottom: 100%;
+    border-bottom: 17.32px solid rgb(16, 185, 129);
+    /* Half of the new height */
+}
+
+.hexagon::after {
+    top: 100%;
+    border-top: 17.32px solid rgb(16, 185, 129);
+    /* Half of the new height */
+}
+
+
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinning {
+    animation: spin 0.85s linear forwards;
+}
