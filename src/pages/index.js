@@ -13,6 +13,7 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dalleImageUrl, setDalleImageUrl] = useState('');
 
 
   // Ref for the scrollable div
@@ -71,6 +72,8 @@ export default function Home() {
     sendMessage(inputValue);
 
     setInputValue('');
+
+    sendImageMessage(inputValue);
   }
 
   const sendMessage = (message) => {
@@ -90,6 +93,29 @@ export default function Home() {
       setIsLoading(false);
       console.log(error);
     })
+
+
+
+  }
+
+  const sendImageMessage = (message) => {
+    const url = '/api/image';
+    const data = {
+      model: "dall-e-3",
+      prompt: "a white siamese cat",
+      n: 1,
+      size: "1024x1024",
+      quality: "hd",
+    };
+
+    console.log("am i here?");
+
+    axios.post(url, data).then((response) => {
+      setDalleImageUrl(response.data.data[0].url);
+      console.log("dalleImageUrl", dalleImageUrl);
+    }).catch((error) => {
+      console.log(error);
+    })
   }
 
   return (
@@ -104,10 +130,18 @@ export default function Home() {
       <div className="flex-1 max-w-[700px]">
         <div className="flex flex-col h-screen justify-start">
           <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Story</h1>
+          {/* Conditional DALL·E Image */}
+          {dalleImageUrl && (
+            <img
+              src={dalleImageUrl}
+              alt="DALL·E Generated"
+              className="max-w-full h-auto rounded-lg shadow-lg" // Adjust the style as needed
+            />
+          )}
         </div>
       </div>
       {/* Right Box */}
-      <div className="flex-1 max-w-[500px] bg-gray-800 p-4 relative flex flex-col h-[95vh]">
+      <div className="flex-1 max-w-[500px] bg-gray-800 p-4 relative flex flex-col h-[100vh]">
         {/* Sticky Header */}
         <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 font-bold text-3xl md:text-4xl">Game Master</h1>
         {/* Scrollable Content */}
@@ -148,7 +182,7 @@ export default function Home() {
         </form>
       </div>
 
-    </div>
+    </div >
   )
 
 }
