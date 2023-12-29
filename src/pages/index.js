@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import styles from '@/styles/Home.module.css'
 import axios from 'axios';
 import TypingAnimation from "../components/TypingAnimation";
+import HexagonDice from "../components/HexagonDice"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -124,6 +125,9 @@ export default function Home() {
       <div className="flex-1 max-w-[200px] border border-white">
         <div className="flex flex-col h-screen justify-start">
           <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
+          <div className="min-h-screen flex items-center justify-center">
+            <HexagonDice />
+          </div>
         </div>
       </div>
       {/* Center Box (Original Content) */}

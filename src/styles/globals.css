@@ -1,3 +1,61 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* styles.css */
+.hexagon {
+    width: 90px;
+    /* Width of the hexagon */
+    height: 52px;
+    /* Height of the central rectangle part of the hexagon */
+    background-color: white;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    border-left: 2px solid black;
+    border-right: 2px solid black;
+}
+
+.hexagon::before,
+.hexagon::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    border-left: 45px solid transparent;
+    /* Adjust this for width */
+    border-right: 45px solid transparent;
+    /* Adjust this for width */
+}
+
+.hexagon::before {
+    bottom: 100%;
+    border-bottom: 30px solid white;
+    /* Adjust this for height */
+    border-bottom-color: inherit;
+    /* Ensures the border color matches the hexagon's color */
+}
+
+.hexagon::after {
+    top: 100%;
+    border-top: 30px solid white;
+    /* Adjust this for height */
+    border-top-color: inherit;
+    /* Ensures the border color matches the hexagon's color */
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinning {
+    animation: spin 2s linear forwards;
+}
