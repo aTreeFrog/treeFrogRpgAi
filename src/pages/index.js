@@ -133,7 +133,7 @@ export default function Home() {
             {/* Arrow Button at the Bottom Middle, initially hidden */}
             <button
               id="scrollArrow"
-              className="hidden absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full"
+              className="hidden absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full"
               onClick={scrollToBottom}>
               ↓
             </button>
