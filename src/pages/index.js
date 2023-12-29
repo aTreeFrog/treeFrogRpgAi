@@ -109,8 +109,7 @@ export default function Home() {
       {/* Right Box */}
       <div className="flex-1 max-w-[500px] bg-gray-800 p-4 relative flex flex-col h-[95vh]">
         {/* Sticky Header */}
-        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Game Master</h1>
-
+        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 font-bold text-3xl md:text-4xl">Game Master</h1>
         {/* Scrollable Content */}
         <div ref={scrollableDivRef} className="overflow-y-auto flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
