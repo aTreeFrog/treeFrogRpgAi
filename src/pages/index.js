@@ -6,8 +6,12 @@ import styles from '@/styles/Home.module.css'
 import axios from 'axios';
 import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
+import io from 'Socket.IO-client'
 
 const inter = Inter({ subsets: ['latin'] })
+
+const chatUrl = '/api/chat';
+
 
 
 export default function Home() {
@@ -15,7 +19,6 @@ export default function Home() {
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState('');
-
 
   // Ref for the scrollable div
   const scrollableDivRef = useRef(null);
@@ -78,22 +81,53 @@ export default function Home() {
   }
 
   const sendMessage = (message) => {
-    const url = '/api/chat';
-    const data = {
-      model: "gpt-4",
-      messages: [{ "role": "user", "content": message }]
+
+    const chatSocket = io('http://localhost:3001', { path: chatUrl });
+
+    chatSocket.onopen = function (event) {
+      console.log("Connection established!");
     };
 
-    setIsLoading(true);
+    chatSocket.onerror = function (error) {
+      console.error("WebSocket Error: ", error);
+    };
 
-    axios.post(url, data).then((response) => {
-      console.log(response);
-      setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: response.data.choices[0].message.content }])
-      setIsLoading(false);
-    }).catch((error) => {
-      setIsLoading(false);
-      console.log(error);
-    })
+    chatSocket.onclose = function (event) {
+      console.log("Connection closed:", event);
+    };
+
+    chatSocket.on('connect', () => {
+      const data = {
+        model: "gpt-4",
+        messages: [{ "role": "user", "content": message }]
+      };
+      console.log("about to send emit");
+      // Convert the message object to a string and send it
+      chatSocket.emit('chat message', data);
+      setIsLoading(true);
+    });
+
+
+    chatSocket.on('chat message', (msg) => {
+      console.log('Received:', msg);
+    });
+
+    chatSocket.on('error', (errorMsg) => {
+      console.error('Error received:', errorMsg);
+    });
+
+    setIsLoading(false);
+
+
+
+    // axios.post(chatUrl, data).then((response) => {
+    //   console.log(response);
+    //   setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: response.data.choices[0].message.content }])
+    //   setIsLoading(false);
+    // }).catch((error) => {
+    //   setIsLoading(false);
+    //   console.log(error);
+    // })
 
 
 
