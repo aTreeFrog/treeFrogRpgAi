@@ -3,20 +3,26 @@
 @tailwind utilities;
 
 
+.hexagon-glow {
+    display: inline-flex;
+    /* or other display as necessary */
+    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.7));
+    /* Glowing effect */
+}
+
 /* styles.css */
 .hexagon {
-    width: 90px;
-    /* Width of the hexagon */
-    height: 52px;
-    /* Height of the central rectangle part of the hexagon */
-    background-color: white;
+    width: 60px;
+    /* Smaller width */
+    height: 34.64px;
+    /* Smaller height, maintaining the hexagon ratio */
+    background-color: rgb(16, 185, 129);
+    /* Hexagon color */
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    border-left: 2px solid black;
-    border-right: 2px solid black;
 }
 
 .hexagon::before,
@@ -24,27 +30,25 @@
     content: "";
     position: absolute;
     width: 0;
-    border-left: 45px solid transparent;
-    /* Adjust this for width */
-    border-right: 45px solid transparent;
-    /* Adjust this for width */
+    border-left: 30px solid transparent;
+    /* Half of the new width */
+    border-right: 30px solid transparent;
+    /* Half of the new width */
 }
 
 .hexagon::before {
     bottom: 100%;
-    border-bottom: 30px solid white;
-    /* Adjust this for height */
-    border-bottom-color: inherit;
-    /* Ensures the border color matches the hexagon's color */
+    border-bottom: 17.32px solid rgb(16, 185, 129);
+    /* Half of the new height */
 }
 
 .hexagon::after {
     top: 100%;
-    border-top: 30px solid white;
-    /* Adjust this for height */
-    border-top-color: inherit;
-    /* Ensures the border color matches the hexagon's color */
+    border-top: 17.32px solid rgb(16, 185, 129);
+    /* Half of the new height */
 }
+
+
 
 @keyframes spin {
     from {
@@ -57,5 +61,5 @@
 }
 
 .spinning {
-    animation: spin 2s linear forwards;
+    animation: spin 0.85s linear forwards;
 }
