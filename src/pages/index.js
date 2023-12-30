@@ -19,26 +19,28 @@ export default function Home() {
   const [dalleImageUrl, setDalleImageUrl] = useState('');
   const messageQueue = useRef([]); // Holds incoming messages
 
-
-  // Function to process and clear the message queue
+  // Function to process a single oldest message from the queue
   const processQueue = () => {
     if (messageQueue.current.length > 0) {
+      const msg = messageQueue.current.shift(); // Get the oldest message
+      console.log("msg: ", msg);
+
       setChatLog((prevChatLog) => {
+        console.log("here huh?")
         let updatedChatLog = [...prevChatLog];
-
-        // Process all messages in the queue
-        while (messageQueue.current.length > 0) {
-          console.log("queue is true");
-          let msg = messageQueue.current.shift(); // Remove the message from the queue
-
-          if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
-            updatedChatLog.push({ type: 'bot', message: msg });
-          } else {
-            // Append new content to the last message if it's also from the bot
-            let lastEntry = updatedChatLog[updatedChatLog.length - 1];
+        if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
+          updatedChatLog.push({ type: 'bot', message: msg });
+        } else {
+          // Append new content to the last message if it's also from the bot
+          let lastEntry = updatedChatLog[updatedChatLog.length - 1];
+          console.log("lastEntry: ", lastEntry.message);
+          if (!lastEntry.message.endsWith(msg)) {
             lastEntry.message += msg; // Append new chunk to last message content
+            console.log("lastEntry again: ", lastEntry.message);
           }
         }
+
+        console.log("this spot?");
 
         return updatedChatLog;
       });
@@ -46,7 +48,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Set up the interval to process the message queue every 100ms
+    // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
     }, 100);
