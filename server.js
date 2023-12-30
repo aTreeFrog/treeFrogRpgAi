@@ -4,11 +4,15 @@ const { createServer } = require('http');
 const next = require('next');
 const { Server } = require('socket.io');
 const OpenAI = require('openai');
+const path = require("path");
+const fs = require('fs');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+const speechFile = path.resolve("./speech.mp3");
 
 const shouldContinue = {};
 
@@ -62,6 +66,21 @@ app.prepare().then(() => {
             } catch (error) {
                 console.error('Error:', error);
                 socket.emit('error', 'Error processing your message');
+            }
+        });
+
+        socket.on('audio message', async (msg) => {
+            try {
+                console.log("audio is getting called?")
+                const mp3 = await openai.audio.speech.create(msg);
+                console.log(speechFile);
+                const buffer = Buffer.from(await mp3.arrayBuffer());
+                // Emit the buffer to the client
+                socket.emit('play audio', { audio: buffer.toString('base64') });
+
+            } catch (error) {
+                console.error('Error:', error);
+                socket.emit('error', 'Error processing your audio message');
             }
         });
 
