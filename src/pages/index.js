@@ -17,6 +17,43 @@ export default function Home() {
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState('');
+  const messageQueue = useRef([]); // Holds incoming messages
+
+
+  // Function to process and clear the message queue
+  const processQueue = () => {
+    if (messageQueue.current.length > 0) {
+      setChatLog((prevChatLog) => {
+        let updatedChatLog = [...prevChatLog];
+
+        // Process all messages in the queue
+        while (messageQueue.current.length > 0) {
+          console.log("queue is true");
+          let msg = messageQueue.current.shift(); // Remove the message from the queue
+
+          if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
+            updatedChatLog.push({ type: 'bot', message: msg });
+          } else {
+            // Append new content to the last message if it's also from the bot
+            let lastEntry = updatedChatLog[updatedChatLog.length - 1];
+            lastEntry.message += msg; // Append new chunk to last message content
+          }
+        }
+
+        return updatedChatLog;
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Set up the interval to process the message queue every 100ms
+    const intervalId = setInterval(() => {
+      processQueue();
+    }, 100);
+    return () => {
+      clearInterval(intervalId); // Clear the interval on component unmount
+    };
+  }, []);
 
   // Ref for the scrollable div
   const scrollableDivRef = useRef(null);
@@ -106,10 +143,24 @@ export default function Home() {
       setIsLoading(true);
     });
 
-
     chatSocket.on('chat message', (msg) => {
+      setIsLoading(false);
       console.log('Received:', msg);
-      //setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: msg.choices[0].message.content }])
+      messageQueue.current.push(msg);
+      // setChatLog((prevChatLog) => {
+      //   // If there's no previous chat log or the last entry is not of type 'bot', create a new entry.
+      //   if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
+      //     return [...prevChatLog, { type: 'bot', message: msg }];
+      //   } else {
+      //     // If the last entry is of type 'bot', append the new message content to the existing last entry.
+      //     let lastEntry = prevChatLog[prevChatLog.length - 1];
+      //     lastEntry.message += msg; // Append new chunk to last message content
+      //     return [
+      //       ...prevChatLog.slice(0, -1), // All but the last entry
+      //       lastEntry, // Modified last entry with appended content
+      //     ];
+      //   }
+      // });
     });
 
     chatSocket.on('error', (errorMsg) => {

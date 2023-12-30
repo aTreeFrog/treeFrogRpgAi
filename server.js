@@ -48,10 +48,9 @@ app.prepare().then(() => {
                 console.log(completion)
 
                 for await (const chunk of completion) {
-                    console.log("chunk: ", chunk.choices[0]?.delta?.content);
-                    process.stdout.write(chunk.choices[0]?.delta?.content || "");
+                    console.log(chunk.choices[0]?.delta?.content);
+                    socket.emit('chat message', chunk.choices[0]?.delta?.content || "");
                 }
-                socket.emit('chat message', completion);
             } catch (error) {
                 console.error('Error:', error);
                 socket.emit('error', 'Error processing your message');
