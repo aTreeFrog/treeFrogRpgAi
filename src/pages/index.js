@@ -34,6 +34,7 @@ export default function Home() {
           // Append new content to the last message if it's also from the bot
           let lastEntry = updatedChatLog[updatedChatLog.length - 1];
           console.log("lastEntry: ", lastEntry.message);
+          // its repeating somewhere so i needed to add this
           if (!lastEntry.message.endsWith(msg)) {
             lastEntry.message += msg; // Append new chunk to last message content
             console.log("lastEntry again: ", lastEntry.message);
@@ -51,7 +52,7 @@ export default function Home() {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 100);
+    }, 200);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
     };
