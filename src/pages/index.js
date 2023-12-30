@@ -32,6 +32,7 @@ export default function Home() {
   const [dalleImageUrl, setDalleImageUrl] = useState('');
   const messageQueue = useRef([]); // Holds incoming messages
   const [cancelButton, setCancelButton] = useState(0);
+  const prevCancelButtonRef = useRef();
 
   // Function to process a single oldest message from the queue
   const processQueue = () => {
@@ -62,6 +63,37 @@ export default function Home() {
       });
     }
     setCancelButton(prevValue => Math.max(0, prevValue - 1));
+  };
+
+  useEffect(() => {
+    // Run this effect after every render, when cancelButton changes
+    const prevCancelButton = prevCancelButtonRef.current;
+    if (prevCancelButton !== 0 && cancelButton === 0) {
+      // Call the function when it changes from non-zero to zero
+      const latestEntry = chatLog.length > 0 ? chatLog[chatLog.length - 1] : null;
+      textToSpeechCall(latestEntry?.message);
+    }
+    // Update the ref to the current value for the next render
+    prevCancelButtonRef.current = cancelButton;
+  }, [cancelButton]); // Only re-run the effect if cancelButton changes
+
+  const textToSpeechCall = async (text) => {
+    console.log('cancelButton changed from non-zero to zero');
+    const data = {
+      model: "tts-1",
+      voice: "onyx",
+      input: text,
+    };
+    console.log("about to send emit");
+    // Convert the message object to a string and send it
+    chatSocket.emit('audio message', data);
+
+    chatSocket.on('play audio', (recording) => {
+      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
+      const audio = new Audio(audioSrc);
+      audio.play()
+        .catch(err => console.error("Error playing audio:", err));
+    });
   };
 
   useEffect(() => {
