@@ -12,8 +12,6 @@ const inter = Inter({ subsets: ['latin'] })
 
 const chatUrl = '/api/chat';
 
-
-
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [chatLog, setChatLog] = useState([]);
@@ -77,7 +75,7 @@ export default function Home() {
 
     setInputValue('');
 
-    sendImageMessage(inputValue);
+    //sendImageMessage(inputValue);
   }
 
   const sendMessage = (message) => {
@@ -110,6 +108,7 @@ export default function Home() {
 
     chatSocket.on('chat message', (msg) => {
       console.log('Received:', msg);
+      setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: msg.choices[0].message.content }])
     });
 
     chatSocket.on('error', (errorMsg) => {
