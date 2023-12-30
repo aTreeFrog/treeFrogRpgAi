@@ -11,6 +11,19 @@ import io from 'Socket.IO-client'
 const inter = Inter({ subsets: ['latin'] })
 
 const chatUrl = '/api/chat';
+const chatSocket = io('http://localhost:3001', { path: chatUrl });
+
+chatSocket.onopen = function (event) {
+  console.log("Connection established!");
+};
+
+chatSocket.onerror = function (error) {
+  console.error("WebSocket Error: ", error);
+};
+
+chatSocket.onclose = function (event) {
+  console.log("Connection closed:", event);
+};
 
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
@@ -18,10 +31,12 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState('');
   const messageQueue = useRef([]); // Holds incoming messages
+  const [cancelButton, setCancelButton] = useState(0);
 
   // Function to process a single oldest message from the queue
   const processQueue = () => {
     if (messageQueue.current.length > 0) {
+      setCancelButton(prevValue => Math.min(prevValue + 2, 8)); //gives max amount so cancel button goes away quicker
       const msg = messageQueue.current.shift(); // Get the oldest message
       console.log("msg: ", msg);
 
@@ -46,6 +61,7 @@ export default function Home() {
         return updatedChatLog;
       });
     }
+    setCancelButton(prevValue => Math.max(0, prevValue - 1));
   };
 
   useEffect(() => {
@@ -107,44 +123,38 @@ export default function Home() {
   }, []); // Empty dependency array means this effect runs once on mount
 
   const handleSubmit = (event) => {
+
     event.preventDefault();
 
-    setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+    if (cancelButton !== 0) {
 
-    sendMessage(inputValue);
+      chatSocket.emit('cancel processing');
+      messageQueue.current = [];
 
-    setInputValue('');
+    } else {
 
-    //sendImageMessage(inputValue);
+      setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+
+      sendMessage(inputValue);
+
+      setInputValue('');
+
+      //sendImageMessage(inputValue);
+
+    }
   }
 
   const sendMessage = (message) => {
 
-    const chatSocket = io('http://localhost:3001', { path: chatUrl });
-
-    chatSocket.onopen = function (event) {
-      console.log("Connection established!");
+    const data = {
+      model: "gpt-4",
+      messages: [{ "role": "user", "content": message }],
+      stream: true,
     };
-
-    chatSocket.onerror = function (error) {
-      console.error("WebSocket Error: ", error);
-    };
-
-    chatSocket.onclose = function (event) {
-      console.log("Connection closed:", event);
-    };
-
-    chatSocket.on('connect', () => {
-      const data = {
-        model: "gpt-4",
-        messages: [{ "role": "user", "content": message }],
-        stream: true,
-      };
-      console.log("about to send emit");
-      // Convert the message object to a string and send it
-      chatSocket.emit('chat message', data);
-      setIsLoading(true);
-    });
+    console.log("about to send emit");
+    // Convert the message object to a string and send it
+    chatSocket.emit('chat message', data);
+    setIsLoading(true);
 
     chatSocket.on('chat message', (msg) => {
       setIsLoading(false);
@@ -171,19 +181,6 @@ export default function Home() {
     });
 
     setIsLoading(false);
-
-
-
-    // axios.post(chatUrl, data).then((response) => {
-    //   console.log(response);
-    //   setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: response.data.choices[0].message.content }])
-    //   setIsLoading(false);
-    // }).catch((error) => {
-    //   setIsLoading(false);
-    //   console.log(error);
-    // })
-
-
 
   }
 
@@ -269,7 +266,8 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="mt-auto p-6">
           <div className="flex rounded-lg border border-gray-700 bg-gray-800">
             <input type="text" className="flex-grow px-4 py-2 bg-transparent text-white focus:outline-none" placeholder="Type your message..." value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-            <button type="submit" className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">Send</button>
+            <button type="submit" className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300"
+            >{cancelButton !== 0 ? '▮▮' : 'Send'}</button>
           </div>
         </form>
       </div>
