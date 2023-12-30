@@ -98,6 +98,22 @@ export default function Home() {
   }
 
   useEffect(() => {
+    if (scrollableDivRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollableDivRef.current;
+
+      const isUserAtBottom = () => {
+        const tolerance = 40; // Adjust this value as needed
+        return scrollHeight - scrollTop - clientHeight <= tolerance;
+      };
+
+      if (isUserAtBottom()) {
+        // Scroll logic here
+        scrollableDivRef.current.scrollTop = scrollHeight;
+      }
+    }
+  }, [chatLog]);
+
+  useEffect(() => {
     ``
     // ComponentDidMount equivalent
     const handleLoad = () => {
@@ -205,7 +221,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex justify-center items-start h-screen bg-gray-900">
+    <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
       <div className="flex-1 max-w-[200px] border border-white">
         <div className="flex flex-col h-screen justify-start">
@@ -232,7 +248,7 @@ export default function Home() {
       {/* Right Box */}
       <div className="flex-1 max-w-[500px] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
         {/* Sticky Header */}
-        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 font-bold text-3xl md:text-4xl">Game Master</h1>
+        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-bold text-3xl md:text-4xl">Game Master</h1>
         {/* Scrollable Content */}
         <div ref={scrollableDivRef} className="overflow-y-auto flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
