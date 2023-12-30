@@ -10,6 +10,8 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const shouldContinue = {};
+
 app.prepare().then(() => {
     // HTTP Server for Next.js
     const httpServer = express();
@@ -41,6 +43,8 @@ app.prepare().then(() => {
     io.on('connection', (socket) => {
         console.log('a user connected:', socket.id);
 
+        shouldContinue[socket.id] = true; //front end can cancel this to break chat completion
+
         socket.on('chat message', async (msg) => {
             try {
                 console.log("is this getting called?")
@@ -49,12 +53,20 @@ app.prepare().then(() => {
 
                 for await (const chunk of completion) {
                     console.log(chunk.choices[0]?.delta?.content);
+                    // Check if we should continue before emitting the next chunk
+                    if (!shouldContinue[socket.id]) {
+                        break; // Exit the loop if instructed to stop
+                    }
                     socket.emit('chat message', chunk.choices[0]?.delta?.content || "");
                 }
             } catch (error) {
                 console.error('Error:', error);
                 socket.emit('error', 'Error processing your message');
             }
+        });
+
+        socket.on('cancel processing', () => {
+            shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket
         });
 
         socket.on('disconnect', () => {
