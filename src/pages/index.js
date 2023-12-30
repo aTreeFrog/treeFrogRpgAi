@@ -6,16 +6,57 @@ import styles from '@/styles/Home.module.css'
 import axios from 'axios';
 import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
+import io from 'Socket.IO-client'
 
 const inter = Inter({ subsets: ['latin'] })
 
+const chatUrl = '/api/chat';
 
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState('');
+  const messageQueue = useRef([]); // Holds incoming messages
 
+  // Function to process a single oldest message from the queue
+  const processQueue = () => {
+    if (messageQueue.current.length > 0) {
+      const msg = messageQueue.current.shift(); // Get the oldest message
+      console.log("msg: ", msg);
+
+      setChatLog((prevChatLog) => {
+        console.log("here huh?")
+        let updatedChatLog = [...prevChatLog];
+        if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
+          updatedChatLog.push({ type: 'bot', message: msg });
+        } else {
+          // Append new content to the last message if it's also from the bot
+          let lastEntry = updatedChatLog[updatedChatLog.length - 1];
+          console.log("lastEntry: ", lastEntry.message);
+          // its repeating somewhere so i needed to add this
+          if (!lastEntry.message.endsWith(msg)) {
+            lastEntry.message += msg; // Append new chunk to last message content
+            console.log("lastEntry again: ", lastEntry.message);
+          }
+        }
+
+        console.log("this spot?");
+
+        return updatedChatLog;
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Set up the interval to process the message queue every x ms
+    const intervalId = setInterval(() => {
+      processQueue();
+    }, 200);
+    return () => {
+      clearInterval(intervalId); // Clear the interval on component unmount
+    };
+  }, []);
 
   // Ref for the scrollable div
   const scrollableDivRef = useRef(null);
@@ -74,26 +115,73 @@ export default function Home() {
 
     setInputValue('');
 
-    sendImageMessage(inputValue);
+    //sendImageMessage(inputValue);
   }
 
   const sendMessage = (message) => {
-    const url = '/api/chat';
-    const data = {
-      model: "gpt-4",
-      messages: [{ "role": "user", "content": message }]
+
+    const chatSocket = io('http://localhost:3001', { path: chatUrl });
+
+    chatSocket.onopen = function (event) {
+      console.log("Connection established!");
     };
 
-    setIsLoading(true);
+    chatSocket.onerror = function (error) {
+      console.error("WebSocket Error: ", error);
+    };
 
-    axios.post(url, data).then((response) => {
-      console.log(response);
-      setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: response.data.choices[0].message.content }])
+    chatSocket.onclose = function (event) {
+      console.log("Connection closed:", event);
+    };
+
+    chatSocket.on('connect', () => {
+      const data = {
+        model: "gpt-4",
+        messages: [{ "role": "user", "content": message }],
+        stream: true,
+      };
+      console.log("about to send emit");
+      // Convert the message object to a string and send it
+      chatSocket.emit('chat message', data);
+      setIsLoading(true);
+    });
+
+    chatSocket.on('chat message', (msg) => {
       setIsLoading(false);
-    }).catch((error) => {
-      setIsLoading(false);
-      console.log(error);
-    })
+      console.log('Received:', msg);
+      messageQueue.current.push(msg);
+      // setChatLog((prevChatLog) => {
+      //   // If there's no previous chat log or the last entry is not of type 'bot', create a new entry.
+      //   if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
+      //     return [...prevChatLog, { type: 'bot', message: msg }];
+      //   } else {
+      //     // If the last entry is of type 'bot', append the new message content to the existing last entry.
+      //     let lastEntry = prevChatLog[prevChatLog.length - 1];
+      //     lastEntry.message += msg; // Append new chunk to last message content
+      //     return [
+      //       ...prevChatLog.slice(0, -1), // All but the last entry
+      //       lastEntry, // Modified last entry with appended content
+      //     ];
+      //   }
+      // });
+    });
+
+    chatSocket.on('error', (errorMsg) => {
+      console.error('Error received:', errorMsg);
+    });
+
+    setIsLoading(false);
+
+
+
+    // axios.post(chatUrl, data).then((response) => {
+    //   console.log(response);
+    //   setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: response.data.choices[0].message.content }])
+    //   setIsLoading(false);
+    // }).catch((error) => {
+    //   setIsLoading(false);
+    //   console.log(error);
+    // })
 
 
 
