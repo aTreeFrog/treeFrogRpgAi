@@ -43,8 +43,14 @@ app.prepare().then(() => {
 
         socket.on('chat message', async (msg) => {
             try {
+                console.log("is this getting called?")
                 const completion = await openai.chat.completions.create(msg);
                 console.log(completion)
+
+                for await (const chunk of completion) {
+                    console.log("chunk: ", chunk.choices[0]?.delta?.content);
+                    process.stdout.write(chunk.choices[0]?.delta?.content || "");
+                }
                 socket.emit('chat message', completion);
             } catch (error) {
                 console.error('Error:', error);

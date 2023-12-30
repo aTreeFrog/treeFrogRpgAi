@@ -97,7 +97,8 @@ export default function Home() {
     chatSocket.on('connect', () => {
       const data = {
         model: "gpt-4",
-        messages: [{ "role": "user", "content": message }]
+        messages: [{ "role": "user", "content": message }],
+        stream: true,
       };
       console.log("about to send emit");
       // Convert the message object to a string and send it
@@ -108,7 +109,7 @@ export default function Home() {
 
     chatSocket.on('chat message', (msg) => {
       console.log('Received:', msg);
-      setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: msg.choices[0].message.content }])
+      //setChatLog((prevChatLog) => [...prevChatLog, { type: 'bot', message: msg.choices[0].message.content }])
     });
 
     chatSocket.on('error', (errorMsg) => {
