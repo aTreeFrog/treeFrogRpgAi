@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const JitsiMeetComponent = ({ meetingRoom }) => {
+const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
     const jitsiContainerRef = useRef(null);
     const isScriptLoaded = useRef(false);
 
@@ -48,9 +48,48 @@ const JitsiMeetComponent = ({ meetingRoom }) => {
                         // Exclude 'chat', 'camera', or other buttons you don't want
                     ],
                 },
+
             };
 
             const api = new window.JitsiMeetExternalAPI(domain, options);
+            onApiReady(api);
+
+            // After the API is initialized and the conference is joined
+            api.addEventListener('videoConferenceJoined', (response) => {
+                // Check your own role shortly after joining
+                setTimeout(() => {
+                    //const myUserId = api.getMyUserId();
+                    console.log("api.getParticipantsInfo: ", api.getParticipantsInfo());
+
+                    // if (me.role === 'moderator') {
+                    //     console.log("I am the moderator!");
+                    //     setIsModerator(true);  // Set state or handle accordingly
+                    // } else {
+                    //     console.log("My role:", me.role);
+                    // }
+                }, 5000); // Adjust time as needed to ensure roles are fully initialized
+            });
+
+            api.addEventListener('participantRoleChanged', function (event) {
+                if (event.role === "moderator") {
+                    console.log("im moderator");
+                    // Now you're the moderator!
+                    // You can make decisions about participant roles, etc.
+                }
+            });
+
+            api.addEventListener('lobbyUserJoined', function (id, displayName, email) {
+                console.log(`${displayName} is waiting in the lobby.`);
+                // You can now allow or deny entry to this participant
+                api.allowLobbyParticipant(id);
+            });
+
+            api.addEventListener('participantRoleChanged', function (event) {
+                setTimeout(() => {
+                    console.log("event.role ", event.role);
+                    console.log("event.id ", event.id);
+                }, 5000);
+            });
 
             // You can use the api object to add event listeners or execute commands
 
