@@ -37,10 +37,25 @@ export default function Home() {
   // State to hold meeting details
   const [meetingDetails, setMeetingDetails] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [api, setApi] = useState(null);
+
+  const handleApiReady = (apiInstance) => {
+    console.log("handleApiReady");
+    setApi(apiInstance);
+  }
+
+  const disposeApi = () => {
+    if (api) {
+      console.log("api disconnecting");
+      api.dispose();
+    }
+  }
+
 
   useEffect(() => {
     // Emit event to server to create a meeting when component mounts
     chatSocket.emit('create-meeting');
+
 
     // Listen for the server's response
     chatSocket.once('meeting-created', (data) => {
@@ -294,7 +309,17 @@ export default function Home() {
           </div>
           {/* Toggle Meeting Panel Button */}
           <button
-            onClick={() => setIsPanelOpen(prevState => !prevState)}
+            onClick={() => {
+              // First, check if the panel is currently open
+              if (isPanelOpen) {
+                // If the panel is open, it means we're about to close it,
+                // so call the function to end the Jitsi meeting.
+                disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
+              }
+              // Next, toggle the panel's open state regardless of the current state.
+              // If it was open, this will close it, and vice versa.
+              setIsPanelOpen(prevState => !prevState);
+            }}
             className="absolute bottom-0 left-0 mb-9 ml-8 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
             {isPanelOpen ? 'Close Meeting' : 'Open Meeting'}
@@ -302,7 +327,7 @@ export default function Home() {
           {/* Floating Jitsi Meeting Panel */}
           <div className={`absolute bottom-0 left-0 mb-20 ml-2 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'w-96 h-96' : 'hidden'}`}>
             {meetingDetails && isPanelOpen && (
-              <JitsiMeetComponent meetingRoom={meetingDetails.roomName} />
+              <JitsiMeetComponent meetingRoom={meetingDetails.roomName} onApiReady={handleApiReady} />
             )}
           </div>
         </div>
