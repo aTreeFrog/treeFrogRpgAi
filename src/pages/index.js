@@ -32,6 +32,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState('');
   const messageQueue = useRef([]); // Holds incoming messages
+  const audioQueue = useRef([]); // Holds incoming messages
   const [cancelButton, setCancelButton] = useState(0);
   const prevCancelButtonRef = useRef();
   // State to hold meeting details
@@ -138,7 +139,7 @@ export default function Home() {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 200);
+    }, 100);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
     };
@@ -218,6 +219,7 @@ export default function Home() {
 
       chatSocket.emit('cancel processing');
       messageQueue.current = [];
+      audioQueue.current = [];
 
     } else {
 
@@ -229,7 +231,7 @@ export default function Home() {
 
         setInputValue('');
 
-        //sendImageMessage(inputValue);
+        sendImageMessage(inputValue);
 
       }
 
@@ -248,25 +250,24 @@ export default function Home() {
     chatSocket.emit('chat message', data);
     setIsLoading(true);
 
+    // Temp buffer to hold the consolidated message
+    let tempBuffer = '';
     chatSocket.on('chat message', (msg) => {
       setIsLoading(false);
       console.log('Received:', msg);
       messageQueue.current.push(msg);
-      // setChatLog((prevChatLog) => {
-      //   // If there's no previous chat log or the last entry is not of type 'bot', create a new entry.
-      //   if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
-      //     return [...prevChatLog, { type: 'bot', message: msg }];
-      //   } else {
-      //     // If the last entry is of type 'bot', append the new message content to the existing last entry.
-      //     let lastEntry = prevChatLog[prevChatLog.length - 1];
-      //     lastEntry.message += msg; // Append new chunk to last message content
-      //     return [
-      //       ...prevChatLog.slice(0, -1), // All but the last entry
-      //       lastEntry, // Modified last entry with appended content
-      //     ];
-      //   }
-      // });
+
+      // Check if the temp buffer length is at least 30
+      if (tempBuffer.length >= 30) {
+        audioQueue.current.push(tempBuffer); // Push the consolidated message to another queue
+        tempBuffer = ''; // Reset the temp buffer
+      }
+
     });
+
+
+
+
 
     chatSocket.on('error', (errorMsg) => {
       console.error('Error received:', errorMsg);
@@ -320,9 +321,9 @@ export default function Home() {
               // If it was open, this will close it, and vice versa.
               setIsPanelOpen(prevState => !prevState);
             }}
-            className="absolute bottom-0 left-0 mb-9 ml-8 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            className="absolute bottom-0 left-0 mb-9 ml-8 bg-purple-500 hover:bg-purple-700 text-white font-bold transition-colors duration-300 py-2 px-4 rounded"
           >
-            {isPanelOpen ? 'Close Meeting' : 'Open Meeting'}
+            {isPanelOpen ? 'Close Party' : 'Party Line'}
           </button>
           {/* Floating Jitsi Meeting Panel */}
           <div className={`absolute bottom-0 left-0 mb-20 ml-2 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'w-96 h-96' : 'hidden'}`}>
@@ -349,7 +350,7 @@ export default function Home() {
       {/* Right Box */}
       <div className="flex-1 max-w-[500px] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
         {/* Sticky Header */}
-        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-bold text-3xl md:text-4xl">Game Master</h1>
+        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">Game Master</h1>
         {/* Scrollable Content */}
         <div ref={scrollableDivRef} className="overflow-y-auto flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
