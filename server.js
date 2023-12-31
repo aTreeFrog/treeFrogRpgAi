@@ -6,6 +6,9 @@ const { Server } = require('socket.io');
 const OpenAI = require('openai');
 const path = require("path");
 const fs = require('fs');
+// Dynamically import 'node-fetch'
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -91,6 +94,38 @@ app.prepare().then(() => {
         socket.on('disconnect', () => {
             console.log('user disconnected');
         });
+
+        //jitsi integration
+        // Handle creating a meeting
+        socket.on('create-meeting', () => {
+            const roomName = "Room-" + Date.now(); // Generate unique room name
+            const meetingUrl = `https://meet.jit.si/${encodeURIComponent(roomName)}`;
+
+
+
+            // Emit back the room details
+            socket.emit('meeting-created', {
+                roomName: roomName,
+                meetingUrl: `https://meet.jit.si/${encodeURIComponent(roomName)}`,
+                message: "Meeting created"
+            });
+        });
+
+        // Handle ending a meeting
+        socket.on('end-meeting', () => {
+            // Implement logic to handle ending the meeting
+            socket.emit('meeting-ended', {
+                message: "Meeting ended"
+            });
+        });
+
+        // Handle disconnect
+        socket.on('disconnect', () => {
+            console.log('User disconnected');
+        });
+
+
+
     });
 
     wsServer.listen(3001, () => {
