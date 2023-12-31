@@ -7,6 +7,7 @@ import axios from 'axios';
 import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
+import JitsiMeetComponent from '../components/JitsiMeetComponent';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -33,6 +34,28 @@ export default function Home() {
   const messageQueue = useRef([]); // Holds incoming messages
   const [cancelButton, setCancelButton] = useState(0);
   const prevCancelButtonRef = useRef();
+  // State to hold meeting details
+  const [meetingDetails, setMeetingDetails] = useState(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  useEffect(() => {
+    // Emit event to server to create a meeting when component mounts
+    chatSocket.emit('create-meeting');
+
+    // Listen for the server's response
+    chatSocket.once('meeting-created', (data) => {
+      console.log("Meeting created:", data);
+      setMeetingDetails(data); // Save the meeting details in state
+    });
+
+    // Cleanup listener when component unmounts
+    return () => {
+      chatSocket.off('meeting-created');
+    };
+
+  }, []);
+
+
 
   // Function to process a single oldest message from the queue
   const processQueue = () => {
@@ -172,6 +195,8 @@ export default function Home() {
 
   const handleSubmit = (event) => {
 
+    console.log("meeting details", meetingDetails.meetingUr);
+
     event.preventDefault();
 
     if (cancelButton !== 0) {
@@ -181,13 +206,17 @@ export default function Home() {
 
     } else {
 
-      setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+      if (inputValue.length > 0) {
 
-      sendMessage(inputValue);
+        setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
-      setInputValue('');
+        sendMessage(inputValue);
 
-      //sendImageMessage(inputValue);
+        setInputValue('');
+
+        //sendImageMessage(inputValue);
+
+      }
 
     }
   }
@@ -256,10 +285,25 @@ export default function Home() {
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
       <div className="flex-1 max-w-[200px] border border-white">
-        <div className="flex flex-col h-screen justify-start">
-          <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
-          <div className="container mx-auto min-h-screen flex flex-col items-center justify-start pt-20">
-            <HexagonDice />
+        <div className="flex flex-col h-screen justify-between"> {/* Adjusted for spacing */}
+          <div>
+            <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
+            <div className="container mx-auto flex flex-col items-center justify-start pt-20">
+              <HexagonDice />
+            </div>
+          </div>
+          {/* Toggle Meeting Panel Button */}
+          <button
+            onClick={() => setIsPanelOpen(prevState => !prevState)}
+            className="absolute bottom-0 left-0 mb-9 ml-8 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            {isPanelOpen ? 'Close Meeting' : 'Open Meeting'}
+          </button>
+          {/* Floating Jitsi Meeting Panel */}
+          <div className={`absolute bottom-0 left-0 mb-20 ml-2 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'w-96 h-96' : 'hidden'}`}>
+            {meetingDetails && isPanelOpen && (
+              <JitsiMeetComponent meetingRoom={meetingDetails.roomName} />
+            )}
           </div>
         </div>
       </div>
