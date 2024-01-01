@@ -8,7 +8,7 @@ import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
-import { debounce } from 'lodash';
+import { Howl } from 'howler';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -136,13 +136,103 @@ export default function Home() {
 
   };
 
+  // Your refactored playNextAudio function
+  let isAudioPlaying = false;
+  const playNextAudio = () => {
+    if (audioQueue.current.length > 0 && !isAudioPlaying) {
+      isAudioPlaying = true;
+      const audioSrc = audioQueue.current.shift();  // Remove the first item from the queue
+
+      // Create a Howl instance for the audio.
+      const sound = new Howl({
+        src: [audioSrc],
+        html5: true, // Force to HTML5 to avoid preloading and allow larger files to play immediately.
+        onend: () => {
+          isAudioPlaying = false; // Reset the flag when audio ends
+          setAudio(null);
+        },
+        onloaderror: (id, err) => {
+          console.error("Error while loading audio: ", err);
+          isAudioPlaying = false;
+          setAudio(null);
+        },
+        onplayerror: (id, err) => {
+          console.error("Error while playing audio: ", err);
+          // To automatically attempt to unlock sound on mobile devices,
+          // you can call sound.play() here, inside the onplayerror callback,
+          // after fixing the issue that caused the error (e.g., user interaction).
+          isAudioPlaying = false;
+          setAudio(null);
+        }
+
+      });
+
+      sound.play();
+
+      // // Fetch the audio file and decode audio data
+      // fetch(audioSrc)
+      // .then(response => response.arrayBuffer())
+      //   .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+      //   .then(audioBuffer => {
+      //     // Create source from buffer and connect to default output (speakers)
+      //     const source = audioContext.createBufferSource();
+      //     source.buffer = audioBuffer;
+      //     source.connect(audioContext.destination);
+
+      //     // Play the audio
+      //     source.start();
+      //     setAudio(newAudio);
+
+      //     // When the audio is finished playing
+      //     source.onended = () => {
+      //       isAudioPlaying = false;  // Reset the flag when audio ends
+      //       setAudio(null);
+      //       // Perform any cleanup or state updates needed
+      //     };
+      //   }).catch(err => {
+      //     console.error("Error with decoding audio data", err);
+      //     isAudioPlaying = false;
+      //     setAudio(null);
+      //   });
+    }
+  };
+
+  // let isAudioPlaying = false;  // Ref to track if audio is currently playing
+  // const playNextAudio = () => {
+  //   if (audioQueue.current.length > 0 && !isAudioPlaying) {
+  //     isAudioPlaying = true;
+  //     const audioSrc = audioQueue.current.shift();  // Remove the first item from the queue
+  //     const newAudio = new Audio(audioSrc);
+  //     newAudio.volume = 1;
+  //     newAudio.play().then(() => {
+  //       setAudio(newAudio);
+  //       // Do something when audio starts playing if needed
+  //     }).catch(err => {
+  //       console.error("Error playing audio:", err);
+  //       isAudioPlaying = false;  // Reset the flag if there's an error
+  //       setAudio(null);
+  //     });
+
+  //     newAudio.onended = () => {
+  //       isAudioPlaying = false;  // Reset the flag when audio ends
+  //       setAudio(null);  // Assuming you want to clear the current audio
+  //     };
+  //   }
+  // };
+
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
     }, 10);
+
+    // Set up the interval to process audio queue every x ms
+    const audioIntervalId = setInterval(() => {
+      playNextAudio();
+    }, 10);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
+      clearInterval(audioIntervalId); // Clear the interval on component unmount
     };
   }, []);
 
@@ -271,31 +361,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    let audioQueue = [];  // Initialize an empty array for the audio queue
-    let isAudioPlaying = false;  // Ref to track if audio is currently playing
-
-    const playNextAudio = () => {
-      if (audioQueue.length > 0 && !isAudioPlaying) {
-        isAudioPlaying = true;
-        const audioSrc = audioQueue.shift();  // Remove the first item from the queue
-        const newAudio = new Audio(audioSrc);
-
-        newAudio.play().then(() => {
-          setAudio(newAudio);
-          // Do something when audio starts playing if needed
-        }).catch(err => {
-          console.error("Error playing audio:", err);
-          isAudioPlaying = false;  // Reset the flag if there's an error
-          setAudio(null);
-        });
-
-        newAudio.onended = () => {
-          isAudioPlaying = false;  // Reset the flag when audio ends
-          setAudio(null);  // Assuming you want to clear the current audio
-          playNextAudio();  // Automatically try to play the next audio
-        };
-      }
-    };
 
     const handleChatMessage = (msg) => {
       setCancelButton(1);
@@ -342,8 +407,8 @@ export default function Home() {
 
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      audioQueue.push(audioSrc);
-      playNextAudio();
+      audioQueue.current.push(audioSrc);
+      //playNextAudio();
     });
 
     // Return a cleanup function to remove the event listener when the component unmounts
