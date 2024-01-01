@@ -8,6 +8,7 @@ import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
+import { debounce } from 'lodash';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,6 +40,14 @@ export default function Home() {
   const [meetingDetails, setMeetingDetails] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [api, setApi] = useState(null);
+  const [audio, setAudio] = useState(null);
+  const chatLogRef = useRef(chatLog);
+  const tempBuffer = useRef('');
+
+  // Whenever chatLog updates, update the ref
+  useEffect(() => {
+    chatLogRef.current = chatLog;
+  }, [chatLog]);
 
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
@@ -72,11 +81,10 @@ export default function Home() {
   }, []);
 
 
-
+  let lastMessage = [];
   // Function to process a single oldest message from the queue
   const processQueue = () => {
-    if (messageQueue.current.length > 0) {
-      setCancelButton(prevValue => Math.min(prevValue + 2, 8)); //gives max amount so cancel button goes away quicker
+    if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
       const msg = messageQueue.current.shift(); // Get the oldest message
       console.log("msg: ", msg);
 
@@ -98,48 +106,41 @@ export default function Home() {
 
         console.log("this spot?");
 
+        lastMessage = updatedChatLog;
         return updatedChatLog;
       });
     }
-    setCancelButton(prevValue => Math.max(0, prevValue - 1));
   };
 
-  useEffect(() => {
-    // Run this effect after every render, when cancelButton changes
-    const prevCancelButton = prevCancelButtonRef.current;
-    if (prevCancelButton !== 0 && cancelButton === 0) {
-      // Call the function when it changes from non-zero to zero
-      const latestEntry = chatLog.length > 0 ? chatLog[chatLog.length - 1] : null;
-      textToSpeechCall(latestEntry?.message);
-    }
-    // Update the ref to the current value for the next render
-    prevCancelButtonRef.current = cancelButton;
-  }, [cancelButton]); // Only re-run the effect if cancelButton changes
+  // useEffect(() => {
+  //   // Run this effect after every render, when cancelButton changes
+  //   const prevCancelButton = prevCancelButtonRef.current;
+  //   if (prevCancelButton !== 1 && cancelButton === 1) {
+  //     // Call the function when it changes from non-zero to zero
+  //     const latestEntry = chatLog.length > 0 ? chatLog[chatLog.length - 1] : null;
+  //     textToSpeechCall(latestEntry?.message);
+  //   }
+  //   // Update the ref to the current value for the next render
+  //   prevCancelButtonRef.current = cancelButton;
+  // }, [cancelButton]); // Only re-run the effect if cancelButton changes
 
   const textToSpeechCall = async (text) => {
-    console.log('cancelButton changed from non-zero to zero');
     const data = {
       model: "tts-1",
       voice: "onyx",
       input: text,
     };
-    console.log("about to send emit");
+    console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
     chatSocket.emit('audio message', data);
 
-    chatSocket.on('play audio', (recording) => {
-      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      const audio = new Audio(audioSrc);
-      audio.play()
-        .catch(err => console.error("Error playing audio:", err));
-    });
   };
 
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 100);
+    }, 10);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
     };
@@ -220,10 +221,17 @@ export default function Home() {
       chatSocket.emit('cancel processing');
       messageQueue.current = [];
       audioQueue.current = [];
+      setCancelButton(0);
+      setIsLoading(false);
 
     } else {
 
       if (inputValue.length > 0) {
+
+        if (audio) {
+          audio.pause(); // Stop the audio
+          console.log(audio.currentTime) // use this later to determine where the voice stopped.
+        }
 
         setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
@@ -231,7 +239,7 @@ export default function Home() {
 
         setInputValue('');
 
-        sendImageMessage(inputValue);
+        //sendImageMessage(inputValue);
 
       }
 
@@ -249,33 +257,59 @@ export default function Home() {
     // Convert the message object to a string and send it
     chatSocket.emit('chat message', data);
     setIsLoading(true);
+    setCancelButton(1);
 
-    // Temp buffer to hold the consolidated message
-    let tempBuffer = '';
-    chatSocket.on('chat message', (msg) => {
+    // chatSocket.on('chat message', (msg) => {
+    //   setCancelButton(1);
+    //   setIsLoading(false);
+    //   console.log('Received:', msg);
+    //   messageQueue.current.push(msg);
+    //   tempBuffer.current += msg;
+
+    // });
+
+  }
+
+  useEffect(() => {
+
+    const handleChatMessage = (msg) => {
+      setCancelButton(1);
       setIsLoading(false);
       console.log('Received:', msg);
       messageQueue.current.push(msg);
+      tempBuffer.current += msg; // Modify tempBuffer ref
+    };
 
-      // Check if the temp buffer length is at least 30
-      if (tempBuffer.length >= 30) {
-        audioQueue.current.push(tempBuffer); // Push the consolidated message to another queue
-        tempBuffer = ''; // Reset the temp buffer
-      }
 
+    const onChatComplete = () => {
+      setTimeout(() => {
+        console.log("onChatComplete!!!");
+        setCancelButton(0); // Assuming setCancelButton is a state setter function
+        textToSpeechCall(tempBuffer.current);
+        tempBuffer.current = '';
+      }, 100);
+    };
+
+    // Attach the event listener only once when the component mounts
+    chatSocket.on('chat message', handleChatMessage);
+    chatSocket.on('chat complete', onChatComplete);
+
+    chatSocket.on('play audio', (recording) => {
+      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
+      const newAudio = new Audio(audioSrc);
+      setAudio(newAudio);
+      newAudio.play()
+        .catch(err => console.error("Error playing audio:", err));
+      setAudio(null);
     });
 
-
-
-
-
-    chatSocket.on('error', (errorMsg) => {
-      console.error('Error received:', errorMsg);
-    });
-
-    setIsLoading(false);
-
-  }
+    // Return a cleanup function to remove the event listener when the component unmounts
+    return () => {
+      chatSocket.off('chat message', handleChatMessage);
+      chatSocket.off('chat complete', onChatComplete);
+      chatSocket.off('play audio');
+    };
+  }, []);
 
   const sendImageMessage = (message) => {
     const url = '/api/image';

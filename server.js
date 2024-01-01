@@ -66,6 +66,7 @@ app.prepare().then(() => {
                     }
                     socket.emit('chat message', chunk.choices[0]?.delta?.content || "");
                 }
+                console.log('made it to chat complete');
                 socket.emit('chat complete');
             } catch (error) {
                 console.error('Error:', error);
