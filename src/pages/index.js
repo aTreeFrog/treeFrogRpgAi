@@ -42,6 +42,7 @@ export default function Home() {
   const [api, setApi] = useState(null);
   const [audio, setAudio] = useState(null);
   const chatLogRef = useRef(chatLog);
+  const tempBuffer = useRef('');
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function Home() {
   }, []);
 
 
-
+  let lastMessage = [];
   // Function to process a single oldest message from the queue
   const processQueue = () => {
     if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
@@ -105,6 +106,7 @@ export default function Home() {
 
         console.log("this spot?");
 
+        lastMessage = updatedChatLog;
         return updatedChatLog;
       });
     }
@@ -128,18 +130,10 @@ export default function Home() {
       voice: "onyx",
       input: text,
     };
-    console.log("about to send emit");
+    console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
     chatSocket.emit('audio message', data);
 
-    chatSocket.on('play audio', (recording) => {
-      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      const newAudio = new Audio(audioSrc);
-      setAudio(newAudio);
-      newAudio.play()
-        .catch(err => console.error("Error playing audio:", err));
-      setAudio(null);
-    });
   };
 
   useEffect(() => {
@@ -265,49 +259,55 @@ export default function Home() {
     setIsLoading(true);
     setCancelButton(1);
 
-    // Temp buffer to hold the consolidated message
-    let tempBuffer = '';
-    chatSocket.on('chat message', (msg) => {
-      setCancelButton(1);
-      setIsLoading(false);
-      console.log('Received:', msg);
-      messageQueue.current.push(msg);
+    // chatSocket.on('chat message', (msg) => {
+    //   setCancelButton(1);
+    //   setIsLoading(false);
+    //   console.log('Received:', msg);
+    //   messageQueue.current.push(msg);
+    //   tempBuffer.current += msg;
 
-      // Check if the temp buffer length is at least 30
-      if (tempBuffer.length >= 30) {
-        audioQueue.current.push(tempBuffer); // Push the consolidated message to another queue
-        tempBuffer = ''; // Reset the temp buffer
-      }
-
-    });
+    // });
 
   }
 
   useEffect(() => {
 
-    chatSocket.on('chat message', (msg) => {
-      setCancelButton(1); // Assuming setCancelButton is a state setter function
-      setIsLoading(false); // Assuming setIsLoading is a state setter function
+    const handleChatMessage = (msg) => {
+      setCancelButton(1);
+      setIsLoading(false);
       console.log('Received:', msg);
       messageQueue.current.push(msg);
-
-    });
-
-    // Define the handleChatComplete function inside effect to capture the current state
-    const handleChatComplete = () => {
-      const latestEntry = chatLogRef.current.length > 0 ? chatLogRef.current[chatLogRef.current.length - 1] : null;
-      setCancelButton(0); // Assuming setCancelButton is a state setter function
-      textToSpeechCall(latestEntry?.message);
+      tempBuffer.current += msg; // Modify tempBuffer ref
     };
 
-    const debouncedChatComplete = debounce(handleChatComplete, 300);
 
-    chatSocket.on('chat complete', debouncedChatComplete);
+    const onChatComplete = () => {
+      setTimeout(() => {
+        console.log("onChatComplete!!!");
+        setCancelButton(0); // Assuming setCancelButton is a state setter function
+        textToSpeechCall(tempBuffer.current);
+        tempBuffer.current = '';
+      }, 100);
+    };
 
-    // Cleanup function to remove event listener when component unmounts or dependencies change
+    // Attach the event listener only once when the component mounts
+    chatSocket.on('chat message', handleChatMessage);
+    chatSocket.on('chat complete', onChatComplete);
+
+    chatSocket.on('play audio', (recording) => {
+      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
+      const newAudio = new Audio(audioSrc);
+      setAudio(newAudio);
+      newAudio.play()
+        .catch(err => console.error("Error playing audio:", err));
+      setAudio(null);
+    });
+
+    // Return a cleanup function to remove the event listener when the component unmounts
     return () => {
-      chatSocket.off('chat complete', debouncedChatComplete);
-      chatSocket.off('chat message');
+      chatSocket.off('chat message', handleChatMessage);
+      chatSocket.off('chat complete', onChatComplete);
+      chatSocket.off('play audio');
     };
   }, []);
 
