@@ -278,16 +278,37 @@ export default function Home() {
       console.log('Received:', msg);
       messageQueue.current.push(msg);
       tempBuffer.current += msg; // Modify tempBuffer ref
+
+      // Process the buffer to extract complete sentences
+      let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
+      for (let i = 0; i < tempBuffer.current.length; i++) {
+        // Check for sentence termination (.,!,?)
+        if (tempBuffer.current[i] === '.' || tempBuffer.current[i] === '!' || tempBuffer.current[i] === '?') {
+          // Extract the sentence
+          let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
+          if (sentence.length > 0) {
+            console.log("sentence: ", sentence);
+            textToSpeechCall(sentence);
+          }
+          lastIndex = i + 1;  // Update the last index to the new position
+        }
+      }
+
+      // Keep only the incomplete sentence part in the buffer
+      tempBuffer.current = tempBuffer.current.substring(lastIndex);
+
+
     };
 
 
     const onChatComplete = () => {
-      setTimeout(() => {
-        console.log("onChatComplete!!!");
-        setCancelButton(0); // Assuming setCancelButton is a state setter function
+      console.log("onChatComplete!!!");
+      setCancelButton(0); // Assuming setCancelButton is a state setter function
+      if (tempBuffer.current.length > 0) {
         textToSpeechCall(tempBuffer.current);
-        tempBuffer.current = '';
-      }, 100);
+      }
+      tempBuffer.current = '';
+
     };
 
     // Attach the event listener only once when the component mounts
