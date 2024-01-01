@@ -115,18 +115,6 @@ export default function Home() {
     }
   };
 
-  // useEffect(() => {
-  //   // Run this effect after every render, when cancelButton changes
-  //   const prevCancelButton = prevCancelButtonRef.current;
-  //   if (prevCancelButton !== 1 && cancelButton === 1) {
-  //     // Call the function when it changes from non-zero to zero
-  //     const latestEntry = chatLog.length > 0 ? chatLog[chatLog.length - 1] : null;
-  //     textToSpeechCall(latestEntry?.message);
-  //   }
-  //   // Update the ref to the current value for the next render
-  //   prevCancelButtonRef.current = cancelButton;
-  // }, [cancelButton]); // Only re-run the effect if cancelButton changes
-
   const textToSpeechCall = async (text) => {
     const data = {
       model: "tts-1",
@@ -138,67 +126,6 @@ export default function Home() {
     chatSocket.emit('audio message', data);
 
   };
-
-  // Your refactored playNextAudio function
-  // let isAudioPlaying = false;
-  // const playNextAudio = () => {
-  //   if (audioQueue.current.length > 0 && !isAudioPlaying) {
-  //     isAudioPlaying = true;
-  //     const audioSrc = audioQueue.current.shift();  // Remove the first item from the queue
-
-  // // Create a Howl instance for the audio.
-  // const sound = new Howl({
-  //   src: [audioSrc],
-  //   html5: true, // Force to HTML5 to avoid preloading and allow larger files to play immediately.
-  //   onend: () => {
-  //     isAudioPlaying = false; // Reset the flag when audio ends
-  //     setAudio(null);
-  //   },
-  //   onloaderror: (id, err) => {
-  //     console.error("Error while loading audio: ", err);
-  //     isAudioPlaying = false;
-  //     setAudio(null);
-  //   },
-  //   onplayerror: (id, err) => {
-  //     console.error("Error while playing audio: ", err);
-  //     // To automatically attempt to unlock sound on mobile devices,
-  //     // you can call sound.play() here, inside the onplayerror callback,
-  //     // after fixing the issue that caused the error (e.g., user interaction).
-  //     isAudioPlaying = false;
-  //     setAudio(null);
-  //   }
-
-  // });
-
-  // sound.play();
-
-  //     // Fetch the audio file and decode audio data
-  //     fetch(audioSrc)
-  //       .then(response => response.arrayBuffer())
-  //       .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-  //       .then(audioBuffer => {
-  //         // Create source from buffer and connect to default output (speakers)
-  //         const source = audioContext.createBufferSource();
-  //         source.buffer = audioBuffer;
-  //         source.connect(audioContext.destination);
-
-  //         // Play the audio
-  //         source.start();
-  //         setAudio(newAudio);
-
-  //         // When the audio is finished playing
-  //         source.onended = () => {
-  //           isAudioPlaying = false;  // Reset the flag when audio ends
-  //           setAudio(null);
-  //           // Perform any cleanup or state updates needed
-  //         };
-  //       }).catch(err => {
-  //         console.error("Error with decoding audio data", err);
-  //         isAudioPlaying = false;
-  //         setAudio(null);
-  //       });
-  //   }
-  // };
 
   let isAudioPlaying = false;  // Ref to track if audio is currently playing
   const playNextAudio = () => {
