@@ -44,6 +44,7 @@ export default function Home() {
   const chatLogRef = useRef(chatLog);
   const tempBuffer = useRef('');
 
+
   // Whenever chatLog updates, update the ref
   useEffect(() => {
     chatLogRef.current = chatLog;
@@ -271,13 +272,13 @@ export default function Home() {
   }
 
   useEffect(() => {
-    let audioQueue = [];  // Initialize an empty array for the audio queue
+
     let isAudioPlaying = false;  // Ref to track if audio is currently playing
 
     const playNextAudio = () => {
-      if (audioQueue.length > 0 && !isAudioPlaying) {
+      if (audioQueue.current.length > 0 && !isAudioPlaying) {
         isAudioPlaying = true;
-        const audioSrc = audioQueue.shift();  // Remove the first item from the queue
+        const audioSrc = audioQueue.current.shift();  // Remove the first item from the queue
         const newAudio = new Audio(audioSrc);
 
         newAudio.play().then(() => {
@@ -342,7 +343,7 @@ export default function Home() {
 
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      audioQueue.push(audioSrc);
+      audioQueue.current.push(audioSrc);
       playNextAudio();
     });
 
