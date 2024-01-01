@@ -271,6 +271,31 @@ export default function Home() {
   }
 
   useEffect(() => {
+    let audioQueue = [];  // Initialize an empty array for the audio queue
+    let isAudioPlaying = false;  // Ref to track if audio is currently playing
+
+    const playNextAudio = () => {
+      if (audioQueue.length > 0 && !isAudioPlaying) {
+        isAudioPlaying = true;
+        const audioSrc = audioQueue.shift();  // Remove the first item from the queue
+        const newAudio = new Audio(audioSrc);
+
+        newAudio.play().then(() => {
+          setAudio(newAudio);
+          // Do something when audio starts playing if needed
+        }).catch(err => {
+          console.error("Error playing audio:", err);
+          isAudioPlaying = false;  // Reset the flag if there's an error
+          setAudio(null);
+        });
+
+        newAudio.onended = () => {
+          isAudioPlaying = false;  // Reset the flag when audio ends
+          setAudio(null);  // Assuming you want to clear the current audio
+          playNextAudio();  // Automatically try to play the next audio
+        };
+      }
+    };
 
     const handleChatMessage = (msg) => {
       setCancelButton(1);
@@ -317,11 +342,8 @@ export default function Home() {
 
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      const newAudio = new Audio(audioSrc);
-      setAudio(newAudio);
-      newAudio.play()
-        .catch(err => console.error("Error playing audio:", err));
-      setAudio(null);
+      audioQueue.push(audioSrc);
+      playNextAudio();
     });
 
     // Return a cleanup function to remove the event listener when the component unmounts
