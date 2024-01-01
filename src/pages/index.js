@@ -8,6 +8,7 @@ import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
+import { debounce } from 'lodash';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -39,6 +40,13 @@ export default function Home() {
   const [meetingDetails, setMeetingDetails] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [api, setApi] = useState(null);
+  const [audio, setAudio] = useState(null);
+  const chatLogRef = useRef(chatLog);
+
+  // Whenever chatLog updates, update the ref
+  useEffect(() => {
+    chatLogRef.current = chatLog;
+  }, [chatLog]);
 
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
@@ -75,8 +83,7 @@ export default function Home() {
 
   // Function to process a single oldest message from the queue
   const processQueue = () => {
-    if (messageQueue.current.length > 0) {
-      setCancelButton(prevValue => Math.min(prevValue + 2, 8)); //gives max amount so cancel button goes away quicker
+    if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
       const msg = messageQueue.current.shift(); // Get the oldest message
       console.log("msg: ", msg);
 
@@ -101,23 +108,21 @@ export default function Home() {
         return updatedChatLog;
       });
     }
-    setCancelButton(prevValue => Math.max(0, prevValue - 1));
   };
 
-  useEffect(() => {
-    // Run this effect after every render, when cancelButton changes
-    const prevCancelButton = prevCancelButtonRef.current;
-    if (prevCancelButton !== 0 && cancelButton === 0) {
-      // Call the function when it changes from non-zero to zero
-      const latestEntry = chatLog.length > 0 ? chatLog[chatLog.length - 1] : null;
-      textToSpeechCall(latestEntry?.message);
-    }
-    // Update the ref to the current value for the next render
-    prevCancelButtonRef.current = cancelButton;
-  }, [cancelButton]); // Only re-run the effect if cancelButton changes
+  // useEffect(() => {
+  //   // Run this effect after every render, when cancelButton changes
+  //   const prevCancelButton = prevCancelButtonRef.current;
+  //   if (prevCancelButton !== 1 && cancelButton === 1) {
+  //     // Call the function when it changes from non-zero to zero
+  //     const latestEntry = chatLog.length > 0 ? chatLog[chatLog.length - 1] : null;
+  //     textToSpeechCall(latestEntry?.message);
+  //   }
+  //   // Update the ref to the current value for the next render
+  //   prevCancelButtonRef.current = cancelButton;
+  // }, [cancelButton]); // Only re-run the effect if cancelButton changes
 
   const textToSpeechCall = async (text) => {
-    console.log('cancelButton changed from non-zero to zero');
     const data = {
       model: "tts-1",
       voice: "onyx",
@@ -129,9 +134,11 @@ export default function Home() {
 
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      const audio = new Audio(audioSrc);
-      audio.play()
+      const newAudio = new Audio(audioSrc);
+      setAudio(newAudio);
+      newAudio.play()
         .catch(err => console.error("Error playing audio:", err));
+      setAudio(null);
     });
   };
 
@@ -139,7 +146,7 @@ export default function Home() {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 100);
+    }, 10);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
     };
@@ -220,10 +227,17 @@ export default function Home() {
       chatSocket.emit('cancel processing');
       messageQueue.current = [];
       audioQueue.current = [];
+      setCancelButton(0);
+      setIsLoading(false);
 
     } else {
 
       if (inputValue.length > 0) {
+
+        if (audio) {
+          audio.pause(); // Stop the audio
+          console.log(audio.currentTime) // use this later to determine where the voice stopped.
+        }
 
         setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
@@ -231,7 +245,7 @@ export default function Home() {
 
         setInputValue('');
 
-        sendImageMessage(inputValue);
+        //sendImageMessage(inputValue);
 
       }
 
@@ -249,10 +263,12 @@ export default function Home() {
     // Convert the message object to a string and send it
     chatSocket.emit('chat message', data);
     setIsLoading(true);
+    setCancelButton(1);
 
     // Temp buffer to hold the consolidated message
     let tempBuffer = '';
     chatSocket.on('chat message', (msg) => {
+      setCancelButton(1);
       setIsLoading(false);
       console.log('Received:', msg);
       messageQueue.current.push(msg);
@@ -265,17 +281,35 @@ export default function Home() {
 
     });
 
+  }
 
+  useEffect(() => {
 
+    chatSocket.on('chat message', (msg) => {
+      setCancelButton(1); // Assuming setCancelButton is a state setter function
+      setIsLoading(false); // Assuming setIsLoading is a state setter function
+      console.log('Received:', msg);
+      messageQueue.current.push(msg);
 
-
-    chatSocket.on('error', (errorMsg) => {
-      console.error('Error received:', errorMsg);
     });
 
-    setIsLoading(false);
+    // Define the handleChatComplete function inside effect to capture the current state
+    const handleChatComplete = () => {
+      const latestEntry = chatLogRef.current.length > 0 ? chatLogRef.current[chatLogRef.current.length - 1] : null;
+      setCancelButton(0); // Assuming setCancelButton is a state setter function
+      textToSpeechCall(latestEntry?.message);
+    };
 
-  }
+    const debouncedChatComplete = debounce(handleChatComplete, 300);
+
+    chatSocket.on('chat complete', debouncedChatComplete);
+
+    // Cleanup function to remove event listener when component unmounts or dependencies change
+    return () => {
+      chatSocket.off('chat complete', debouncedChatComplete);
+      chatSocket.off('chat message');
+    };
+  }, []);
 
   const sendImageMessage = (message) => {
     const url = '/api/image';
