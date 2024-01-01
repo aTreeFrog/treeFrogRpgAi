@@ -91,6 +91,7 @@ export default function Home() {
       const msg = messageQueue.current.shift(); // Get the oldest message
       console.log("msg: ", msg);
 
+
       setChatLog((prevChatLog) => {
         console.log("here huh?")
         let updatedChatLog = [...prevChatLog];
@@ -123,7 +124,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    //chatSocket.emit('audio message', data);
+    chatSocket.emit('audio message', data);
 
   };
 
@@ -237,7 +238,6 @@ export default function Home() {
     event.preventDefault();
 
     if (cancelButton !== 0) {
-      ``
       chatSocket.emit('cancel processing');
       messageQueue.current = [];
       audioQueue.current = [];
@@ -246,7 +246,7 @@ export default function Home() {
 
     } else {
 
-      chatSocket.emit('continue processing');
+      chatSocket.emit('resume processing');
 
       if (inputValue.length > 0) {
 
@@ -270,11 +270,11 @@ export default function Home() {
       messages: [{ "role": "user", "content": message }],
       stream: true,
     };
-    console.log("about to send emit");
+    console.log("about to send message: ", message);
     // Convert the message object to a string and send it
     chatSocket.emit('chat message', data);
     setIsLoading(true);
-    setCancelButton(1);
+    //setCancelButton(1);
 
     // chatSocket.on('chat message', (msg) => {
     //   setCancelButton(1);
@@ -320,7 +320,7 @@ export default function Home() {
 
     const onChatComplete = () => {
       console.log("onChatComplete!!!");
-      setCancelButton(0); // Assuming setCancelButton is a state setter function
+      //setCancelButton(0); // Assuming setCancelButton is a state setter function
       if (tempBuffer.current.length > 0) {
         textToSpeechCall(tempBuffer.current);
       }
