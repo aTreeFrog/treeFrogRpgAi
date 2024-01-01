@@ -123,7 +123,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    chatSocket.emit('audio message', data);
+    //chatSocket.emit('audio message', data);
 
   };
 
@@ -154,7 +154,7 @@ export default function Home() {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 10);
+    }, 200);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
@@ -237,7 +237,7 @@ export default function Home() {
     event.preventDefault();
 
     if (cancelButton !== 0) {
-
+      ``
       chatSocket.emit('cancel processing');
       messageQueue.current = [];
       audioQueue.current = [];
@@ -245,6 +245,8 @@ export default function Home() {
       setIsLoading(false);
 
     } else {
+
+      chatSocket.emit('continue processing');
 
       if (inputValue.length > 0) {
 

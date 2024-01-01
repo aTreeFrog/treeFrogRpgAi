@@ -93,6 +93,10 @@ app.prepare().then(() => {
             shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket
         });
 
+        socket.on('resume processing', () => {
+            shouldContinue[socket.id] = true;
+        });
+
         socket.on('disconnect', () => {
             console.log('user disconnected');
         });
