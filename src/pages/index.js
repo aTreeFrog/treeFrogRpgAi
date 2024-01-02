@@ -164,7 +164,7 @@ export default function Home() {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 1);
+    }, 200);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
