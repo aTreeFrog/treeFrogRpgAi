@@ -440,12 +440,12 @@ export default function Home() {
               // If it was open, this will close it, and vice versa.
               setIsPanelOpen(prevState => !prevState);
             }}
-            className="absolute bottom-0 left-0 mb-9 ml-8 bg-purple-500 hover:bg-purple-700 text-white font-bold transition-colors duration-300 py-2 px-4 rounded"
+            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-500 hover:bg-purple-700 text-white font-bold transition-colors duration-300 py-2 px-4 rounded"
           >
             {isPanelOpen ? 'Close Party' : 'Party Line'}
           </button>
           {/* Floating Jitsi Meeting Panel */}
-          <div className={`absolute bottom-0 left-0 mb-20 ml-2 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'w-96 h-96' : 'hidden'}`}>
+          <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'w-96 h-[30rem]' : 'hidden'}`}>
             {meetingDetails && isPanelOpen && (
               <JitsiMeetComponent meetingRoom={meetingDetails.roomName} onApiReady={handleApiReady} />
             )}
@@ -467,7 +467,7 @@ export default function Home() {
         </div>
       </div>
       {/* Right Box */}
-      <div className="flex-1 max-w-[500px] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
+      <div className="flex-1 max-w-[450px] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
         {/* Sticky Header */}
         <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">Game Master</h1>
         {/* Scrollable Content */}
