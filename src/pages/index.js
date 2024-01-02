@@ -431,24 +431,22 @@ export default function Home() {
           <button
             onClick={() => {
               // First, check if the panel is currently open
-              if (isPanelOpen) {
-                // If the panel is open, it means we're about to close it,
-                // so call the function to end the Jitsi meeting.
-                disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
-              }
+              // if (isPanelOpen) {
+              //   // If the panel is open, it means we're about to close it,
+              //   // so call the function to end the Jitsi meeting.
+              //   disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
+              // }
               // Next, toggle the panel's open state regardless of the current state.
               // If it was open, this will close it, and vice versa.
               setIsPanelOpen(prevState => !prevState);
             }}
             className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-500 hover:bg-purple-700 text-white font-bold transition-colors duration-300 py-2 px-4 rounded"
           >
-            {isPanelOpen ? 'Close Party' : 'Party Line'}
+            {isPanelOpen ? 'Hide Party' : 'Open Party'}
           </button>
           {/* Floating Jitsi Meeting Panel */}
-          <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'w-96 h-[30rem]' : 'hidden'}`}>
-            {meetingDetails && isPanelOpen && (
-              <JitsiMeetComponent meetingRoom={meetingDetails.roomName} onApiReady={handleApiReady} />
-            )}
+          <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'visible w-96 h-[30rem]' : 'invisible h-0 overflow-hidden'}`}>
+            <JitsiMeetComponent meetingRoom={meetingDetails?.roomName} onApiReady={handleApiReady} />
           </div>
         </div>
       </div>
