@@ -43,7 +43,7 @@ export default function Home() {
   const audio = useRef(false);
   const chatLogRef = useRef(chatLog);
   const tempBuffer = useRef('');
-  const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottom = useRef(true);
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
 
@@ -125,7 +125,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    chatSocket.emit('audio message', data);
+    //chatSocket.emit('audio message', data);
 
   };
 
@@ -191,7 +191,7 @@ export default function Home() {
     if (scrollableDiv) {
       scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
     }
-    setIsAtBottom(true);
+    isAtBottom.current = true;
   };
 
   // Function to check scrolling and adjust visibility of something based on scroll position
@@ -218,6 +218,7 @@ export default function Home() {
       if (isUserAtBottom()) {
         // Scroll logic here
         scrollableDivRef.current.scrollTop = scrollHeight;
+        isAtBottom.current = true;
       }
     }
   }, [chatLog]);
@@ -245,6 +246,22 @@ export default function Home() {
         scrollableDiv.removeEventListener('scroll', checkScrolling);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const div = scrollableDivRef.current;
+      if (div) {
+        const isScrolledToBottom = div.scrollHeight - div.scrollTop === div.clientHeight;
+        isAtBottom.current = isScrolledToBottom;
+      }
+    };
+
+    const div = scrollableDivRef.current;
+    div.addEventListener('scroll', handleScroll);
+
+    // Cleanup listener when component unmounts
+    return () => div.removeEventListener('scroll', handleScroll);
   }, []); // Empty dependency array means this effect runs once on mount
 
   const handleSubmit = (event) => {
@@ -260,12 +277,14 @@ export default function Home() {
       setCancelButton(0);
       setIsLoading(false);
 
-      if (!newAudio.current.paused) {
-        newAudio.current.pause();
-        newAudio.current.currentTime = 0; // Reset only if it was playing
-        newAudio.current = null;
+      if (newAudio.current) {
+        if (!newAudio.current.paused) {
+          newAudio.current.pause();
+          newAudio.current.currentTime = 0; // Reset only if it was playing
+          newAudio.current = null;
+        }
+        audio.current = false;
       }
-      audio.current = false;
 
     } else {
 
@@ -303,16 +322,6 @@ export default function Home() {
     // Convert the message object to a string and send it
     chatSocket.emit('chat message', data);
     setIsLoading(true);
-    //setCancelButton(1);
-
-    // chatSocket.on('chat message', (msg) => {
-    //   setCancelButton(1);
-    //   setIsLoading(false);
-    //   console.log('Received:', msg);
-    //   messageQueue.current.push(msg);
-    //   tempBuffer.current += msg;
-
-    // });
 
   }
 
@@ -474,7 +483,7 @@ export default function Home() {
             {/* Arrow Button at the Bottom Middle, initially hidden */}
             <button
               id="scrollArrow"
-              className="hidden absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full"
+              className={`${isAtBottom.current ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
               onClick={scrollToBottom}>
               ↓
             </button>
