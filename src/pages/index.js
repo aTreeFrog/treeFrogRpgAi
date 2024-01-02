@@ -8,7 +8,6 @@ import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
-import { Howl } from 'howler';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -125,7 +124,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    chatSocket.emit('audio message', data);
+    //chatSocket.emit('audio message', data);
 
   };
 
@@ -165,7 +164,7 @@ export default function Home() {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 200);
+    }, 1);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
@@ -192,19 +191,20 @@ export default function Home() {
       scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
     }
     setIsAtBottom(true);
+    handleScroll();
   };
 
   // Function to check scrolling and adjust visibility of something based on scroll position
-  const checkScrolling = () => {
-    const scrollableDiv = document.getElementById('scrollableDiv');
-    const scrollArrow = document.getElementById('scrollArrow');
-    if (scrollableDiv.scrollHeight > scrollableDiv.clientHeight &&
-      scrollableDiv.scrollTop < scrollableDiv.scrollHeight - scrollableDiv.clientHeight) {
-      scrollArrow.classList.remove('hidden'); // Show arrow
-    } else {
-      scrollArrow.classList.add('hidden'); // Hide arrow
-    }
-  }
+  // const checkScrolling = () => {
+  //   const scrollableDiv = document.getElementById('scrollableDiv');
+  //   const scrollArrow = document.getElementById('scrollArrow');
+  //   if (scrollableDiv.scrollHeight > scrollableDiv.clientHeight &&
+  //     scrollableDiv.scrollTop < scrollableDiv.scrollHeight - scrollableDiv.clientHeight) {
+  //     //scrollArrow.classList.remove('hidden'); // Show arrow
+  //   } else {
+  //     //scrollArrow.classList.add('hidden'); // Hide arrow
+  //   }
+  // }
 
   useEffect(() => {
     if (scrollableDivRef.current) {
@@ -218,6 +218,7 @@ export default function Home() {
       if (isUserAtBottom()) {
         // Scroll logic here
         scrollableDivRef.current.scrollTop = scrollHeight;
+        setIsAtBottom(true);
       }
     }
   }, [chatLog]);
@@ -226,7 +227,7 @@ export default function Home() {
     ``
     // ComponentDidMount equivalent
     const handleLoad = () => {
-      checkScrolling(); // Call on window load
+      //checkScrolling(); // Call on window load
     };
 
     // Attach window load event
@@ -235,14 +236,39 @@ export default function Home() {
     // Attach scroll event to the div
     const scrollableDiv = scrollableDivRef.current;
     if (scrollableDiv) {
-      scrollableDiv.addEventListener('scroll', checkScrolling);
+      //scrollableDiv.addEventListener('scroll', checkScrolling);
     }
 
     // Cleanup function for component unmount
     return () => {
       window.removeEventListener('load', handleLoad);
       if (scrollableDiv) {
-        scrollableDiv.removeEventListener('scroll', checkScrolling);
+        //scrollableDiv.removeEventListener('scroll', checkScrolling);
+      }
+    };
+  }, []);
+
+  const handleScroll = () => {
+    const div = scrollableDivRef.current;
+    if (div) {
+      const tolerance = 30; // or whatever small number suits your situation
+      const isScrolledToBottom = Math.abs(div.scrollHeight - div.scrollTop - div.clientHeight) < tolerance;
+      setIsAtBottom(isScrolledToBottom);
+      console.log("isAtBottom: ", isAtBottom);
+
+    }
+  };
+
+  useEffect(() => {
+    const div = scrollableDivRef.current;
+    if (div) {
+      div.addEventListener('scroll', handleScroll);
+    }
+
+    // Cleanup listener when component unmounts
+    return () => {
+      if (div) {
+        div.removeEventListener('scroll', handleScroll);
       }
     };
   }, []); // Empty dependency array means this effect runs once on mount
@@ -260,12 +286,14 @@ export default function Home() {
       setCancelButton(0);
       setIsLoading(false);
 
-      if (!newAudio.current.paused) {
-        newAudio.current.pause();
-        newAudio.current.currentTime = 0; // Reset only if it was playing
-        newAudio.current = null;
+      if (newAudio.current) {
+        if (!newAudio.current.paused) {
+          newAudio.current.pause();
+          newAudio.current.currentTime = 0; // Reset only if it was playing
+          newAudio.current = null;
+        }
+        audio.current = false;
       }
-      audio.current = false;
 
     } else {
 
@@ -303,16 +331,6 @@ export default function Home() {
     // Convert the message object to a string and send it
     chatSocket.emit('chat message', data);
     setIsLoading(true);
-    //setCancelButton(1);
-
-    // chatSocket.on('chat message', (msg) => {
-    //   setCancelButton(1);
-    //   setIsLoading(false);
-    //   console.log('Received:', msg);
-    //   messageQueue.current.push(msg);
-    //   tempBuffer.current += msg;
-
-    // });
 
   }
 
@@ -474,7 +492,7 @@ export default function Home() {
             {/* Arrow Button at the Bottom Middle, initially hidden */}
             <button
               id="scrollArrow"
-              className="hidden absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full"
+              className={`${isAtBottom ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
               onClick={scrollToBottom}>
               ↓
             </button>
