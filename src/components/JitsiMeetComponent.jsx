@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
     const jitsiContainerRef = useRef(null);
     const isScriptLoaded = useRef(false);
+    const [meetingEnded, setMeetingEnded] = useState(false);
 
     // Define loadJitsiScript inside the component
     const loadJitsiScript = () => {
@@ -44,7 +45,7 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
                     SHOW_WATERMARK_FOR_GUESTS: false,
                     DEFAULT_REMOTE_DISPLAY_NAME: 'Participant',
                     TOOLBAR_BUTTONS: [ // List the buttons you want to remain
-                        'microphone', 'raisehand'
+                        'microphone', 'settings', 'hangup', 'fodeviceselection', 'invite', 'mute-everyone'
                         // Exclude 'chat', 'camera', or other buttons you don't want
                     ],
                 },
@@ -91,6 +92,10 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
                 }, 5000);
             });
 
+            api.addEventListener('videoConferenceLeft', () => {
+                setMeetingEnded(true); // Update the state to indicate meeting has ended
+            });
+
             // You can use the api object to add event listeners or execute commands
 
             return () => {
@@ -115,6 +120,19 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
             }
         };
     }, [meetingRoom]);
+
+    useEffect(() => {
+        // Whenever the component mounts or meetingRoom changes,
+        // reinitialize the Jitsi component if the meeting had ended
+        if (meetingEnded) {
+            setMeetingEnded(false); // Reset the flag
+            if (window.JitsiMeetExternalAPI) {
+                initializeJitsi();
+            } else {
+                loadJitsiScript();
+            }
+        }
+    }, [meetingRoom, meetingEnded]);
 
     return <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
         <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left', width: '125%', height: '125%' }}>
