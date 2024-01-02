@@ -72,3 +72,28 @@ body,
 .spinning {
     animation: spin 0.85s linear forwards;
 }
+
+/* styles/globals.css */
+
+.wavy-edges {
+    position: relative;
+    overflow: hidden;
+    /* Ensures the pseudo-elements don't overflow */
+    background-color: transparent;
+    /* Ensures the background is transparent */
+    border: 2px solid rgb(16, 185, 129);
+    /* Green border color */
+}
+
+.wavy-detail-box {
+    height: calc(2 * (2rem + 2rem));
+    /* Adjust based on the actual size of your name ribbon and label */
+    width: 225px;
+    position: relative;
+    overflow: hidden;
+    /* Ensures the pseudo-elements don't overflow */
+    background-color: transparent;
+    /* Ensures the background is transparent */
+    border: 2px solid rgb(16, 185, 129);
+    /* Green border color */
+}

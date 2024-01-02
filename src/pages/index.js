@@ -8,6 +8,7 @@ import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
+import CharacterSheet from '../components/CharacterSheet';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -124,7 +125,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    //chatSocket.emit('audio message', data);
+    chatSocket.emit('audio message', data);
 
   };
 
@@ -313,7 +314,7 @@ export default function Home() {
 
         setInputValue('');
 
-        //sendImageMessage(inputValue);
+        sendImageMessage(inputValue);
 
       }
 
@@ -423,6 +424,9 @@ export default function Home() {
         <div className="flex flex-col h-screen justify-between"> {/* Adjusted for spacing */}
           <div>
             <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
+            <div>
+              <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" />
+            </div>
             <div className="container mx-auto flex flex-col items-center justify-start pt-20">
               <HexagonDice />
             </div>
