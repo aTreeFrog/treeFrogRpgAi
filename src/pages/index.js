@@ -419,7 +419,7 @@ export default function Home() {
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
-      <div className="flex-1 max-w-[200px] border border-white">
+      <div className="flex-1 max-w-[400px] border border-white">
         <div className="flex flex-col h-screen justify-between"> {/* Adjusted for spacing */}
           <div>
             <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
