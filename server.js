@@ -50,21 +50,22 @@ app.prepare().then(() => {
     io.on('connection', (socket) => {
         console.log('a user connected:', socket.id);
 
-        shouldContinue[socket.id] = true; //front end can cancel this to break chat completion
-
         socket.on('chat message', async (msg) => {
             try {
                 console.log("is this getting called?")
-                const completion = await openai.chat.completions.create(msg);
-                console.log(completion)
+                if (shouldContinue[socket.id]) {
+                    const completion = await openai.chat.completions.create(msg);
 
-                for await (const chunk of completion) {
-                    console.log(chunk.choices[0]?.delta?.content);
-                    // Check if we should continue before emitting the next chunk
-                    if (!shouldContinue[socket.id]) {
-                        break; // Exit the loop if instructed to stop
+                    console.log(completion)
+
+                    for await (const chunk of completion) {
+                        console.log(chunk.choices[0]?.delta?.content);
+                        // Check if we should continue before emitting the next chunk
+                        if (!shouldContinue[socket.id]) {
+                            break; // Exit the loop if instructed to stop
+                        }
+                        socket.emit('chat message', chunk.choices[0]?.delta?.content || "");
                     }
-                    socket.emit('chat message', chunk.choices[0]?.delta?.content || "");
                 }
                 console.log('made it to chat complete');
                 socket.emit('chat complete');
@@ -74,20 +75,34 @@ app.prepare().then(() => {
             }
         });
 
-        socket.on('audio message', async (msg) => {
-            try {
-                console.log("audio is getting called?")
-                const mp3 = await openai.audio.speech.create(msg);
-                console.log(speechFile);
-                const buffer = Buffer.from(await mp3.arrayBuffer());
-                // Emit the buffer to the client
-                socket.emit('play audio', { audio: buffer.toString('base64') });
+        const queue = []; // Initialize an empty queue
 
-            } catch (error) {
-                console.error('Error:', error);
-                socket.emit('error', 'Error processing your audio message');
-            }
+        socket.on('audio message', async (msg) => {
+            queue.push(msg); // Add incoming messages to the queue
+            processQueue(); // Trigger processing (if not already in progress)
         });
+
+        async function processQueue() {
+            if (shouldContinue[socket.id] && queue.length > 0) {
+                const msg = queue.shift(); // Get the first message in the queue
+                try {
+                    console.log("audio is getting called?")
+                    console.log("audio msg: ", msg);
+                    const mp3 = await openai.audio.speech.create(msg);
+                    const buffer = Buffer.from(await mp3.arrayBuffer());
+                    // Emit the buffer to the client
+                    socket.emit('play audio', { audio: buffer.toString('base64') });
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    socket.emit('error', 'Error processing your audio message');
+                } finally {
+                    if (queue.length > 0) {
+                        processQueue(); // If there are more items, continue processing
+                    }
+                }
+            }
+        }
 
         socket.on('cancel processing', () => {
             shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket

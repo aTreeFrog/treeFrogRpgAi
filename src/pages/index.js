@@ -90,8 +90,6 @@ export default function Home() {
     if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
       const msg = messageQueue.current.shift(); // Get the oldest message
       console.log("msg: ", msg);
-
-
       setChatLog((prevChatLog) => {
         console.log("here huh?")
         let updatedChatLog = [...prevChatLog];
@@ -151,6 +149,14 @@ export default function Home() {
     }
   };
 
+  const cancelButtonMonitor = () => {
+    if (audioQueue.current.length > 0 || messageQueue.current.length > 0) {
+      setCancelButton(prevValue => Math.min(prevValue + 2, 8));
+    } else {
+      setCancelButton(prevValue => Math.max(0, prevValue - 1));
+    }
+  }
+
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
@@ -161,9 +167,14 @@ export default function Home() {
     const audioIntervalId = setInterval(() => {
       playNextAudio();
     }, 10);
+
+    const cancelButtonIntervalId = setInterval(() => {
+      cancelButtonMonitor();
+    }, 5);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
       clearInterval(audioIntervalId); // Clear the interval on component unmount
+      clearInterval(cancelButtonIntervalId);
     };
   }, []);
 
@@ -250,6 +261,9 @@ export default function Home() {
 
       if (inputValue.length > 0) {
 
+        messageQueue.current = [];
+        audioQueue.current = [];
+
         setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
         sendMessage(inputValue);
@@ -322,6 +336,7 @@ export default function Home() {
       console.log("onChatComplete!!!");
       //setCancelButton(0); // Assuming setCancelButton is a state setter function
       if (tempBuffer.current.length > 0) {
+        console.log("chat complete buffer: ", tempBuffer.current);
         textToSpeechCall(tempBuffer.current);
       }
       tempBuffer.current = '';
