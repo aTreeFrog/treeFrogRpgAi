@@ -33,16 +33,19 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState('');
   const messageQueue = useRef([]); // Holds incoming messages
-  const audioQueue = useRef([]); // Holds incoming messages
+  const audioQueue = useRef(new Map()); // Holds incoming messages
   const [cancelButton, setCancelButton] = useState(0);
   const prevCancelButtonRef = useRef();
   // State to hold meeting details
   const [meetingDetails, setMeetingDetails] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [api, setApi] = useState(null);
-  const [audio, setAudio] = useState(null);
+  const audio = useRef(false);
   const chatLogRef = useRef(chatLog);
   const tempBuffer = useRef('');
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const expectedSequence = useRef(0);
+  const newAudio = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -126,31 +129,32 @@ export default function Home() {
 
   };
 
-  let isAudioPlaying = false;  // Ref to track if audio is currently playing
+  // Ref to track if audio is currently playing
   const playNextAudio = () => {
-    if (audioQueue.current.length > 0 && !isAudioPlaying) {
-      isAudioPlaying = true;
-      const audioSrc = audioQueue.current.shift();  // Remove the first item from the queue
-      const newAudio = new Audio(audioSrc);
-      newAudio.volume = 1;
-      newAudio.play().then(() => {
-        setAudio(newAudio);
+    console.log("playNextAudio expectedSequence: ", expectedSequence.current)
+    if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
+      audio.current = true;
+      const audioSrc = audioQueue.current.get(expectedSequence.current);
+      audioQueue.current.delete(expectedSequence.current);
+      newAudio.current = new Audio(audioSrc);
+      newAudio.current.volume = 1;
+      newAudio.current.play().then(() => {
         // Do something when audio starts playing if needed
       }).catch(err => {
         console.error("Error playing audio:", err);
-        isAudioPlaying = false;  // Reset the flag if there's an error
-        setAudio(null);
+        audio.current = false;
       });
 
-      newAudio.onended = () => {
-        isAudioPlaying = false;  // Reset the flag when audio ends
-        setAudio(null);  // Assuming you want to clear the current audio
+      newAudio.current.onended = () => {
+        audio.current = false;  // Assuming you want to clear the current audio
+        expectedSequence.current++;
       };
     }
   };
 
   const cancelButtonMonitor = () => {
-    if (audioQueue.current.length > 0 || messageQueue.current.length > 0) {
+
+    if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
       setCancelButton(prevValue => Math.min(prevValue + 2, 8));
     } else {
       setCancelButton(prevValue => Math.max(0, prevValue - 1));
@@ -166,11 +170,11 @@ export default function Home() {
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
       playNextAudio();
-    }, 10);
+    }, 200);
 
     const cancelButtonIntervalId = setInterval(() => {
       cancelButtonMonitor();
-    }, 5);
+    }, 200);
     return () => {
       clearInterval(intervalId); // Clear the interval on component unmount
       clearInterval(audioIntervalId); // Clear the interval on component unmount
@@ -187,6 +191,7 @@ export default function Home() {
     if (scrollableDiv) {
       scrollableDiv.scrollTop = scrollableDiv.scrollHeight;
     }
+    setIsAtBottom(true);
   };
 
   // Function to check scrolling and adjust visibility of something based on scroll position
@@ -251,18 +256,28 @@ export default function Home() {
     if (cancelButton !== 0) {
       chatSocket.emit('cancel processing');
       messageQueue.current = [];
-      audioQueue.current = [];
+      audioQueue.current = new Map();
       setCancelButton(0);
       setIsLoading(false);
+
+      if (!newAudio.current.paused) {
+        newAudio.current.pause();
+        newAudio.current.currentTime = 0; // Reset only if it was playing
+        newAudio.current = null;
+      }
+      audio.current = false;
 
     } else {
 
       chatSocket.emit('resume processing');
+      audio.current = false;
 
       if (inputValue.length > 0) {
 
         messageQueue.current = [];
-        audioQueue.current = [];
+        chatSocket.emit('reset audio sequence');
+        expectedSequence.current = 0;
+        audioQueue.current = new Map();
 
         setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
@@ -349,7 +364,9 @@ export default function Home() {
 
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      audioQueue.current.push(audioSrc);
+      console.log("play audio sequence: ", recording.sequence);
+      audioQueue.current.set(recording.sequence, audioSrc);
+      //audioQueue.current.push(audioSrc);
       //playNextAudio();
     });
 

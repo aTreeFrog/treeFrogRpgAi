@@ -82,20 +82,27 @@ app.prepare().then(() => {
             processQueue(); // Trigger processing (if not already in progress)
         });
 
+        let sequenceNumber = 0;
+
+        socket.on('reset audio sequence', async (msg) => {
+            sequenceNumber = 0;
+        });
+
         async function processQueue() {
             if (shouldContinue[socket.id] && queue.length > 0) {
-                const msg = queue.shift(); // Get the first message in the queue
+                const msg = queue.shift();
+                const currentSequence = sequenceNumber++;
                 try {
                     console.log("audio is getting called?")
                     console.log("audio msg: ", msg);
                     const mp3 = await openai.audio.speech.create(msg);
                     const buffer = Buffer.from(await mp3.arrayBuffer());
                     // Emit the buffer to the client
-                    socket.emit('play audio', { audio: buffer.toString('base64') });
+                    socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence });
 
                 } catch (error) {
                     console.error('Error:', error);
-                    socket.emit('error', 'Error processing your audio message');
+                    socket.emit('error', 'Error processing your audio message: ', 'sequence', currentSequence);
                 } finally {
                     if (queue.length > 0) {
                         processQueue(); // If there are more items, continue processing
