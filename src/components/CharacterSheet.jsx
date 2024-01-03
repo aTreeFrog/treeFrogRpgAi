@@ -50,7 +50,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                     <div className="absolute top-1/2 transform -translate-y-1/2 right-8">
                         <div className="rounded-full h-16 w-16 ml-1 flex items-center justify-center border-2"
                             style={{
-                                backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                                backgroundColor: "rgba(139, 0, 0, 0.3)", /* Semi-transparent amber background */
                                 borderColor: "rgb(217, 119, 6)" /* Solid amber border */
                             }}>
                             <span className="text-white text-3xl">{level}</span>
@@ -60,8 +60,116 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                 </div>
             </div>
             {/* New Rectangle below both sections */}
-            <div className="relative block p-3 mt-7 text-white text-2xl font-bold rounded wavy-edges" style={{ height: '20rem', width: '95%' }}>
-                {/* Optional content or additional styling here */}
+            <div className="relative block p-3 mt-7 text-white text-2xl font-bold rounded wavy-edges" style={{ height: '40rem', width: '95%' }}>
+                {/* Level Circle (Left and towards the top) */}
+                <div className="absolute top-0 left-0 ml-3 mt-3">
+                    <div className="rounded-full flex items-center justify-center border-2"
+                        style={{
+                            height: '60px',
+                            width: '60px',
+                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            borderColor: "rgb(217, 119, 6)" /* Solid amber border */
+                        }}>
+                        <span className="text-white text-3xl">{level}</span>
+                    </div>
+                    <div className="text-white text-base text-center mt-1 ">Strength</div>
+                </div>
+                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(6rem + 12px)' }}>
+                    <div className="rounded-full flex items-center justify-center border-2"
+                        style={{
+                            height: '60px',
+                            width: '60px',
+                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            borderColor: "rgb(217, 119, 6)" /* Solid amber border */
+                        }}>
+                        <span className="text-white text-3xl">{level}</span>
+                    </div>
+                    <div className="text-white text-base text-center mt-1">Dexterity</div>
+                </div>
+                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(12rem + 12px)' }}>
+                    <div className="rounded-full flex items-center justify-center border-2"
+                        style={{
+                            height: '60px',
+                            width: '60px',
+                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            borderColor: "rgb(217, 119, 6)" /* Solid amber border */
+                        }}>
+                        <span className="text-white text-3xl">{level}</span>
+                    </div>
+                    <div className="text-white text-base text-center mt-1">Constitution</div>
+                </div>
+                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(18rem + 12px)' }}>
+                    <div className="rounded-full flex items-center justify-center border-2"
+                        style={{
+                            height: '60px',
+                            width: '60px',
+                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            borderColor: "rgb(217, 119, 6)" /* Solid amber border */
+                        }}>
+                        <span className="text-white text-3xl">{level}</span>
+                    </div>
+                    <div className="text-white text-base text-center mt-1">Intelligence</div>
+                </div>
+                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(24rem + 12px)' }}>
+                    <div className="rounded-full flex items-center justify-center border-2"
+                        style={{
+                            height: '60px',
+                            width: '60px',
+                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            borderColor: "rgb(217, 119, 6)" /* Solid amber border */
+                        }}>
+                        <span className="text-white text-3xl">{level}</span>
+                    </div>
+                    <div className="text-white text-base text-center mt-1">Wisdom</div>
+                </div>
+                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(30rem + 12px)' }}>
+                    <div className="rounded-full flex items-center justify-center border-2"
+                        style={{
+                            height: '60px',
+                            width: '60px',
+                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            borderColor: "rgb(217, 119, 6)" /* Solid amber border */
+                        }}>
+                        <span className="text-white text-3xl">{level}</span>
+                    </div>
+                    <div className="text-white text-base text-center mt-1">Charisma</div>
+                </div>
+                {/* Shield-shaped box */}
+                <div className="shield-box" style={{
+                    position: 'absolute',
+                    top: '10%',
+                    left: '42%',  // Adjusted left positioning
+                    transform: 'translate(-58%, -50%)',
+                    width: '60px',
+                    height: '100px',
+                    backgroundColor: 'rgba(88, 24, 69, 0.7)',
+                    clipPath: 'polygon(50% 0%, 100% 0, 100% 75%, 50% 100%, 0 75%, 0 0)', /* Adjust this to refine shape */
+                    display: 'flex',  // Added for inner text alignment
+                    flexDirection: 'column',  // Added for inner text alignment
+                    justifyContent: 'flex-end',  // Aligns the content to the bottom
+                    alignItems: 'center',  // Centers the content horizontally
+                    padding: '4px'  // Padding to ensure text doesn't touch the edges
+                }}>
+                    {/* ... Other content inside the shield ... */}
+                    <div style={{
+                        color: 'white',
+                        fontSize: '24px',  // Adjust as needed
+                        textAlign: 'center',
+                        width: '100%',  // Ensure it's centered
+                        marginBottom: '4px'  // Space between the number and the text
+                    }}>
+                        16
+                    </div>
+                    <div style={{
+                        color: 'white',
+                        fontSize: '14px', // Adjust as needed
+                        textAlign: 'center',
+                        lineHeight: '18px',
+                        marginBottom: '12px' // Adjust as needed to position the text from the bottom
+                    }}>
+                        Armor Class
+                    </div>
+                </div>
             </div>
         </div>
 
