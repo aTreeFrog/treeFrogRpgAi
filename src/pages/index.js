@@ -489,9 +489,9 @@ export default function Home() {
             <div>
               <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" />
             </div>
-            <div className="container mx-auto flex flex-col items-center justify-start pt-20">
+            {/* <div className="container mx-auto flex flex-col items-center justify-start pt-20">
               <HexagonDice />
-            </div>
+            </div> */}
           </div>
           {/* Toggle Meeting Panel Button */}
           <button

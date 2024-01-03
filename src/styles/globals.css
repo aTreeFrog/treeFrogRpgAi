@@ -79,22 +79,22 @@ body,
     position: relative;
     overflow: hidden;
     /* Ensures the pseudo-elements don't overflow */
-    background-color: transparent;
+    background-color: rgba(217, 119, 6, 0.1);
     /* Ensures the background is transparent */
-    border: 2px solid rgb(16, 185, 129);
+    border: 2px solid rgb(217, 119, 6);
     /* Green border color */
 }
 
 .wavy-detail-box {
     height: calc(2 * (2rem + 2rem));
     /* Adjust based on the actual size of your name ribbon and label */
-    width: 225px;
+    width: 200px;
     position: relative;
     overflow: hidden;
     /* Ensures the pseudo-elements don't overflow */
-    background-color: transparent;
+    background-color: rgba(217, 119, 6, 0.1);
     /* Ensures the background is transparent */
-    border: 2px solid rgb(16, 185, 129);
+    border: 2px solid rgb(217, 119, 6);
     /* Green border color */
 }
 
