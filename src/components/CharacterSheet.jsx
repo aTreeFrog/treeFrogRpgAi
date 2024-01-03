@@ -26,14 +26,14 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                 {/* Left Section */}
                 <div style={{ flex: '0 1 auto', maxWidth: '50%', marginRight: '20px' }}>
                     <div className="mb-1 mt-5"> {/* Wrapper for Name box and label */}
-                        <div className="relative inline-block p-3 text-white text-2xl font-bold rounded wavy-edges">
+                        <div className="bg-gray-800 relative inline-block p-3 text-white text-2xl font-bold rounded wavy-edges">
                             {name}
                         </div>
                         <div className="text-white text-base ml-1 mt-[-4px]">Name</div>
                     </div>
                 </div>
                 {/* Right Section */}
-                <div style={{ flex: '1 1 auto', minWidth: '40%', marginRight: '20px' }} className="wavy-detail-box ml-0 mr-2 bg-red-600 p-2 rounded flex flex-col justify-start items-start text-white h-[calc(2*3rem)] w-64 relative">
+                <div style={{ flex: '1 1 auto', minWidth: '40%', marginRight: '20px' }} className="wavy-detail-box ml-0 mr-2 bg-gray-800 p-2 rounded flex flex-col justify-start items-start text-white h-[calc(2*3rem)] w-64 relative">
                     {/* Dynamic Text for Race */}
                     <div className="flex flex-col items-start mb-2">
                         <span ref={raceRef} className="text-white text-base">{race}</span>
@@ -68,7 +68,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             height: '60px',
                             width: '60px',
                             borderWidth: '3px',
-                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
                             borderColor: "rgb(49, 46, 129)" /* Solid amber border */
                         }}>
                         <span className="text-white text-3xl">{level}</span>
@@ -81,7 +81,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             height: '60px',
                             width: '60px',
                             borderWidth: '3px',
-                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
                             borderColor: "rgb(49, 46, 129)" /* Solid amber border */
                         }}>
                         <span className="text-white text-3xl">{level}</span>
@@ -94,7 +94,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             height: '60px',
                             width: '60px',
                             borderWidth: '3px',
-                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
                             borderColor: "rgb(49, 46, 129)" /* Solid amber border */
                         }}>
                         <span className="text-white text-3xl">{level}</span>
@@ -107,7 +107,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             height: '60px',
                             width: '60px',
                             borderWidth: '3px',
-                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
                             borderColor: "rgb(49, 46, 129)" /* Solid amber border */
                         }}>
                         <span className="text-white text-3xl">{level}</span>
@@ -120,7 +120,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             height: '60px',
                             width: '60px',
                             borderWidth: '3px',
-                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
                             borderColor: "rgb(49, 46, 129)" /* Solid amber border */
                         }}>
                         <span className="text-white text-3xl">{level}</span>
@@ -133,7 +133,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             height: '60px',
                             width: '60px',
                             borderWidth: '3px',
-                            backgroundColor: "rgba(217, 119, 6, 0.2)", /* Semi-transparent amber background */
+                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
                             borderColor: "rgb(49, 46, 129)" /* Solid amber border */
                         }}>
                         <span className="text-white text-3xl">{level}</span>
