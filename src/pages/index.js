@@ -47,6 +47,8 @@ export default function Home() {
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
   const [inputTextHeight, setInputTextHeight] = useState(20);
+  const textareaRef = useRef(null);
+
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -161,6 +163,14 @@ export default function Home() {
       setCancelButton(prevValue => Math.max(0, prevValue - 1));
     }
   }
+
+  const handleKeyDown = (e) => {
+    // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent the default action (new line)
+      handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+    }
+  };
 
   //adjust text input bar height based on amount of user input.
   const handleInputChange = (e) => {
@@ -315,7 +325,10 @@ export default function Home() {
 
     console.log("meeting details", meetingDetails.meetingUr);
 
-    event.preventDefault();
+    // Prevent the default form submission if an event is provided
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
 
     if (cancelButton !== 0) {
       chatSocket.emit('cancel processing');
@@ -333,29 +346,41 @@ export default function Home() {
         audio.current = false;
       }
 
-    } else {
+    }
+
+    if (inputValue.length > 0) {
 
       chatSocket.emit('resume processing');
       audio.current = false;
 
-      if (inputValue.length > 0) {
+      messageQueue.current = [];
+      chatSocket.emit('reset audio sequence');
+      expectedSequence.current = 0;
+      audioQueue.current = new Map();
 
-        messageQueue.current = [];
-        chatSocket.emit('reset audio sequence');
-        expectedSequence.current = 0;
-        audioQueue.current = new Map();
+      setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
-        setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+      sendMessage(inputValue);
 
-        sendMessage(inputValue);
+      setInputValue('');
 
-        setInputValue('');
+      resetUserTextForm();
 
-        //sendImageMessage(inputValue);
-
-      }
+      //sendImageMessage(inputValue);
 
     }
+
+  }
+
+  const resetUserTextForm = () => {
+    // Reset the textarea after form submission
+    if (textareaRef.current) {
+      textareaRef.current.value = ''; // Clear the text
+      textareaRef.current.style.height = 'auto'; // Reset the height to auto
+      textareaRef.current.focus(); // Refocus on the textarea
+    }
+
+    setInputTextHeight(20);
   }
 
   const sendMessage = (message) => {
@@ -547,9 +572,11 @@ export default function Home() {
                 className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
                 placeholder="Type your message..."
                 value={inputValue}
+                onKeyDown={handleKeyDown}
                 onChange={(e) => handleInputChange(e)}
                 style={{ minHeight: '10px' }} // Adjust as needed
                 rows={1} // Start with one row
+                ref={textareaRef}
               ></textarea>
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">
