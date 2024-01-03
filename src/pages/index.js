@@ -506,7 +506,7 @@ export default function Home() {
               // If it was open, this will close it, and vice versa.
               setIsPanelOpen(prevState => !prevState);
             }}
-            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-500 hover:bg-purple-700 text-white font-bold transition-colors duration-300 py-2 px-4 rounded"
+            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-600 hover:bg-purple-700 text-white font-bold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
           >
             {isPanelOpen ? 'Hide Party' : 'Open Party'}
           </button>
@@ -579,7 +579,7 @@ export default function Home() {
                 ref={textareaRef}
               ></textarea>
             </div>
-            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">
+            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300">
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>

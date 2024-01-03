@@ -119,3 +119,62 @@ textarea {
     margin-bottom: 0;
     /* Adjust or remove margin as necessary */
 }
+
+.heart {
+    position: relative;
+    background: rgb(123, 23, 19);
+    height: 35px;
+    width: 35px;
+    transform: rotate(-45deg);
+    margin: 1rem;
+    display: flex;
+    /* Added for centering text */
+    justify-content: center;
+    /* Center horizontally */
+    align-items: center;
+    /* Center vertically */
+}
+
+.heart:before,
+.heart:after {
+    content: "";
+    position: absolute;
+    background-color: rgb(123, 23, 19);
+    border-radius: 50%;
+    height: 100%;
+    width: 100%;
+}
+
+.heart:before {
+    left: 0;
+    top: -50%;
+}
+
+.heart:after {
+    left: 50%;
+}
+
+.heart-text {
+    /* Additional styling for the number text */
+    position: absolute;
+    transform: rotate(45deg);
+    /* Counter-rotate the text to make it upright */
+    color: white;
+    /* Assuming white text */
+    font-size: 1em;
+    z-index: 1;
+    /* Adjust as needed */
+    bottom: 25%;
+    /* Pushing the text up a little from the bottom center */
+    left: 30%;
+}
+
+.text-medieval {
+    font-family: 'MedievalFont', serif;
+    /* Use a medieval-style font */
+    font-size: 1.2em;
+    /* Adjust the font size as needed */
+    font-weight: bold
+        /* Use a dark brown color, similar to medieval manuscripts */
+        /* Add other medieval styling as desired, such as text-decoration, drop shadows, etc. */
+}

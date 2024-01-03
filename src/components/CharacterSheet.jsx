@@ -20,7 +20,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
     }, [race, characterClass]); // Recalculate when race or class changes
 
     return (
-        <div className="mt-4 ml-4 text-left"> {/* Removed flex from this div */}
+        <div className="mt-4 ml-4 text-left " > {/* Removed flex from this div */}
             {/* Container for both left and right sections */}
             <div className="flex items-start"> {/* Add flex here */}
                 {/* Left Section */}
@@ -60,7 +60,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                 </div>
             </div>
             {/* New Rectangle below both sections */}
-            <div className="relative block p-3 mt-7 text-white text-2xl font-bold rounded wavy-edges" style={{ height: '40rem', width: '95%' }}>
+            <div className="relative block p-3 mt-7 text-white text-2xl font-bold text-medieval rounded wavy-edges" style={{ height: '38.5rem', width: '95%' }}>
                 {/* Level Circle (Left and towards the top) */}
                 <div className="absolute top-0 left-0 ml-3 mt-3">
                     <div className="rounded-full flex items-center justify-center border-2"
@@ -135,11 +135,11 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                     <div className="text-white text-base text-center mt-1">Charisma</div>
                 </div>
                 {/* Shield-shaped box */}
-                <div className="shield-box" style={{
+                <div className="shield-box rounded" style={{
                     position: 'absolute',
                     top: '10%',
-                    left: '42%',  // Adjusted left positioning
-                    transform: 'translate(-58%, -50%)',
+                    left: '38%',  // Adjusted left positioning
+                    transform: 'translate(-62%, -50%)',
                     width: '60px',
                     height: '100px',
                     backgroundColor: 'rgba(88, 24, 69, 0.7)',
@@ -168,6 +168,60 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                         marginBottom: '12px' // Adjust as needed to position the text from the bottom
                     }}>
                         Armor Class
+                    </div>
+                </div>
+                {/* New Initiative Box */}
+                <div className="initiative-box rounded" style={{
+                    position: 'absolute',
+                    top: '2%',
+                    left: 'calc(30% + 70px)',  // Positioned to the right of the shield
+                    width: '80px',
+                    height: '90px',
+                    backgroundColor: 'rgba(204, 108, 29, 0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '4px'
+                }}>
+                    {/* Number "4" */}
+                    <div style={{
+                        color: 'white',
+                        fontSize: '24px',
+                        textAlign: 'center',
+                        marginBottom: '4px'  // Space between the number and the text
+                    }}>
+                        4
+                    </div>
+                    {/* "Initiative" text */}
+                    <div style={{
+                        color: 'white',
+                        fontSize: '16px',
+                        textAlign: 'center'
+                    }}>
+                        Initiative
+                    </div>
+                </div>
+                {/* Heart-shaped icon container */}
+                <div style={{
+                    position: 'absolute',
+                    top: '1%',  // Adjust as needed
+                    left: 'calc(42% + 120px)',  // Adjust as needed
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}>
+                    {/* Text "Max: 35" above the heart */}
+                    <div style={{
+                        fontSize: '20px',
+                        color: 'white',
+                        marginBottom: '4px'
+                    }}>
+                        Max: 35
+                    </div>
+                    {/* Heart Shape with number "30" inside */}
+                    <div className="heart">
+                        <div class="heart-text">30</div>
                     </div>
                 </div>
             </div>
