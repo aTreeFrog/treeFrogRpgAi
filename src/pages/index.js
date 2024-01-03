@@ -47,8 +47,6 @@ export default function Home() {
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
   const [inputTextHeight, setInputTextHeight] = useState(20);
-  const lastLineCount = useRef(null);
-  const lastScrollHeight = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -172,17 +170,28 @@ export default function Home() {
 
     if (typeof window !== 'undefined') {
       const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
+      const oldHeight = textarea.style.height;
+      // Temporarily reset height to 'auto' to get the correct scrollHeight
+      textarea.style.height = 'auto';
       const currentScrollHeight = textarea.scrollHeight;
 
       // Calculate the number of lines
       const numberOfLines = Math.ceil(currentScrollHeight / lineHeight);
 
       // Only update if the number of lines has changed or if the textarea is shrinking
-      if (numberOfLines !== lastLineCount.current || currentScrollHeight > parseInt(inputTextHeight, 10)) {
+      if (numberOfLines !== currentScrollHeight > parseInt(inputTextHeight, 10)) {
         textarea.style.height = `${currentScrollHeight}px`;
         setInputTextHeight(currentScrollHeight); // Update state with the new height
 
-        lastLineCount.current = numberOfLines; // Update the last line count
+      } else {
+        // If the new height is smaller, shrink the textarea
+        textarea.style.height = `${Math.max(currentScrollHeight, lineHeight * numberOfLines)}px`;
+        setInputTextHeight(Math.max(currentScrollHeight, lineHeight * numberOfLines));
+      }
+
+      // Restore the old height if the currentScrollHeight is larger than the content needs
+      if (textarea.scrollHeight < textarea.clientHeight) {
+        textarea.style.height = oldHeight;
       }
     }
   };
