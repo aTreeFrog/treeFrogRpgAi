@@ -112,4 +112,10 @@ textarea {
     /* Hide default scrollbars */
     resize: none;
     /* Prevent manual resizing */
+    box-sizing: border-box;
+    /* Include padding and border in the height calculation */
+    padding-bottom: 0;
+    /* Adjust or remove padding as necessary */
+    margin-bottom: 0;
+    /* Adjust or remove margin as necessary */
 }

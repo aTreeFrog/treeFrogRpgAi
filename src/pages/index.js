@@ -47,6 +47,8 @@ export default function Home() {
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
   const [inputTextHeight, setInputTextHeight] = useState(20);
+  const lastLineCount = useRef(null);
+  const lastScrollHeight = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -164,18 +166,28 @@ export default function Home() {
 
   //adjust text input bar height based on amount of user input.
   const handleInputChange = (e) => {
-    const { value } = e.target;
+    const textarea = e.target;
+    const value = textarea.value;
     setInputValue(value); // existing state update
 
-    // Logic to update height based on content
-    // This is simplistic; you might need more sophisticated measurement
-    const newHeight = Math.max(20, Math.min(200, value.length * 2)); // example calculation
-    setInputTextHeight(newHeight);
+    if (typeof window !== 'undefined') {
+      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
+      const currentScrollHeight = textarea.scrollHeight;
 
-    //for textarea hight inside text box
-    e.target.style.height = 'auto'; // Temporarily shrink to content size
-    e.target.style.height = `${e.target.scrollHeight}px`;
+      // Calculate the number of lines
+      const numberOfLines = Math.ceil(currentScrollHeight / lineHeight);
+
+      // Only update if the number of lines has changed or if the textarea is shrinking
+      if (numberOfLines !== lastLineCount.current || currentScrollHeight > parseInt(inputTextHeight, 10)) {
+        textarea.style.height = `${currentScrollHeight}px`;
+        setInputTextHeight(currentScrollHeight); // Update state with the new height
+
+        lastLineCount.current = numberOfLines; // Update the last line count
+      }
+    }
   };
+
+
 
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
@@ -527,7 +539,7 @@ export default function Home() {
                 placeholder="Type your message..."
                 value={inputValue}
                 onChange={(e) => handleInputChange(e)}
-                style={{ minHeight: '50px' }} // Adjust as needed
+                style={{ minHeight: '10px' }} // Adjust as needed
                 rows={1} // Start with one row
               ></textarea>
             </div>
