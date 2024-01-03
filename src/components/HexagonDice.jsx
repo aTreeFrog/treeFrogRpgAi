@@ -7,11 +7,12 @@ const HexagonDice = () => {
 
     const rollDice = () => {
         setIsSpinning(true); // Begin spinning
+        setValue("");
         setTimeout(() => {
             const newValue = Math.floor(Math.random() * 20) + 1; // Randomize dice value
             setValue(newValue); // Set new dice value
             setIsSpinning(false); // Stop spinning
-        }, 1500); // Duration to match CSS animation
+        }, 2600); // Duration to match CSS animation
     };
 
     return (

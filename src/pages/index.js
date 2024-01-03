@@ -488,9 +488,6 @@ export default function Home() {
             <div>
               <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" />
             </div>
-            {/* <div className="container mx-auto flex flex-col items-center justify-start pt-20">
-              <HexagonDice />
-            </div> */}
           </div>
           {/* Toggle Meeting Panel Button */}
           <button
@@ -527,6 +524,12 @@ export default function Home() {
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-12"
             />
           )}
+        </div>
+        <div className="container mx-auto flex flex-col items-center justify-start">
+          {/* Apply negative margin or adjust padding as needed */}
+          <div className="mt-[-90px] ml-[-30px] text-white text-2xl font-semibold"> {/* This is an example value; adjust as needed */}
+            <HexagonDice />
+          </div>
         </div>
       </div>
       {/* Right Box */}

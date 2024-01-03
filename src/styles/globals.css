@@ -15,7 +15,7 @@ body,
 .hexagon-glow {
     display: inline-flex;
     /* or other display as necessary */
-    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.7));
+    filter: drop-shadow(0 0 12px rgba(204, 85, 0, 0.5));
     /* Glowing effect */
 }
 
@@ -25,7 +25,8 @@ body,
     /* Smaller width */
     height: 34.64px;
     /* Smaller height, maintaining the hexagon ratio */
-    background-color: rgb(16, 185, 129);
+    background-color: rgb(204, 85, 0);
+    ;
     /* Hexagon color */
     position: relative;
     display: flex;
@@ -47,13 +48,13 @@ body,
 
 .hexagon::before {
     bottom: 100%;
-    border-bottom: 17.32px solid rgb(16, 185, 129);
+    border-bottom: 17.32px solid rgb(204, 85, 0);
     /* Half of the new height */
 }
 
 .hexagon::after {
     top: 100%;
-    border-top: 17.32px solid rgb(16, 185, 129);
+    border-top: 17.32px solid rgb(204, 85, 0);
     /* Half of the new height */
 }
 
@@ -65,12 +66,12 @@ body,
     }
 
     to {
-        transform: rotate(360deg);
+        transform: rotate(2000deg);
     }
 }
 
 .spinning {
-    animation: spin 0.85s linear forwards;
+    animation: spin 3.2s linear 1;
 }
 
 /* styles/globals.css */
