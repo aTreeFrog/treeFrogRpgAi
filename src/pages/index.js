@@ -171,6 +171,10 @@ export default function Home() {
     // This is simplistic; you might need more sophisticated measurement
     const newHeight = Math.max(20, Math.min(200, value.length * 2)); // example calculation
     setInputTextHeight(newHeight);
+
+    //for textarea hight inside text box
+    e.target.style.height = 'auto'; // Temporarily shrink to content size
+    e.target.style.height = `${e.target.scrollHeight}px`;
   };
 
   useEffect(() => {
@@ -518,13 +522,14 @@ export default function Home() {
           <div className="flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative' }}>
             {/* Make sure the input container can grow and the button stays aligned */}
             <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
-              <input
-                type="text"
+              <textarea
                 className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
                 placeholder="Type your message..."
                 value={inputValue}
                 onChange={(e) => handleInputChange(e)}
-              />
+                style={{ minHeight: '50px' }} // Adjust as needed
+                rows={1} // Start with one row
+              ></textarea>
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">
               {cancelButton !== 0 ? '▮▮' : 'Send'}

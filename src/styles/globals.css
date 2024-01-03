@@ -106,3 +106,10 @@ body,
     /* Adjust as needed */
     /* other styles as needed */
 }
+
+textarea {
+    overflow: hidden;
+    /* Hide default scrollbars */
+    resize: none;
+    /* Prevent manual resizing */
+}
