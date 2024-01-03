@@ -81,8 +81,8 @@ body,
     /* Ensures the pseudo-elements don't overflow */
     background-color: rgba(217, 119, 6, 0.1);
     /* Ensures the background is transparent */
-    border: 2px solid rgb(217, 119, 6);
-    /* Green border color */
+    border: 2px solid rgb(87, 28, 161)
+        /* Green border color */
 }
 
 .wavy-detail-box {
@@ -94,8 +94,8 @@ body,
     /* Ensures the pseudo-elements don't overflow */
     background-color: rgba(217, 119, 6, 0.1);
     /* Ensures the background is transparent */
-    border: 2px solid rgb(217, 119, 6);
-    /* Green border color */
+    border: 2px solid rgb(87, 28, 161)
+        /* Green border color */
 }
 
 .message-input-container {
@@ -161,12 +161,12 @@ textarea {
     /* Counter-rotate the text to make it upright */
     color: white;
     /* Assuming white text */
-    font-size: 1em;
+    font-size: 1.3em;
     z-index: 1;
     /* Adjust as needed */
-    bottom: 25%;
+    bottom: 20%;
     /* Pushing the text up a little from the bottom center */
-    left: 30%;
+    left: 25%;
 }
 
 .text-medieval {

@@ -128,7 +128,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    //chatSocket.emit('audio message', data);
+    chatSocket.emit('audio message', data);
 
   };
 
@@ -206,13 +206,11 @@ export default function Home() {
     }
   };
 
-
-
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 400);
+    }, 235);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
@@ -360,13 +358,14 @@ export default function Home() {
 
       setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
+      sendImageMessage(inputValue);
+
       sendMessage(inputValue);
 
       setInputValue('');
 
       resetUserTextForm();
 
-      //sendImageMessage(inputValue);
 
     }
 
@@ -506,7 +505,7 @@ export default function Home() {
               // If it was open, this will close it, and vice versa.
               setIsPanelOpen(prevState => !prevState);
             }}
-            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-600 hover:bg-purple-700 text-white font-bold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
           >
             {isPanelOpen ? 'Hide Party' : 'Open Party'}
           </button>
