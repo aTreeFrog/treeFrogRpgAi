@@ -97,3 +97,25 @@ body,
     border: 2px solid rgb(16, 185, 129);
     /* Green border color */
 }
+
+.message-input-container {
+    position: fixed;
+    /* or absolute */
+    bottom: 0;
+    width: 100%;
+    /* Adjust as needed */
+    /* other styles as needed */
+}
+
+textarea {
+    overflow: hidden;
+    /* Hide default scrollbars */
+    resize: none;
+    /* Prevent manual resizing */
+    box-sizing: border-box;
+    /* Include padding and border in the height calculation */
+    padding-bottom: 0;
+    /* Adjust or remove padding as necessary */
+    margin-bottom: 0;
+    /* Adjust or remove margin as necessary */
+}

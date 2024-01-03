@@ -46,6 +46,9 @@ export default function Home() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
+  const [inputTextHeight, setInputTextHeight] = useState(20);
+  const textareaRef = useRef(null);
+
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -125,7 +128,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    chatSocket.emit('audio message', data);
+    //chatSocket.emit('audio message', data);
 
   };
 
@@ -161,11 +164,55 @@ export default function Home() {
     }
   }
 
+  const handleKeyDown = (e) => {
+    // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent the default action (new line)
+      handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+    }
+  };
+
+  //adjust text input bar height based on amount of user input.
+  const handleInputChange = (e) => {
+    const textarea = e.target;
+    const value = textarea.value;
+    setInputValue(value); // existing state update
+
+    if (typeof window !== 'undefined') {
+      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
+      const oldHeight = textarea.style.height;
+      // Temporarily reset height to 'auto' to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      const currentScrollHeight = textarea.scrollHeight;
+
+      // Calculate the number of lines
+      const numberOfLines = Math.ceil(currentScrollHeight / lineHeight);
+
+      // Only update if the number of lines has changed or if the textarea is shrinking
+      if (numberOfLines !== currentScrollHeight > parseInt(inputTextHeight, 10)) {
+        textarea.style.height = `${currentScrollHeight}px`;
+        setInputTextHeight(currentScrollHeight); // Update state with the new height
+
+      } else {
+        // If the new height is smaller, shrink the textarea
+        textarea.style.height = `${Math.max(currentScrollHeight, lineHeight * numberOfLines)}px`;
+        setInputTextHeight(Math.max(currentScrollHeight, lineHeight * numberOfLines));
+      }
+
+      // Restore the old height if the currentScrollHeight is larger than the content needs
+      if (textarea.scrollHeight < textarea.clientHeight) {
+        textarea.style.height = oldHeight;
+      }
+    }
+  };
+
+
+
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 200);
+    }, 400);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
@@ -278,7 +325,10 @@ export default function Home() {
 
     console.log("meeting details", meetingDetails.meetingUr);
 
-    event.preventDefault();
+    // Prevent the default form submission if an event is provided
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
 
     if (cancelButton !== 0) {
       chatSocket.emit('cancel processing');
@@ -296,29 +346,41 @@ export default function Home() {
         audio.current = false;
       }
 
-    } else {
+    }
+
+    if (inputValue.length > 0) {
 
       chatSocket.emit('resume processing');
       audio.current = false;
 
-      if (inputValue.length > 0) {
+      messageQueue.current = [];
+      chatSocket.emit('reset audio sequence');
+      expectedSequence.current = 0;
+      audioQueue.current = new Map();
 
-        messageQueue.current = [];
-        chatSocket.emit('reset audio sequence');
-        expectedSequence.current = 0;
-        audioQueue.current = new Map();
+      setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
-        setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+      sendMessage(inputValue);
 
-        sendMessage(inputValue);
+      setInputValue('');
 
-        setInputValue('');
+      resetUserTextForm();
 
-        sendImageMessage(inputValue);
-
-      }
+      //sendImageMessage(inputValue);
 
     }
+
+  }
+
+  const resetUserTextForm = () => {
+    // Reset the textarea after form submission
+    if (textareaRef.current) {
+      textareaRef.current.value = ''; // Clear the text
+      textareaRef.current.style.height = 'auto'; // Reset the height to auto
+      textareaRef.current.focus(); // Refocus on the textarea
+    }
+
+    setInputTextHeight(20);
   }
 
   const sendMessage = (message) => {
@@ -503,14 +565,26 @@ export default function Home() {
 
         {/* Fixed Send Message Form or other bottom content */}
         <form onSubmit={handleSubmit} className="mt-auto p-6">
-          <div className="flex rounded-lg border border-gray-700 bg-gray-800">
-            <input type="text" className="flex-grow px-4 py-2 bg-transparent text-white focus:outline-none" placeholder="Type your message..." value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-            <button type="submit" className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300"
-            >{cancelButton !== 0 ? '▮▮' : 'Send'}</button>
+          <div className="flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative' }}>
+            {/* Make sure the input container can grow and the button stays aligned */}
+            <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
+              <textarea
+                className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
+                placeholder="Type your message..."
+                value={inputValue}
+                onKeyDown={handleKeyDown}
+                onChange={(e) => handleInputChange(e)}
+                style={{ minHeight: '10px' }} // Adjust as needed
+                rows={1} // Start with one row
+                ref={textareaRef}
+              ></textarea>
+            </div>
+            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">
+              {cancelButton !== 0 ? '▮▮' : 'Send'}
+            </button>
           </div>
         </form>
       </div>
-
     </div >
   )
 
