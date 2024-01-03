@@ -46,6 +46,7 @@ export default function Home() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
+  const [inputTextHeight, setInputTextHeight] = useState(20);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    chatSocket.emit('audio message', data);
+    //chatSocket.emit('audio message', data);
 
   };
 
@@ -161,11 +162,22 @@ export default function Home() {
     }
   }
 
+  //adjust text input bar height based on amount of user input.
+  const handleInputChange = (e) => {
+    const { value } = e.target;
+    setInputValue(value); // existing state update
+
+    // Logic to update height based on content
+    // This is simplistic; you might need more sophisticated measurement
+    const newHeight = Math.max(20, Math.min(200, value.length * 2)); // example calculation
+    setInputTextHeight(newHeight);
+  };
+
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 200);
+    }, 400);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
@@ -314,7 +326,7 @@ export default function Home() {
 
         setInputValue('');
 
-        sendImageMessage(inputValue);
+        //sendImageMessage(inputValue);
 
       }
 
@@ -503,14 +515,23 @@ export default function Home() {
 
         {/* Fixed Send Message Form or other bottom content */}
         <form onSubmit={handleSubmit} className="mt-auto p-6">
-          <div className="flex rounded-lg border border-gray-700 bg-gray-800">
-            <input type="text" className="flex-grow px-4 py-2 bg-transparent text-white focus:outline-none" placeholder="Type your message..." value={inputValue} onChange={(e) => setInputValue(e.target.value)} />
-            <button type="submit" className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300"
-            >{cancelButton !== 0 ? '▮▮' : 'Send'}</button>
+          <div className="flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative' }}>
+            {/* Make sure the input container can grow and the button stays aligned */}
+            <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
+              <input
+                type="text"
+                className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
+                placeholder="Type your message..."
+                value={inputValue}
+                onChange={(e) => handleInputChange(e)}
+              />
+            </div>
+            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">
+              {cancelButton !== 0 ? '▮▮' : 'Send'}
+            </button>
           </div>
         </form>
       </div>
-
     </div >
   )
 

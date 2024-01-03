@@ -97,3 +97,12 @@ body,
     border: 2px solid rgb(16, 185, 129);
     /* Green border color */
 }
+
+.message-input-container {
+    position: fixed;
+    /* or absolute */
+    bottom: 0;
+    width: 100%;
+    /* Adjust as needed */
+    /* other styles as needed */
+}
