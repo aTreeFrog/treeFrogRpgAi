@@ -58,8 +58,6 @@ body,
     /* Half of the new height */
 }
 
-
-
 @keyframes spin {
     from {
         transform: rotate(0deg);
@@ -71,7 +69,7 @@ body,
 }
 
 .spinning {
-    animation: spin 3.2s linear 1;
+    animation: spin 2.4s linear 1;
 }
 
 /* styles/globals.css */
@@ -178,4 +176,8 @@ textarea {
     font-weight: bold
         /* Use a dark brown color, similar to medieval manuscripts */
         /* Add other medieval styling as desired, such as text-decoration, drop shadows, etc. */
+}
+
+.text-serif {
+    font-family: serif;
 }
