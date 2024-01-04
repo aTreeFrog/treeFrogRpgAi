@@ -191,14 +191,14 @@ textarea {
 
     0%,
     100% {
-        box-shadow: 0 0 3px rgba(235, 220, 48, 0.4), 0 0 5px rgba(235, 220, 48, 0.4);
+        box-shadow: 0 0 3px rgba(235, 220, 48, 0.3), 0 0 5px rgba(235, 220, 48, 0.3);
         filter: blur(3px);
         opacity: 0.6;
         /* Adjust opacity for a more subtle effect */
     }
 
     50% {
-        box-shadow: 0 0 7px rgba(235, 220, 48, 0.6), 0 0 10px rgba(235, 220, 48, 0.6);
+        box-shadow: 0 0 7px rgba(235, 220, 48, 0.5), 0 0 10px rgba(235, 220, 48, 0.5);
         filter: blur(6px);
         opacity: 1;
         /* Full visibility for peak glow */
