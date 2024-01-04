@@ -198,7 +198,7 @@ textarea {
     }
 
     50% {
-        box-shadow: 0 0 7px rgba(235, 220, 48, 0.5), 0 0 10px rgba(235, 220, 48, 0.5);
+        box-shadow: 0 0 7px rgba(235, 220, 48, 0.4), 0 0 10px rgba(235, 220, 48, 0.4);
         filter: blur(6px);
         opacity: 1;
         /* Full visibility for peak glow */
@@ -222,10 +222,10 @@ textarea {
     /* Extend further below the text */
     left: -37px;
     right: -8px;
-    background-color: rgba(235, 220, 48, 0.15);
+    background-color: rgba(235, 220, 48, 0.5);
     /* Yellow highlight with opacity */
-    z-index: 1;
+    z-index: 0;
     /* Place it behind the text */
-    border-radius: 4px;
+    border-radius: 8px;
     animation: glow 2s linear infinite;
 }
