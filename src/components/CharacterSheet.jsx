@@ -233,7 +233,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                 <div className="flex align-self-end justify-end space-x-0.5 mt-70" style={{
                     position: 'absolute',
                     top: '20%',
-                    left: '27%'
+                    left: '29%'
                 }}>
                     {['Skills', 'Attacks/Spells', 'Equipment'].map((tabName) => (
                         <button
@@ -245,8 +245,10 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                         </button>
                     ))}
                 </div>
+                <div className="relative block p-3 text-white text-2xl font-bold text-medieval rounded wavy-edges" style={{ height: '23rem', width: '64%', position: 'absolute', top: '26%', left: '30%' }}></div>
             </div>
         </div>
+
 
     );
 }
