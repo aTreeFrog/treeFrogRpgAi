@@ -177,3 +177,7 @@ textarea {
         /* Use a dark brown color, similar to medieval manuscripts */
         /* Add other medieval styling as desired, such as text-decoration, drop shadows, etc. */
 }
+
+.text-serif {
+    font-family: serif;
+}
