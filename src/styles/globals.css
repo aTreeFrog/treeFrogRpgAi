@@ -179,5 +179,53 @@ textarea {
 }
 
 .text-serif {
-    font-family: serif;
+    font-family: 'Times New Roman', serif;
+    font-size: 1.6em;
+    font-weight: bold
+}
+
+
+
+/* Define the keyframes for glowing effect */
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 3px rgba(235, 220, 48, 0.4), 0 0 5px rgba(235, 220, 48, 0.4);
+        filter: blur(3px);
+        opacity: 0.6;
+        /* Adjust opacity for a more subtle effect */
+    }
+
+    50% {
+        box-shadow: 0 0 7px rgba(235, 220, 48, 0.6), 0 0 10px rgba(235, 220, 48, 0.6);
+        filter: blur(6px);
+        opacity: 1;
+        /* Full visibility for peak glow */
+    }
+}
+
+
+.highlight-container {
+    position: relative;
+    display: inline-block;
+    /* or 'block' as needed */
+}
+
+
+.highlight-container::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    /* Extend higher above the text */
+    bottom: -3px;
+    /* Extend further below the text */
+    left: -37px;
+    right: -8px;
+    background-color: rgba(235, 220, 48, 0.15);
+    /* Yellow highlight with opacity */
+    z-index: 1;
+    /* Place it behind the text */
+    border-radius: 4px;
+    animation: glow 2s linear infinite;
 }

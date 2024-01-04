@@ -6,6 +6,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
     const [raceLineWidth, setRaceLineWidth] = useState('0px');
     const [classLineWidth, setClassLineWidth] = useState('0px');
     const [activeTab, setActiveTab] = useState('Skills');
+    const [highlight, setHighlight] = useState("arcana");
 
     useEffect(() => {
         // Calculating for Race
@@ -246,7 +247,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                     ))}
                 </div>
                 <div className="relative block p-3 text-white text-serif text-2xl font-semibold rounded"
-                    style={{ height: '23rem', width: '67%', position: 'absolute', top: '26%', left: '30%', backgroundColor: "rgba(45, 55, 72, 0.2)" }}>
+                    style={{ height: '23.5rem', width: '69%', position: 'absolute', top: '27%', left: '29%', backgroundColor: "rgba(45, 55, 72, 0.2)" }}>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
@@ -254,7 +255,9 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Acrobatics</div>
+                            <div className={highlight.toLocaleLowerCase() === "acrobatics" ? "highlight-container" : ""}>
+                                <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Acrobatics</div>
+                            </div>
                             <div className="flex flex-col items-center" style={{ marginLeft: '16px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
@@ -269,7 +272,9 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Arcana</div>
+                            <div className={highlight.toLocaleLowerCase() === "arcana" ? "highlight-container" : ""}>
+                                <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Arcana</div>
+                            </div >
                             <div className="flex flex-col items-center" style={{ marginLeft: '36px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
@@ -292,8 +297,6 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>History</div>
                         </div>
                     </div>
-
-
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
