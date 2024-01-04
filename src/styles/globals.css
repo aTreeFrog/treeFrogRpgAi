@@ -15,7 +15,7 @@ body,
 .hexagon-glow {
     display: inline-flex;
     /* or other display as necessary */
-    filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.7));
+    filter: drop-shadow(0 0 12px rgba(204, 85, 0, 0.5));
     /* Glowing effect */
 }
 
@@ -25,7 +25,8 @@ body,
     /* Smaller width */
     height: 34.64px;
     /* Smaller height, maintaining the hexagon ratio */
-    background-color: rgb(16, 185, 129);
+    background-color: rgb(204, 85, 0);
+    ;
     /* Hexagon color */
     position: relative;
     display: flex;
@@ -47,13 +48,13 @@ body,
 
 .hexagon::before {
     bottom: 100%;
-    border-bottom: 17.32px solid rgb(16, 185, 129);
+    border-bottom: 17.32px solid rgb(204, 85, 0);
     /* Half of the new height */
 }
 
 .hexagon::after {
     top: 100%;
-    border-top: 17.32px solid rgb(16, 185, 129);
+    border-top: 17.32px solid rgb(204, 85, 0);
     /* Half of the new height */
 }
 
@@ -65,12 +66,12 @@ body,
     }
 
     to {
-        transform: rotate(360deg);
+        transform: rotate(2000deg);
     }
 }
 
 .spinning {
-    animation: spin 0.85s linear forwards;
+    animation: spin 3.2s linear 1;
 }
 
 /* styles/globals.css */
@@ -79,23 +80,23 @@ body,
     position: relative;
     overflow: hidden;
     /* Ensures the pseudo-elements don't overflow */
-    background-color: transparent;
+    /* background-color: rgba(217, 119, 6, 0.1); */
     /* Ensures the background is transparent */
-    border: 2px solid rgb(16, 185, 129);
-    /* Green border color */
+    border: 2px solid rgb(87, 28, 161)
+        /* Green border color */
 }
 
 .wavy-detail-box {
     height: calc(2 * (2rem + 2rem));
     /* Adjust based on the actual size of your name ribbon and label */
-    width: 225px;
+    width: 200px;
     position: relative;
     overflow: hidden;
     /* Ensures the pseudo-elements don't overflow */
-    background-color: transparent;
+    /* background-color: rgba(217, 119, 6, 0.1); */
     /* Ensures the background is transparent */
-    border: 2px solid rgb(16, 185, 129);
-    /* Green border color */
+    border: 2px solid rgb(87, 28, 161)
+        /* Green border color */
 }
 
 .message-input-container {
@@ -118,4 +119,63 @@ textarea {
     /* Adjust or remove padding as necessary */
     margin-bottom: 0;
     /* Adjust or remove margin as necessary */
+}
+
+.heart {
+    position: relative;
+    background: rgb(123, 23, 19);
+    height: 35px;
+    width: 35px;
+    transform: rotate(-45deg);
+    margin: 1rem;
+    display: flex;
+    /* Added for centering text */
+    justify-content: center;
+    /* Center horizontally */
+    align-items: center;
+    /* Center vertically */
+}
+
+.heart:before,
+.heart:after {
+    content: "";
+    position: absolute;
+    background-color: rgb(123, 23, 19);
+    border-radius: 50%;
+    height: 100%;
+    width: 100%;
+}
+
+.heart:before {
+    left: 0;
+    top: -50%;
+}
+
+.heart:after {
+    left: 50%;
+}
+
+.heart-text {
+    /* Additional styling for the number text */
+    position: absolute;
+    transform: rotate(45deg);
+    /* Counter-rotate the text to make it upright */
+    color: white;
+    /* Assuming white text */
+    font-size: 1.3em;
+    z-index: 1;
+    /* Adjust as needed */
+    bottom: 20%;
+    /* Pushing the text up a little from the bottom center */
+    left: 25%;
+}
+
+.text-medieval {
+    font-family: 'MedievalFont', serif;
+    /* Use a medieval-style font */
+    font-size: 1.2em;
+    /* Adjust the font size as needed */
+    font-weight: bold
+        /* Use a dark brown color, similar to medieval manuscripts */
+        /* Add other medieval styling as desired, such as text-decoration, drop shadows, etc. */
 }

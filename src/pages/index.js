@@ -128,7 +128,7 @@ export default function Home() {
     };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    //chatSocket.emit('audio message', data);
+    chatSocket.emit('audio message', data);
 
   };
 
@@ -206,13 +206,11 @@ export default function Home() {
     }
   };
 
-
-
   useEffect(() => {
     // Set up the interval to process the message queue every x ms
     const intervalId = setInterval(() => {
       processQueue();
-    }, 400);
+    }, 235);
 
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
@@ -360,13 +358,14 @@ export default function Home() {
 
       setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
+      sendImageMessage(inputValue);
+
       sendMessage(inputValue);
 
       setInputValue('');
 
       resetUserTextForm();
 
-      //sendImageMessage(inputValue);
 
     }
 
@@ -489,9 +488,6 @@ export default function Home() {
             <div>
               <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" />
             </div>
-            <div className="container mx-auto flex flex-col items-center justify-start pt-20">
-              <HexagonDice />
-            </div>
           </div>
           {/* Toggle Meeting Panel Button */}
           <button
@@ -506,7 +502,7 @@ export default function Home() {
               // If it was open, this will close it, and vice versa.
               setIsPanelOpen(prevState => !prevState);
             }}
-            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-500 hover:bg-purple-700 text-white font-bold transition-colors duration-300 py-2 px-4 rounded"
+            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
           >
             {isPanelOpen ? 'Hide Party' : 'Open Party'}
           </button>
@@ -528,6 +524,12 @@ export default function Home() {
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-12"
             />
           )}
+        </div>
+        <div className="container mx-auto flex flex-col items-center justify-start">
+          {/* Apply negative margin or adjust padding as needed */}
+          <div className="mt-[-90px] ml-[-30px] text-white text-2xl font-semibold"> {/* This is an example value; adjust as needed */}
+            <HexagonDice />
+          </div>
         </div>
       </div>
       {/* Right Box */}
@@ -579,7 +581,7 @@ export default function Home() {
                 ref={textareaRef}
               ></textarea>
             </div>
-            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-500 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none hover:bg-purple-600 transition-colors duration-300">
+            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300">
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
