@@ -302,7 +302,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Sleight</div>
-                            <div className="flex flex-col items-center" style={{ marginLeft: '34.75px' }}>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '37.5px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
@@ -317,7 +317,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Stealth</div>
-                            <div className="flex flex-col items-center" style={{ marginLeft: '33.25px' }}>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '36px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
@@ -332,7 +332,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Medicine</div>
-                            <div className="flex flex-col items-center" style={{ marginLeft: '18.7px' }}>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '22.5px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
@@ -347,7 +347,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Insight</div>
-                            <div className="flex flex-col items-center" style={{ marginLeft: '31px' }}>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '35px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
@@ -362,7 +362,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Nature</div>
-                            <div className="flex flex-col items-center" style={{ marginLeft: '30px' }}>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '34.65px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
@@ -377,7 +377,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
                             <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Perception</div>
-                            <div className="flex flex-col items-center" style={{ marginLeft: '6.4px' }}>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '11.5px' }}>
                                 <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
