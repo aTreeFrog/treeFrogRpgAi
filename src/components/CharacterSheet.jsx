@@ -5,6 +5,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
     const classRef = useRef(null);
     const [raceLineWidth, setRaceLineWidth] = useState('0px');
     const [classLineWidth, setClassLineWidth] = useState('0px');
+    const [activeTab, setActiveTab] = useState('Skills');
 
     useEffect(() => {
         // Calculating for Race
@@ -228,6 +229,21 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                     <div className="heart">
                         <div class="heart-text">30</div>
                     </div>
+                </div>
+                <div className="flex align-self-end justify-end space-x-0.5 mt-70" style={{
+                    position: 'absolute',
+                    top: '20%',
+                    left: '27%'
+                }}>
+                    {['Skills', 'Attacks/Spells', 'Equipment'].map((tabName) => (
+                        <button
+                            key={tabName}
+                            className={`tab-button px-2 py-1 text-sm font-semibold border-2 border-transparent rounded-full transition-colors duration-300
+                                ${activeTab === tabName ? 'bg-purple-800' : 'hover:bg-slate-800 opacity-90'}`}
+                            onClick={() => setActiveTab(tabName)}>
+                            {tabName}
+                        </button>
+                    ))}
                 </div>
             </div>
         </div>
