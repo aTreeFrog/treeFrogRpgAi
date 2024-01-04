@@ -250,121 +250,138 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-m" style={{ marginRight: '0px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-sm" style={{ marginBottom: '1px' }}>Acrobatics</div>
-                            <div className="flex flex-col ml-4 items-center">
-                                <span className="text-white  text-m" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Acrobatics</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '16px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-sm ml-2" style={{ marginBottom: '1px' }}>Investigation</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Animals</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-1 items-center">
-                                <span className="text-white text-m " style={{ marginRight: '0px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-sm" style={{ marginBottom: '1px' }}>Animals</div>
-                            <div className="flex flex-col ml-7 items-center">
-                                <span className="text-white text-m" style={{ marginLeft: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Arcana</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '36px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-sm" style={{ marginLeft: '8px', marginBottom: '1px' }}>Medicine</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Athletics</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-s " style={{ marginRight: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginBottom: '1px' }}>Arcana</div>
-                            <div className="flex flex-col ml-8 items-center">
-                                <span className="text-white text-s" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Deception</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '20px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginLeft: '8px', marginBottom: '1px' }}>Nature</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>History</div>
+                        </div>
+                    </div>
+
+
+                    <div className="flex flex-col items-start mb-2">
+                        <div className="flex items-end">
+                            {/* Container for the number and line */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                                <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
+                            </div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Sleight</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '34.75px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                                <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
+                            </div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Persuasion</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-s " style={{ marginRight: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginBottom: '1px' }}>Athletics</div>
-                            <div className="flex flex-col ml-6 items-center">
-                                <span className="text-white text-s" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Stealth</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '33.25px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginLeft: '8px', marginBottom: '1px' }}>Perception</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Survival</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-s " style={{ marginRight: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginBottom: '1px' }}>Deception</div>
-                            <div className="flex flex-col ml-4 items-center">
-                                <span className="text-white text-s" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Medicine</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '18.7px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginLeft: '8px', marginBottom: '1px' }}>Performance</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Religion</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-s " style={{ marginRight: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginBottom: '1px' }}>History</div>
-                            <div className="flex flex-col ml-7 items-center">
-                                <span className="text-white text-s" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Insight</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '31px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginLeft: '8px', marginBottom: '1px' }}>Persuasion</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Intimidation</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-s " style={{ marginRight: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginBottom: '1px' }}>Insight</div>
-                            <div className="flex flex-col ml-7 items-center">
-                                <span className="text-white text-s" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Nature</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '30px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginLeft: '8px', marginBottom: '1px' }}>Religion</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Investigation</div>
                         </div>
                     </div>
                     <div className="flex flex-col items-start mb-2">
                         <div className="flex items-end">
                             {/* Container for the number and line */}
-                            <div className="flex flex-col mr-2 items-center">
-                                <span className="text-white text-s " style={{ marginRight: '4px' }}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="flex flex-col items-center" style={{ marginLeft: '-4px' }}>
+                                <span className="text-white text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginBottom: '1px' }}>Sleight</div>
-                            <div className="flex flex-col ml-7 items-center">
-                                <span className="text-white text-s" style={{}}>+2</span> {/* Adjust with your dynamic number */}
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Perception</div>
+                            <div className="flex flex-col items-center" style={{ marginLeft: '6.4px' }}>
+                                <span className="text-white  text-m" style={{ marginRight: '0px', marginBottom: '-4px' }}>+2</span> {/* Adjust with your dynamic number */}
                                 <hr className="border-purple-800" style={{ width: '24px', borderTopWidth: '2px', marginBottom: '2px' }} />
                             </div>
-                            <div className="text-white text-xss" style={{ marginLeft: '8px', marginBottom: '1px' }}>Intimidation</div>
+                            <div className="text-white text-sm" style={{ marginBottom: '1px', marginLeft: '6px' }}>Performance</div>
                         </div>
                     </div>
                 </div>
