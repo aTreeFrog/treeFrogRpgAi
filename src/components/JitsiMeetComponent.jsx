@@ -45,7 +45,7 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
                     SHOW_WATERMARK_FOR_GUESTS: false,
                     DEFAULT_REMOTE_DISPLAY_NAME: 'Participant',
                     TOOLBAR_BUTTONS: [ // List the buttons you want to remain
-                        'microphone', 'settings', 'hangup', 'fodeviceselection', 'invite', 'mute-everyone'
+                        'microphone', 'chat', 'settings', 'hangup', 'fodeviceselection', 'invite', 'mute-everyone'
                         // Exclude 'chat', 'camera', or other buttons you don't want
                     ],
                 },
@@ -119,7 +119,7 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
                 jitsiContainerRef.current.innerHTML = '';
             }
         };
-    }, [meetingRoom]);
+    }, [meetingRoom, meetingEnded]);
 
     useEffect(() => {
         // Whenever the component mounts or meetingRoom changes,
