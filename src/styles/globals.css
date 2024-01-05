@@ -229,3 +229,76 @@ textarea {
     border-radius: 4px;
     animation: glow 2s linear infinite;
 }
+
+.attackRowLeftClicked {
+    background-color: rgba(235, 220, 48, 0.2);
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.hoverAttackRowLeft:hover {
+    background-color: rgba(235, 220, 48, 0.2);
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
+.attackRowClicked {
+    background-color: rgba(235, 220, 48, 0.2);
+}
+
+.hoverAttackRow:hover {
+    background-color: rgba(235, 220, 48, 0.2);
+}
+
+.attackRowRightClicked {
+    background-color: rgba(235, 220, 48, 0.2);
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.hoverAttackRowRight:hover {
+    background-color: rgba(235, 220, 48, 0.2);
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.attack-header-border {
+    border-bottom: 4px solid rgba(129, 140, 248, 0.5);
+    /* Set the thickness and color of your border */
+    display: inline-block;
+    /* Allows you to set a width or use padding */
+    margin: 0 auto;
+    /* Center the border if the button is wider */
+    width: 70%;
+    /* Adjust to control how much the line extends */
+}
+
+/* Container of the scrollbar (all parts) */
+.scrollable-container::-webkit-scrollbar {
+    width: 12px;
+    /* Adjust width of the scrollbar */
+}
+
+/* The track (progress bar) of the scrollbar */
+.scrollable-container::-webkit-scrollbar-track {
+    background: rgb(49, 46, 129);
+    /* Background of the track */
+    border-radius: 10px;
+    /* Roundness of the track */
+}
+
+/* The handle (movable part) of the scrollbar */
+.scrollable-container::-webkit-scrollbar-thumb {
+    background: rgba(129, 140, 248, 0.5);
+    /* Color of the scrollbar thumb */
+    border-radius: 10px;
+    /* Roundness of the thumb */
+    border: 3px solid rgb(49, 46, 129);
+    /* Border between the thumb and track */
+}
+
+/* Optional: Handle the hover state of the scrollbar */
+.scrollable-container::-webkit-scrollbar-thumb:hover {
+    background: darkpurple;
+    /* Darker purple when hovering */
+}
