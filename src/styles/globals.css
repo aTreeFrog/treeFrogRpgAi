@@ -19,15 +19,30 @@ body,
     /* Glowing effect */
 }
 
+@keyframes diceGlowAnimation {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 8px rgba(204, 85, 0, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 15px rgba(204, 85, 0, 0.8));
+    }
+}
+
+.no-glow {
+    animation: none !important;
+    /* Overrides any glow animation */
+    filter: none;
+    /* Removes glow effect */
+}
+
 /* styles.css */
+/* Common base styles for hexagon */
 .hexagon {
     width: 60px;
-    /* Smaller width */
     height: 34.64px;
-    /* Smaller height, maintaining the hexagon ratio */
-    background-color: rgb(204, 85, 0);
-    ;
-    /* Hexagon color */
     position: relative;
     display: flex;
     justify-content: center;
@@ -35,28 +50,55 @@ body,
     cursor: pointer;
 }
 
+/* Pseudo-elements common styles */
 .hexagon::before,
 .hexagon::after {
     content: "";
     position: absolute;
     width: 0;
     border-left: 30px solid transparent;
-    /* Half of the new width */
     border-right: 30px solid transparent;
-    /* Half of the new width */
 }
 
-.hexagon::before {
+/* Active state styles */
+.hexagon-active {
+    background-color: rgb(204, 85, 0);
+    /* Original color */
+    animation: diceGlowAnimation 2s ease-in-out infinite;
+}
+
+.hexagon-active::before {
     bottom: 100%;
     border-bottom: 17.32px solid rgb(204, 85, 0);
-    /* Half of the new height */
+    /* Original color */
+    animation: diceGlowAnimation 2s ease-in-out infinite;
 }
 
-.hexagon::after {
+.hexagon-active::after {
     top: 100%;
     border-top: 17.32px solid rgb(204, 85, 0);
-    /* Half of the new height */
+    /* Original color */
+    animation: diceGlowAnimation 2s ease-in-out infinite;
 }
+
+/* Inactive state styles with transparency */
+.hexagon-inactive {
+    background-color: rgba(204, 85, 0, 0.3);
+    /* Transparent color */
+}
+
+.hexagon-inactive::before {
+    bottom: 100%;
+    border-bottom: 17.32px solid rgba(204, 85, 0, 0.3);
+    /* Transparent color */
+}
+
+.hexagon-inactive::after {
+    top: 100%;
+    border-top: 17.32px solid rgba(204, 85, 0, 0.3);
+    /* Transparent color */
+}
+
 
 @keyframes spin {
     from {
@@ -71,6 +113,42 @@ body,
 .spinning {
     animation: spin 2.4s linear 1;
 }
+
+.triangle-glow {
+    display: inline-flex;
+    filter: drop-shadow(0 0 12px rgba(204, 85, 0, 0.5));
+    /* Keep the glowing effect */
+}
+
+.triangle {
+    width: 0;
+    height: 0;
+    border-left: 30px solid transparent;
+    border-right: 30px solid transparent;
+    /* Adjust size and color as needed */
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: -5px;
+    /* Move up */
+    left: -20px;
+    /* Move left */
+    cursor: pointer;
+}
+
+.triangle-active {
+    border-bottom: 52px solid rgb(204, 85, 0);
+    /* Original color */
+    animation: diceGlowAnimation 2s ease-in-out infinite;
+}
+
+.triangle-inactive {
+    border-bottom: 52px solid rgba(204, 85, 0, 0.3);
+    /* Original color */
+}
+
+
 
 /* styles/globals.css */
 
@@ -206,6 +284,7 @@ textarea {
 }
 
 
+
 .highlight-container {
     position: relative;
     display: inline-block;
@@ -333,4 +412,12 @@ textarea {
 
 .animate-grow-shrink {
     animation: audio-grow-shrink 2s ease-in-out infinite;
+}
+
+.word-cell {
+    max-width: 93px;
+}
+
+.all-cells {
+    /* min-height: 65px; */
 }

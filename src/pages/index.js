@@ -639,7 +639,7 @@ export default function Home() {
                           // Cell with text and cancel area
                           <div key={index} className="flex items-center gap-1">
                             {/* Cell with text */}
-                            <button className="flex-grow word-cell p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                            <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
                               onClick={() => handleCellClick(content)}
                             >
                               {content}
@@ -655,7 +655,8 @@ export default function Home() {
                             placeholder="Type here..."
                             onKeyDown={newTextEnterKeyDown}
                             onBlur={(e) => handleBlur(index, e.target.value)}
-                            className="word-cell p-2 bg-gray-700 rounded text-white"
+                            className="p-2 bg-gray-700 rounded text-white maxWidth:10px"
+
                           />
                       ))}
                     </div>
@@ -697,20 +698,20 @@ export default function Home() {
         </form>
         {isCustomTextOpen && (
           <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 all-cells">
               {/* Render cells */}
               {customTextCells.map((content, index) => (
                 content ?
                   // Cell with text and cancel area
                   <div key={index} className="flex items-center gap-1">
                     {/* Cell with text */}
-                    <button className="flex-grow word-cell p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                    <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
                       onClick={() => handleCellClick(content)}
                     >
                       {content}
                     </button>
                     {/* Cancel button */}
-                    <button className="text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
+                    <button className=" all-cells text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
                   </div>
                   :
                   // Input cell
@@ -720,7 +721,7 @@ export default function Home() {
                     placeholder="Type here..."
                     onKeyDown={newTextEnterKeyDown}
                     onBlur={(e) => handleBlur(index, e.target.value)}
-                    className="word-cell p-2 bg-gray-700 rounded text-white"
+                    className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
                   />
               ))}
             </div>
