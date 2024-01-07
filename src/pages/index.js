@@ -497,8 +497,10 @@ export default function Home() {
       newCells.push('');
     }
     newCells[index] = value;
+
     if (index === customTextCells.length - 1 && value && customTextCells[customTextCells.length - 1] !== '') {
       newCells.push('');  // Add a new empty cell at the end
+
     } else if (index === customTextCells.length - 1 && !value) {
       // If the last cell is emptied, remove extra empty cells
       while (newCells.length > 1 && newCells[newCells.length - 2] === '') {
@@ -506,8 +508,16 @@ export default function Home() {
       }
     }
 
+    // ensures a new empty cell appears at the end even if last cell was modified
+    if (index === customTextCells.length - 1 && value && customTextCells[customTextCells.length - 1] == '') {
+      newCells.push('');
+    }
+
     setCustomTextCells(newCells);
+
   };
+
+
 
   // Handles clicking on the cell
   const handleCellClick = (content) => {
