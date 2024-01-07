@@ -30,7 +30,7 @@ export default function AttackSheet() {
                 <div className="grid grid-cols-3 text-white font-semibold text-center whitespace-nowrap">
                     <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">Name</button>
                     <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">ATK Bonus</button>
-                    <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">Type</button>
+                    <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">Damage</button>
                     {/* Dynamic data cells */}
                     {/* Use a mapping function to generate the data cells dynamically */}
                     {yourDataArray.map((item, index) => (
