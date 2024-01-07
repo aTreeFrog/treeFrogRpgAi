@@ -718,7 +718,7 @@ export default function Home() {
         )}
         {isAudioOpen && (
           <div>
-            <AudioInput />
+            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} />
           </div>
         )}
 

@@ -314,7 +314,7 @@ textarea {
     }
 
     50% {
-        transform: scale(1.2);
+        transform: scale(1.14);
         /* 30% larger */
     }
 }
@@ -329,6 +329,8 @@ textarea {
     /* initial size */
     margin: 0 auto;
     /* Center the circle */
+}
+
+.animate-grow-shrink {
     animation: audio-grow-shrink 2s ease-in-out infinite;
-    /* Apply the animation */
 }

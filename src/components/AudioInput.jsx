@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function AudioInput() {
+export default function AudioInput({ isAudioOpen, setIsAudioOpen }) {
     // Define constraints for the audio
     const constraints = { audio: true };
     const analyser = useRef(null);
@@ -100,15 +100,24 @@ export default function AudioInput() {
 
     }, [micPermission]);
 
+    const handleComplete = () => {
+
+    }
+
+    const handleCancel = () => {
+        setIsAudioOpen(false);
+    }
+
 
     return (
-        < div class="flex flex-col justify-center items-center -mt-3 bg-blue-900 p-6 rounded-lg border border-gray-500 space-y-4" >
+        < div class="flex flex-col justify-center items-center -mt-3 bg-purple-900 p-6 rounded-lg border border-gray-500 space-y-4" >
 
-            <button id="audioCircle" class=" audio-circle flex justify-center items-center text-white font-semibold relative px-4 bg-gray-500 inline-block overflow-visible whitespace-nowrap">
+            <button id="audioCircle" className={`audio-circle flex justify-center items-center text-white font-semibold relative px-4 bg-gray-500 inline-block overflow-visible whitespace-nowrap ${setIsRecording ? 'animate-grow-shrink' : ''}`}
+                onClick={() => handleComplete()}>
                 {recordText}
             </button>
-
-            <button class=" -mt-4 flex justify-center items-center text-white font-bold text-xl bg-red-600 h-10 w-10 rounded-full ">
+            <button class=" -mt-4 flex justify-center items-center text-white font-bold text-xl bg-red-600 h-10 w-10 rounded-full"
+                onClick={() => handleCancel()}>
                 X
             </button>
         </div >
