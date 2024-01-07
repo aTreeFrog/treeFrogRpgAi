@@ -13,9 +13,8 @@ body,
 }
 
 .hexagon-glow {
-    display: inline-flex;
     /* or other display as necessary */
-    filter: drop-shadow(0 0 12px rgba(204, 85, 0, 0.5));
+    filter: drop-shadow(0 0 10px rgba(204, 85, 0, 0.5));
     /* Glowing effect */
 }
 
@@ -23,18 +22,16 @@ body,
 
     0%,
     100% {
-        filter: drop-shadow(0 0 8px rgba(204, 85, 0, 0.5));
+        filter: drop-shadow(0 0 10px rgba(237, 232, 66, 0.5));
     }
 
     50% {
-        filter: drop-shadow(0 0 15px rgba(204, 85, 0, 0.8));
+        filter: drop-shadow(0 0 20px rgb(237, 232, 66));
     }
 }
 
 .no-glow {
-    animation: none !important;
-    /* Overrides any glow animation */
-    filter: none;
+    filter: none !important;
     /* Removes glow effect */
 }
 
@@ -64,21 +61,26 @@ body,
 .hexagon-active {
     background-color: rgb(204, 85, 0);
     /* Original color */
-    animation: diceGlowAnimation 2s ease-in-out infinite;
+
 }
+
+.glow-active {
+    animation: diceGlowAnimation 1.5s ease-in-out infinite;
+}
+
 
 .hexagon-active::before {
     bottom: 100%;
     border-bottom: 17.32px solid rgb(204, 85, 0);
     /* Original color */
-    animation: diceGlowAnimation 2s ease-in-out infinite;
+
 }
 
 .hexagon-active::after {
     top: 100%;
     border-top: 17.32px solid rgb(204, 85, 0);
     /* Original color */
-    animation: diceGlowAnimation 2s ease-in-out infinite;
+
 }
 
 /* Inactive state styles with transparency */
@@ -114,10 +116,39 @@ body,
     animation: spin 2.4s linear 1;
 }
 
+@keyframes trianlgeSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(2250deg);
+    }
+}
+
+.triangle-container.spinning {
+    animation: trianlgeSpin 2.4s linear infinite;
+    transform-origin: 0% 40%;
+    /*this adjusts triangle spinning to be centered*/
+    /* Adjust based on the exact shape and orientation of your triangle */
+}
+
 .triangle-glow {
     display: inline-flex;
     filter: drop-shadow(0 0 12px rgba(204, 85, 0, 0.5));
     /* Keep the glowing effect */
+}
+
+.triangle-container {
+    position: relative;
+    width: 60px;
+    /* Set to the width of the triangle */
+    height: 52px;
+    /* Set to the height of the triangle */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
 }
 
 .triangle {
@@ -125,22 +156,29 @@ body,
     height: 0;
     border-left: 30px solid transparent;
     border-right: 30px solid transparent;
-    /* Adjust size and color as needed */
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    top: -5px;
-    /* Move up */
-    left: -20px;
-    /* Move left */
-    cursor: pointer;
+    border-bottom: 52px solid rgb(204, 85, 0);
+    /* Adjust the color as needed */
+    position: absolute;
+    margin-Left: -60px;
+    margin-Bottom: 12px;
+}
+
+.triangle-text {
+    position: absolute;
+    z-index: 1;
+    /* Ensures the text is above the triangle */
+    /* Styling for the text */
+    font-size: 24px;
+    /* Adjust as needed */
+    text-align: center;
+    margin-Top: 14px;
+    margin-Left: -8px;
 }
 
 .triangle-active {
     border-bottom: 52px solid rgb(204, 85, 0);
     /* Original color */
-    animation: diceGlowAnimation 2s ease-in-out infinite;
+    animation: diceGlowAnimation 1.5s ease-in-out infinite;
 }
 
 .triangle-inactive {
