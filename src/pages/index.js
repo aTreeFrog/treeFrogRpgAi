@@ -508,6 +508,7 @@ export default function Home() {
       }
     }
 
+    // ensures a new empty cell appears at the end even if last cell was modified
     if (index === customTextCells.length - 1 && value && customTextCells[customTextCells.length - 1] == '') {
       newCells.push('');
     }
