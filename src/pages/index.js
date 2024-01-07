@@ -48,6 +48,8 @@ export default function Home() {
   const newAudio = useRef(null);
   const [inputTextHeight, setInputTextHeight] = useState(20);
   const textareaRef = useRef(null);
+  const [isCustomTextOpen, setIsCustomTextOpen] = useState(false);
+  const [customTextCells, setCustomTextCells] = useState(['I jump away', 'I check for magic', 'I sneak by', 'I yell Guards', '']);
 
 
   // Whenever chatLog updates, update the ref
@@ -478,6 +480,51 @@ export default function Home() {
     })
   }
 
+  const newTextEnterKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      // Prevent the default action to avoid form submission or anything else
+      event.target.blur();     // Remove focus from the input
+    }
+  };
+
+  // Handles text input and converts input to a text element
+  const handleBlur = (index, value) => {
+    const newCells = [...customTextCells];
+    // If all cells are empty, ensure there's one empty cell
+    if (newCells.every((cell) => cell === '')) {
+      newCells.push('');
+    }
+    newCells[index] = value;
+    if (index === customTextCells.length - 1 && value && customTextCells[customTextCells.length - 1] !== '') {
+      newCells.push('');  // Add a new empty cell at the end
+    } else if (index === customTextCells.length - 1 && !value) {
+      // If the last cell is emptied, remove extra empty cells
+      while (newCells.length > 1 && newCells[newCells.length - 2] === '') {
+        newCells.pop();
+      }
+    }
+
+    setCustomTextCells(newCells);
+  };
+
+  // Handles clicking on the cell
+  const handleCellClick = (content) => {
+    console.log(`Cell clicked with content: ${content}`);
+    // Perform action here, such as updating the textarea with this content
+  };
+
+  // Deletes the content of the cell, making it an input again
+  const deleteCellContent = (index) => {
+    const newCells = [...customTextCells];
+    newCells.splice(index, 1);  // Remove the cell content at the specific index
+    // Ensure the last cell is always an empty input
+    if (newCells.length === 0 || newCells[newCells.length - 1] !== '') {
+      newCells.push('');  // Add an empty cell if there isn't one already
+    } // Ensure there's always an empty input cell at the end
+    setCustomTextCells(newCells);
+  };
+
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -537,7 +584,7 @@ export default function Home() {
         {/* Sticky Header */}
         <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">Game Master</h1>
         {/* Scrollable Content */}
-        <div ref={scrollableDivRef} className="overflow-y-auto flex-grow" id="scrollableDiv">
+        <div ref={scrollableDivRef} className="overflow-y-auto scrollable-container flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
               <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'
@@ -566,8 +613,12 @@ export default function Home() {
         </div>
         {/* Fixed Send Message Form or other bottom content */}
         <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
-          <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }} className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold ">
-            +
+          <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }}
+            className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold "
+            onClick={() => {
+              setIsCustomTextOpen(prevState => !prevState);
+            }}>
+            <span style={{ paddingBottom: '4px' }}>+</span>
           </button>
           <div className=" ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
             {/* Make sure the input container can grow and the button stays aligned */}
@@ -587,12 +638,43 @@ export default function Home() {
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
-          <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', zIndex: 3 }} class="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2">
+          <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }} class="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2">
             <div class="w-1 bg-white h-2"></div>
             <div class="w-1 bg-white h-3 mx-0.5"></div>
             <div class="w-1 bg-white h-2.5"></div>
           </button>
         </form>
+        {isCustomTextOpen && (
+          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+            <div className="grid grid-cols-3 gap-2">
+              {/* Render cells */}
+              {customTextCells.map((content, index) => (
+                content ?
+                  // Cell with text and cancel area
+                  <div key={index} className="flex items-center gap-1">
+                    {/* Cell with text */}
+                    <button className="flex-grow word-cell p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                      onClick={() => handleCellClick(content)}
+                    >
+                      {content}
+                    </button>
+                    {/* Cancel button */}
+                    <button className="text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
+                  </div>
+                  :
+                  // Input cell
+                  <input
+                    key={index}
+                    type="text"
+                    placeholder="Type here..."
+                    onKeyDown={newTextEnterKeyDown}
+                    onBlur={(e) => handleBlur(index, e.target.value)}
+                    className="word-cell p-2 bg-gray-700 rounded text-white"
+                  />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div >
   )
