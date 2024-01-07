@@ -4,6 +4,8 @@ import { useState } from 'react';
 const HexagonDice = () => {
     const [value, setValue] = useState(1); // Initialize dice value
     const [isSpinning, setIsSpinning] = useState(false); // Initialize spinning state
+    const [d20Active, setD20Active] = useState(true);
+    const [d4Active, setD4Active] = useState(false);
 
     const rollDice = () => {
         setIsSpinning(true); // Begin spinning
@@ -16,14 +18,19 @@ const HexagonDice = () => {
     };
 
     return (
-        <div className="hexagon-glow">
+
+        <div className={`hexagon-glow ${isSpinning ? 'no-glow' : ''}`}>
+            <div className={`triangle ${isSpinning ? 'spinning' : ''} ${d4Active ? 'triangle-active' : 'triangle-inactive'}`}
+            ></div>
             <div
-                className={`hexagon ${isSpinning ? 'spinning' : ''}`}
+                className={`hexagon ${isSpinning ? 'spinning' : ''} ${d20Active ? 'hexagon-active' : 'hexagon-inactive'}`}
+
                 onClick={rollDice}
             >
                 {value}
             </div>
         </div>
+
     );
 };
 
