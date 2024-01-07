@@ -302,3 +302,35 @@ textarea {
     background: darkpurple;
     /* Darker purple when hovering */
 }
+
+
+/* Define your keyframes for the growing and shrinking animation */
+@keyframes audio-grow-shrink {
+
+    0%,
+    100% {
+        transform: scale(1);
+        /* Original size */
+    }
+
+    50% {
+        transform: scale(1.14);
+        /* 30% larger */
+    }
+}
+
+/* Apply the animation to your .audio-circle class */
+.audio-circle {
+    border-radius: 50%;
+    /* makes the div circular */
+    width: 100px;
+    /* initial size */
+    height: 100px;
+    /* initial size */
+    margin: 0 auto;
+    /* Center the circle */
+}
+
+.animate-grow-shrink {
+    animation: audio-grow-shrink 2s ease-in-out infinite;
+}

@@ -9,6 +9,7 @@ import HexagonDice from "../components/HexagonDice"
 import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
 import CharacterSheet from '../components/CharacterSheet';
+import AudioInput from '../components/AudioInput'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -50,7 +51,7 @@ export default function Home() {
   const textareaRef = useRef(null);
   const [isCustomTextOpen, setIsCustomTextOpen] = useState(false);
   const [customTextCells, setCustomTextCells] = useState(['I jump away', 'I check for magic', 'I sneak by', 'I yell Guards', '']);
-
+  const [isAudioOpen, setIsAudioOpen] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -617,6 +618,40 @@ export default function Home() {
             className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold "
             onClick={() => {
               setIsCustomTextOpen(prevState => !prevState);
+              setIsAudioOpen(false); {/* probably have some audio clean up to do too */ }
+              {
+                isCustomTextOpen && (
+                  <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Render cells */}
+                      {customTextCells.map((content, index) => (
+                        content ?
+                          // Cell with text and cancel area
+                          <div key={index} className="flex items-center gap-1">
+                            {/* Cell with text */}
+                            <button className="flex-grow word-cell p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                              onClick={() => handleCellClick(content)}
+                            >
+                              {content}
+                            </button>
+                            {/* Cancel button */}
+                            <button className="text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
+                          </div>
+                          :
+                          // Input cell
+                          <input
+                            key={index}
+                            type="text"
+                            placeholder="Type here..."
+                            onKeyDown={newTextEnterKeyDown}
+                            onBlur={(e) => handleBlur(index, e.target.value)}
+                            className="word-cell p-2 bg-gray-700 rounded text-white"
+                          />
+                      ))}
+                    </div>
+                  </div>
+                )
+              }
             }}>
             <span style={{ paddingBottom: '4px' }}>+</span>
           </button>
@@ -638,7 +673,13 @@ export default function Home() {
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
-          <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }} class="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2">
+          <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
+            class="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
+            onClick={() => {
+              setIsAudioOpen(prevState => !prevState);
+              setIsCustomTextOpen(false);
+            }}
+          >
             <div class="w-1 bg-white h-2"></div>
             <div class="w-1 bg-white h-3 mx-0.5"></div>
             <div class="w-1 bg-white h-2.5"></div>
@@ -675,6 +716,12 @@ export default function Home() {
             </div>
           </div>
         )}
+        {isAudioOpen && (
+          <div>
+            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} />
+          </div>
+        )}
+
       </div>
     </div >
   )
