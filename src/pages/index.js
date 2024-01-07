@@ -564,10 +564,12 @@ export default function Home() {
             </button>
           </div>
         </div>
-
         {/* Fixed Send Message Form or other bottom content */}
-        <form onSubmit={handleSubmit} className="mt-auto p-6">
-          <div className="flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative' }}>
+        <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
+          <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }} className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold ">
+            +
+          </button>
+          <div className=" ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
             {/* Make sure the input container can grow and the button stays aligned */}
             <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
               <textarea
@@ -585,6 +587,11 @@ export default function Home() {
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
+          <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', zIndex: 3 }} class="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2">
+            <div class="w-1 bg-white h-2"></div>
+            <div class="w-1 bg-white h-3 mx-0.5"></div>
+            <div class="w-1 bg-white h-2.5"></div>
+          </button>
         </form>
       </div>
     </div >

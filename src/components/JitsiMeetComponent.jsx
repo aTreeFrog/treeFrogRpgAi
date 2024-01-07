@@ -56,20 +56,20 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
             onApiReady(api);
 
             // After the API is initialized and the conference is joined
-            api.addEventListener('videoConferenceJoined', (response) => {
-                // Check your own role shortly after joining
-                setTimeout(() => {
-                    //const myUserId = api.getMyUserId();
-                    console.log("api.getParticipantsInfo: ", api.getParticipantsInfo());
+            // api.addEventListener('videoConferenceJoined', (response) => {
+            //     // Check your own role shortly after joining
+            //     setTimeout(() => {
+            //         //const myUserId = api.getMyUserId();
+            //         console.log("api.getParticipantsInfo: ", api.getParticipantsInfo());
 
-                    // if (me.role === 'moderator') {
-                    //     console.log("I am the moderator!");
-                    //     setIsModerator(true);  // Set state or handle accordingly
-                    // } else {
-                    //     console.log("My role:", me.role);
-                    // }
-                }, 5000); // Adjust time as needed to ensure roles are fully initialized
-            });
+            //         // if (me.role === 'moderator') {
+            //         //     console.log("I am the moderator!");
+            //         //     setIsModerator(true);  // Set state or handle accordingly
+            //         // } else {
+            //         //     console.log("My role:", me.role);
+            //         // }
+            //     }, 5000); // Adjust time as needed to ensure roles are fully initialized
+            // });
 
             api.addEventListener('participantRoleChanged', function (event) {
                 if (event.role === "moderator") {
