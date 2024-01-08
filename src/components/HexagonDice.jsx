@@ -3,10 +3,13 @@ import { useState } from 'react';
 
 const HexagonDice = () => {
     const [d20Value, setD20Value] = useState(20); // Initialize dice value
+    const [d6Value, setD6Value] = useState(4);
     const [d4Value, setD4Value] = useState(4);
     const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning state
+    const [isD6Spinning, setIsD6Spinning] = useState(false);
     const [isD4Spinning, setIsD4Spinning] = useState(false);
     const [d20Active, setD20Active] = useState(true);
+    const [d6Active, setD6Active] = useState(false);
     const [d4Active, setD4Active] = useState(true);
 
     const rollDice = (maxNumber) => {
@@ -40,14 +43,19 @@ const HexagonDice = () => {
                     <span class="triangle-text"> {d4Value}</span>
                 </div>
             </div>
-            <div>
-                <div
-                    className={`hexagon-glow hexagon ${isD20Spinning ? 'spinning' : ''} ${isD20Spinning ? 'no-glow' : ''} ${d20Active ? 'glow-active' : ''} ${d20Active ? 'hexagon-active' : 'hexagon-inactive'}`}
-                    onClick={() => rollDice(20)}
-                >
-                    {d20Value}
-                </div>
+            <div className={`hexagon-glow square ${isD6Spinning ? 'no-glow' : ''} ${d6Active ? 'glow-active' : ''} ${d6Active ? 'cube-active' : 'cube-inactive'}`}
+                onClick={() => rollDice(6)}
+            >
+                <span className="dice-text">{d6Value}</span>
             </div>
+
+            <div
+                className={`hexagon-glow hexagon ${isD20Spinning ? 'spinning' : ''} ${isD20Spinning ? 'no-glow' : ''} ${d20Active ? 'glow-active' : ''} ${d20Active ? 'hexagon-active' : 'hexagon-inactive'}`}
+                onClick={() => rollDice(20)}
+            >
+                {d20Value}
+            </div>
+
         </div>
 
     );

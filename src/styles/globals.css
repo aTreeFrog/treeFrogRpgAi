@@ -38,9 +38,12 @@ body,
 /* styles.css */
 /* Common base styles for hexagon */
 .hexagon {
-    width: 60px;
-    height: 34.64px;
-    position: relative;
+    width: 69px;
+    height: 39.84px;
+    position: absolute;
+    margin-Left: 0px;
+    margin-Bottom: 12px;
+    border-radius: 0px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -53,8 +56,8 @@ body,
     content: "";
     position: absolute;
     width: 0;
-    border-left: 30px solid transparent;
-    border-right: 30px solid transparent;
+    border-left: 34.5px solid transparent;
+    border-right: 34.5px solid transparent;
 }
 
 /* Active state styles */
@@ -71,14 +74,14 @@ body,
 
 .hexagon-active::before {
     bottom: 100%;
-    border-bottom: 17.32px solid rgb(204, 85, 0);
+    border-bottom: 19.918px solid rgb(204, 85, 0);
     /* Original color */
 
 }
 
 .hexagon-active::after {
     top: 100%;
-    border-top: 17.32px solid rgb(204, 85, 0);
+    border-top: 19.918px solid rgb(204, 85, 0);
     /* Original color */
 
 }
@@ -91,13 +94,13 @@ body,
 
 .hexagon-inactive::before {
     bottom: 100%;
-    border-bottom: 17.32px solid rgba(204, 85, 0, 0.3);
+    border-bottom: 19.918px solid rgba(204, 85, 0, 0.3);
     /* Transparent color */
 }
 
 .hexagon-inactive::after {
     top: 100%;
-    border-top: 17.32px solid rgba(204, 85, 0, 0.3);
+    border-top: 19.918px solid rgba(204, 85, 0, 0.3);
     /* Transparent color */
 }
 
@@ -151,6 +154,28 @@ body,
     cursor: pointer;
 }
 
+
+.square {
+    width: 50px;
+    /* Adjust size as needed */
+    height: 50px;
+    /* Adjust size as needed */
+    background-color: rgb(204, 85, 0);
+    /* Adjust color as needed */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    margin-Left: -90px;
+    margin-Top: -3px;
+    cursor: pointer;
+    cursor: pointer;
+    border-radius: 10px;
+    /* Rounded corners, adjust as needed */
+}
+
 .triangle {
     width: 0;
     height: 0;
@@ -159,8 +184,9 @@ body,
     border-bottom: 52px solid rgb(204, 85, 0);
     /* Adjust the color as needed */
     position: absolute;
-    margin-Left: -60px;
+    margin-Left: -350px;
     margin-Bottom: 12px;
+    border-radius: 1px;
 }
 
 .triangle-text {
