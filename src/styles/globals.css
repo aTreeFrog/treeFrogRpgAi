@@ -41,7 +41,7 @@ body,
     width: 69px;
     height: 39.84px;
     position: absolute;
-    margin-Left: 0px;
+    margin-Left: -20px;
     margin-Bottom: 12px;
     border-radius: 0px;
     display: flex;
@@ -88,19 +88,22 @@ body,
 
 /* Inactive state styles with transparency */
 .hexagon-inactive {
-    background-color: rgba(204, 85, 0, 0.3);
+    background-color: rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 3px rgba(84, 83, 82, 0.3));
     /* Transparent color */
 }
 
 .hexagon-inactive::before {
     bottom: 100%;
-    border-bottom: 19.918px solid rgba(204, 85, 0, 0.3);
+    border-bottom: 19.918px solid rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 3px rgba(84, 83, 82, 0.3));
     /* Transparent color */
 }
 
 .hexagon-inactive::after {
     top: 100%;
-    border-top: 19.918px solid rgba(204, 85, 0, 0.3);
+    border-top: 19.918px solid rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 3px rgba(84, 83, 82, 0.3));
     /* Transparent color */
 }
 
@@ -131,7 +134,7 @@ body,
 
 .triangle-container.spinning {
     animation: trianlgeSpin 2.4s linear infinite;
-    transform-origin: 0% 40%;
+    transform-origin: 0% 200%;
     /*this adjusts triangle spinning to be centered*/
     /* Adjust based on the exact shape and orientation of your triangle */
 }
@@ -152,6 +155,7 @@ body,
     justify-content: center;
     align-items: center;
     cursor: pointer;
+
 }
 
 
@@ -168,7 +172,7 @@ body,
     justify-content: center;
     align-items: center;
     position: absolute;
-    margin-Left: -90px;
+    margin-Left: -120px;
     margin-Top: -3px;
     cursor: pointer;
     cursor: pointer;
@@ -184,9 +188,10 @@ body,
     border-bottom: 52px solid rgb(204, 85, 0);
     /* Adjust the color as needed */
     position: absolute;
-    margin-Left: -350px;
+    margin-Left: -400px;
     margin-Bottom: 12px;
     border-radius: 1px;
+    transform-origin: 50% 60%;
 }
 
 .triangle-text {
@@ -204,13 +209,37 @@ body,
 .triangle-active {
     border-bottom: 52px solid rgb(204, 85, 0);
     /* Original color */
-    animation: diceGlowAnimation 1.5s ease-in-out infinite;
 }
 
 .triangle-inactive {
-    border-bottom: 52px solid rgba(204, 85, 0, 0.3);
+    border-bottom: 52px solid rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 1px rgba(204, 85, 0, 0.5));
     /* Original color */
 }
+
+.square-active {
+    background-color: rgb(204, 85, 0);
+    /* Original color */
+}
+
+.square-inactive {
+    background-color: rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 1px rgba(204, 85, 0, 0.1));
+    /* Original color */
+}
+
+.square-text {
+    position: absolute;
+    z-index: 1;
+    /* Ensures the text is above the triangle */
+    /* Styling for the text */
+    font-size: 24px;
+    /* Adjust as needed */
+    text-align: center;
+    margin-Top: 0px;
+    margin-Left: 0px;
+}
+
 
 
 
