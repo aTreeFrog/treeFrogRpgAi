@@ -3,18 +3,22 @@ import { useState } from 'react';
 
 const HexagonDice = () => {
     const [d20Value, setD20Value] = useState(20); // Initialize dice value
+    const [d10Value, setD10Value] = useState(10);
     const [d8Value, setD8Value] = useState(8);
-    const [d6Value, setD6Value] = useState(4);
+    const [d6Value, setD6Value] = useState(6);
     const [d4Value, setD4Value] = useState(4);
     const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning state
+    const [isD10Spinning, setIsD10Spinning] = useState(false);
     const [isD8Spinning, setIsD8Spinning] = useState(false);
     const [isD6Spinning, setIsD6Spinning] = useState(false);
     const [isD4Spinning, setIsD4Spinning] = useState(false);
     const [d20Active, setD20Active] = useState(true);
-    const [d8Active, setD8Active] = useState(true);
-    const [d6Active, setD6Active] = useState(true);
-    const [d4Active, setD4Active] = useState(true);
-    const [d20GlowActive, setD20GlowActive] = useState(true);
+    const [d10Active, setD10Active] = useState(false);
+    const [d8Active, setD8Active] = useState(false);
+    const [d6Active, setD6Active] = useState(false);
+    const [d4Active, setD4Active] = useState(false);
+    const [d20GlowActive, setD20GlowActive] = useState(false);
+    const [d10GlowActive, setD10GlowActive] = useState(false);
     const [d8GlowActive, setD8GlowActive] = useState(false);
     const [d6GlowActive, setD6GlowActive] = useState(false);
     const [d4GlowActive, setD4GlowActive] = useState(false);
@@ -33,6 +37,9 @@ const HexagonDice = () => {
         } else if (maxNumber == 8) {
             setD8Value("");
             setIsD8Spinning(true);
+        } else if (maxNumber == 10) {
+            setD10Value("");
+            setIsD10Spinning(true);
         }
         setTimeout(() => {
             const newValue = Math.floor(Math.random() * maxNumber) + 1; // Randomize dice value
@@ -48,6 +55,9 @@ const HexagonDice = () => {
             } else if (maxNumber == 8) {
                 setD8Value(newValue);
                 setIsD8Spinning(false);
+            } else if (maxNumber == 10) {
+                setD10Value(newValue);
+                setIsD10Spinning(false);
             }
         }, 1600); // Duration to match CSS animation
     };
@@ -78,6 +88,12 @@ const HexagonDice = () => {
                 onClick={() => rollDice(8)}
             >
                 <span className="d8-text">{d8Value}</span>
+            </div>
+            <div
+                className={`hexagon-glow d10 ${isD10Spinning ? 'spinning' : ''} ${isD10Spinning ? 'no-glow' : ''} ${d10GlowActive ? 'glow-active' : ''} ${d10Active ? 'd10-active' : 'd10-inactive'}`}
+                onClick={() => rollDice(10)}
+            >
+                {d10Value}
             </div>
 
         </div>
