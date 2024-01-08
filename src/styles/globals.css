@@ -411,7 +411,7 @@ body,
 
 .triangle-inactive {
     border-bottom: 52px solid rgba(84, 83, 82, 0.3);
-    filter: drop-shadow(0 0 1px rgba(204, 85, 0, 0.5));
+    filter: drop-shadow(0 0 1px rgba(204, 85, 0, 0.1));
     /* Original color */
 }
 
