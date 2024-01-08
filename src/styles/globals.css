@@ -41,7 +41,7 @@ body,
     width: 69px;
     height: 39.84px;
     position: absolute;
-    margin-Left: -20px;
+    margin-Left: 0px;
     margin-Bottom: 12px;
     border-radius: 0px;
     display: flex;
@@ -51,7 +51,14 @@ body,
 }
 
 /* Pseudo-elements common styles */
-.hexagon::before,
+.hexagon::before {
+    content: "";
+    position: absolute;
+    width: 0;
+    border-left: 34.5px solid transparent;
+    border-right: 34.5px solid transparent;
+}
+
 .hexagon::after {
     content: "";
     position: absolute;
@@ -106,6 +113,121 @@ body,
     filter: drop-shadow(0 0 3px rgba(84, 83, 82, 0.3));
     /* Transparent color */
 }
+
+
+/* Base styles */
+.d8 {
+    position: absolute;
+    width: 60px;
+    /* 100px * 0.8 */
+    height: 48px;
+    margin-Top: -2px;
+    margin-left: 110px;
+    background-color: rgba(204, 85, 0, 0.3);
+    cursor: pointer;
+    /* Inactive color */
+    /* Adjust clip-path for central trapezoid shape */
+    clip-path: polygon(20% 0, 80% 0,
+            /* top corners */
+            100% 50%,
+            /* right middle */
+            80% 100%, 20% 100%,
+            /* bottom corners */
+            0 50%
+            /* left middle */
+        );
+    /* Adjust the percentages to match the tapering effect */
+}
+
+/* Top triangle */
+.d8::before {
+    position: absolute;
+    width: 0;
+    bottom: 50%;
+    left: 20%;
+    right: 20%;
+    height: 0;
+    border-bottom: 24px solid rgba(204, 85, 0, 0.3);
+    /* 30px * 0.8 */
+    border-left: calc(32% + 1px) solid transparent;
+    /* Adjusted for 20% smaller size */
+    border-right: calc(32% + 1px) solid transparent;
+    /* Adjusted for 20% smaller size */
+}
+
+/* Adjust width as needed */
+
+/* Bottom triangle */
+.d8::after {
+    position: absolute;
+    width: 0;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 0;
+    border-top: 24px solid rgba(204, 85, 0, 0.3);
+    /* 30px * 0.8 */
+    border-left: 40px solid transparent;
+    /* 50px * 0.8 */
+    border-right: 40px solid transparent;
+    /* 50px * 0.8 */
+}
+
+.d8-active {
+    background-color: rgb(204, 85, 0);
+    /* Original color */
+
+}
+
+.d8-active::before {
+    bottom: 100%;
+    border-bottom: 19.918px solid rgb(204, 85, 0);
+    /* Original color */
+
+}
+
+.d8-active::after {
+    top: 100%;
+    border-top: 19.918px solid rgb(204, 85, 0);
+    /* Original color */
+
+}
+
+/* Inactive state styles with transparency */
+.d8-inactive {
+    background-color: rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 20px rgba(84, 83, 82, 0.3));
+
+    /* Transparent color */
+}
+
+.d8-inactive::before {
+    bottom: 100%;
+    border-bottom: 19.918px solid rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 20px rgba(84, 83, 82, 0.3));
+
+    /* Transparent color */
+}
+
+.d8-inactive::after {
+    top: 100%;
+    border-top: 19.918px solid rgba(84, 83, 82, 0.3);
+    filter: drop-shadow(0 0 20px rgba(84, 83, 82, 0.3));
+    /* Transparent color */
+}
+
+.d8-text {
+    position: absolute;
+    z-index: 1;
+    /* Ensures the text is above the triangle */
+    /* Styling for the text */
+    font-size: 24px;
+    /* Adjust as needed */
+    text-align: center;
+    margin-Top: 5px;
+    margin-Left: 22px;
+}
+
 
 
 @keyframes spin {
@@ -172,7 +294,7 @@ body,
     justify-content: center;
     align-items: center;
     position: absolute;
-    margin-Left: -120px;
+    margin-Left: -95px;
     margin-Top: -3px;
     cursor: pointer;
     cursor: pointer;
@@ -188,7 +310,7 @@ body,
     border-bottom: 52px solid rgb(204, 85, 0);
     /* Adjust the color as needed */
     position: absolute;
-    margin-Left: -400px;
+    margin-Left: -370px;
     margin-Bottom: 12px;
     border-radius: 1px;
     transform-origin: 50% 60%;
