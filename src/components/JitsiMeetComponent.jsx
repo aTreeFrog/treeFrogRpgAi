@@ -37,6 +37,7 @@ const JitsiMeetComponent = ({ meetingRoom, onApiReady }) => {
                 configOverwrite: {
                     startAudioOnly: true, // Start with only audio
                     disableDeepLinking: true,
+                    //prejoinPageEnabled: false,
                 },
                 interfaceConfigOverwrite: {
                     DISABLE_VIDEO_BACKGROUND: true,

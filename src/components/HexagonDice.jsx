@@ -13,11 +13,11 @@ const HexagonDice = () => {
     const [isD6Spinning, setIsD6Spinning] = useState(false);
     const [isD4Spinning, setIsD4Spinning] = useState(false);
     const [d20Active, setD20Active] = useState(true);
-    const [d10Active, setD10Active] = useState(false);
-    const [d8Active, setD8Active] = useState(false);
-    const [d6Active, setD6Active] = useState(false);
-    const [d4Active, setD4Active] = useState(false);
-    const [d20GlowActive, setD20GlowActive] = useState(false);
+    const [d10Active, setD10Active] = useState(true);
+    const [d8Active, setD8Active] = useState(true);
+    const [d6Active, setD6Active] = useState(true);
+    const [d4Active, setD4Active] = useState(true);
+    const [d20GlowActive, setD20GlowActive] = useState(true);
     const [d10GlowActive, setD10GlowActive] = useState(false);
     const [d8GlowActive, setD8GlowActive] = useState(false);
     const [d6GlowActive, setD6GlowActive] = useState(false);
