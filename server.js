@@ -6,6 +6,8 @@ const { Server } = require('socket.io');
 const OpenAI = require('openai');
 const path = require("path");
 const fs = require('fs');
+const stream = require('stream');
+const FormData = require('form-data');
 // Dynamically import 'node-fetch'
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
@@ -152,9 +154,24 @@ app.prepare().then(() => {
             console.log('User disconnected');
         });
 
-        socket.on('player audio stream', async (audioFile) => {
-            const sttData = await openai.audio.transcriptions.create(audioFile);
+        socket.on('player audio stream', async arrayBuffer => {
+            // Convert ArrayBuffer to Buffer
+            console.log("arrayBuffer: ", arrayBuffer);
+            const buffer = Buffer.from(arrayBuffer);
+            console.log("buffer: ", buffer)
+            const filePath = "src/temp/input.webm";
+            fs.writeFileSync(filePath, buffer);
+            const readStream = fs.createReadStream(filePath);
+
+            const data = {
+                model: "whisper-1",
+                file: readStream,
+                language: "en"
+            };
+            const sttData = await openai.audio.transcriptions.create(data);
             socket.emit('speech to text data', sttData);
+            fs.unlinkSync(filePath); // deletes file
+
         });
 
     });
