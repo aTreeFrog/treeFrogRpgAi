@@ -152,7 +152,10 @@ app.prepare().then(() => {
             console.log('User disconnected');
         });
 
-
+        socket.on('player audio stream', async (audioFile) => {
+            const sttData = await openai.audio.transcriptions.create(audioFile);
+            socket.emit('speech to text data', sttData);
+        });
 
     });
 
