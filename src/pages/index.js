@@ -52,6 +52,7 @@ export default function Home() {
   const [isCustomTextOpen, setIsCustomTextOpen] = useState(false);
   const [customTextCells, setCustomTextCells] = useState(['I jump away', 'I check for magic', 'I sneak by', 'I yell Guards', '']);
   const [isAudioOpen, setIsAudioOpen] = useState(false);
+  const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000) // some high value for init
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -453,6 +454,12 @@ export default function Home() {
       //playNextAudio();
     });
 
+    chatSocket.on('speech to text data', (data) => {
+
+      console.log("speech to text input data", data);
+
+    });
+
     // Return a cleanup function to remove the event listener when the component unmounts
     return () => {
       chatSocket.off('chat message', handleChatMessage);
@@ -729,7 +736,7 @@ export default function Home() {
         )}
         {isAudioOpen && (
           <div>
-            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} />
+            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} />
           </div>
         )}
 
