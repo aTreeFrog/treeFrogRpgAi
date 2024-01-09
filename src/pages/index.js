@@ -10,6 +10,7 @@ import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
 import CharacterSheet from '../components/CharacterSheet';
 import AudioInput from '../components/AudioInput'
+import * as Tone from 'tone';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -99,24 +100,19 @@ export default function Home() {
   const processQueue = () => {
     if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
       const msg = messageQueue.current.shift(); // Get the oldest message
-      console.log("msg: ", msg);
       setChatLog((prevChatLog) => {
-        console.log("here huh?")
         let updatedChatLog = [...prevChatLog];
         if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
           updatedChatLog.push({ type: 'bot', message: msg });
         } else {
           // Append new content to the last message if it's also from the bot
           let lastEntry = updatedChatLog[updatedChatLog.length - 1];
-          console.log("lastEntry: ", lastEntry.message);
           // its repeating somewhere so i needed to add this
           if (!lastEntry.message.endsWith(msg)) {
             lastEntry.message += msg; // Append new chunk to last message content
             console.log("lastEntry again: ", lastEntry.message);
           }
         }
-
-        console.log("this spot?");
 
         lastMessage = updatedChatLog;
         return updatedChatLog;
@@ -138,24 +134,59 @@ export default function Home() {
 
   // Ref to track if audio is currently playing
   const playNextAudio = () => {
-    console.log("playNextAudio expectedSequence: ", expectedSequence.current)
     if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
+      console.log("playNextAudio expectedSequence: ", expectedSequence.current)
       audio.current = true;
       const audioSrc = audioQueue.current.get(expectedSequence.current);
       audioQueue.current.delete(expectedSequence.current);
-      newAudio.current = new Audio(audioSrc);
-      newAudio.current.volume = 1;
-      newAudio.current.play().then(() => {
-        // Do something when audio starts playing if needed
-      }).catch(err => {
-        console.error("Error playing audio:", err);
-        audio.current = false;
-      });
 
-      newAudio.current.onended = () => {
-        audio.current = false;  // Assuming you want to clear the current audio
+      newAudio.current = new Tone.Player(audioSrc, () => {
+        console.log("Audio is ready to play");
+        // Start the audio manually after it's loaded and connected to effects
+        newAudio.current.start();
+      }).toDestination();
+
+      //newAudio.current = new Audio(audioSrc);
+      newAudio.current.volume.value = 1;
+      //newAudio.current.volume = 1;
+
+      // Pitch shifting to lower the voice
+      const pitchShift = new Tone.PitchShift({
+        pitch: -12 // Value in semitones, adjust as needed
+      }).toDestination();
+      newAudio.current.connect(pitchShift);
+
+      // Adding reverb for a more ominous effect
+      const reverb = new Tone.Reverb({
+        decay: 6, // Reverb decay time in seconds
+        wet: 0.5  // Mix between the source and the reverb signal
+      }).toDestination();
+      newAudio.current.connect(reverb);
+
+
+      // newAudio.current.play().then(() => {
+      //   // Do something when audio starts playing if needed
+      // }).catch(err => {
+      //   console.error("Error playing audio:", err);
+      //   audio.current = false;
+      // });
+
+      // newAudio.current.onended = () => {
+      //   audio.current = false;  // Assuming you want to clear the current audio
+      //   expectedSequence.current++;
+      // };
+
+      newAudio.current.onstop = () => {
+        audio.current = false; // Clear the current audio
+        console.log("make it here?");
         expectedSequence.current++;
       };
+
+      newAudio.current.onerror = (error) => {
+        console.error("Error with audio playback", error);
+        audio.current = false;
+      };
+
     }
   };
 
@@ -304,7 +335,6 @@ export default function Home() {
       const tolerance = 30; // or whatever small number suits your situation
       const isScrolledToBottom = Math.abs(div.scrollHeight - div.scrollTop - div.clientHeight) < tolerance;
       setIsAtBottom(isScrolledToBottom);
-      console.log("isAtBottom: ", isAtBottom);
 
     }
   };
@@ -341,7 +371,7 @@ export default function Home() {
 
       if (newAudio.current) {
         if (!newAudio.current.paused) {
-          newAudio.current.pause();
+          newAudio.current.stop();
           newAudio.current.currentTime = 0; // Reset only if it was playing
           newAudio.current = null;
         }
@@ -362,7 +392,7 @@ export default function Home() {
 
       setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
 
-      sendImageMessage(inputValue);
+      //sendImageMessage(inputValue);
 
       sendMessage(inputValue);
 
@@ -405,7 +435,6 @@ export default function Home() {
     const handleChatMessage = (msg) => {
       setCancelButton(1);
       setIsLoading(false);
-      console.log('Received:', msg);
       messageQueue.current.push(msg);
       tempBuffer.current += msg; // Modify tempBuffer ref
 
@@ -417,7 +446,6 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            console.log("sentence: ", sentence);
             textToSpeechCall(sentence);
           }
           lastIndex = i + 1;  // Update the last index to the new position
@@ -432,10 +460,8 @@ export default function Home() {
 
 
     const onChatComplete = () => {
-      console.log("onChatComplete!!!");
       //setCancelButton(0); // Assuming setCancelButton is a state setter function
       if (tempBuffer.current.length > 0) {
-        console.log("chat complete buffer: ", tempBuffer.current);
         textToSpeechCall(tempBuffer.current);
       }
       tempBuffer.current = '';
@@ -477,8 +503,6 @@ export default function Home() {
       size: "1024x1024",
       quality: "hd",
     };
-
-    console.log("am i here?");
 
     axios.post(url, data).then((response) => {
       setDalleImageUrl(response.data.data[0].url);
