@@ -151,10 +151,18 @@ export default function Home() {
       //newAudio.current.volume = 1;
 
       // Pitch shifting to lower the voice
+      // Adjust the pitch shift value as needed
       const pitchShift = new Tone.PitchShift({
-        pitch: -12 // Value in semitones, adjust as needed
+        pitch: -8, // Try different values, like -8, -10, etc.
+        windowSize: 0.1 // Experiment with this value
       }).toDestination();
       newAudio.current.connect(pitchShift);
+
+      const lowPassFilter = new Tone.Filter({
+        frequency: 500, // Hz, adjust as needed
+        type: 'lowpass'
+      }).toDestination();
+      newAudio.current.connect(lowPassFilter);
 
       // Adding reverb for a more ominous effect
       const reverb = new Tone.Reverb({
