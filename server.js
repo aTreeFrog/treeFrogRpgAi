@@ -21,6 +21,8 @@ const speechFile = path.resolve("./speech.mp3");
 
 const shouldContinue = {};
 
+let activityCount = 1;
+
 app.prepare().then(() => {
     // HTTP Server for Next.js
     const httpServer = express();
@@ -52,6 +54,27 @@ app.prepare().then(() => {
     io.on('connection', (socket) => {
         console.log('a user connected:', socket.id);
 
+        //Dice Roll Function Message Creator and sender
+        function sendDiceRollMessage() {
+            const uniqueId = `activity${activityCount}-${new Date().toISOString()}`;
+            const diceRollMessage = {
+                Action: "DiceRoll",
+                D20: true,
+                D10: false,
+                D8: false,
+                D6: false,
+                D4: false,
+                Skill: "Deception",
+                Advantage: false,
+                Disadvantage: false,
+                Id: uniqueId,
+                User: "aTreeFrog"
+            };
+            // Sending the message to the connected client
+            socket.emit('dice roll', diceRollMessage);
+            activityCount++;
+        }
+
         socket.on('chat message', async (msg) => {
             try {
                 console.log("is this getting called?")
@@ -71,6 +94,7 @@ app.prepare().then(() => {
                 }
                 console.log('made it to chat complete');
                 socket.emit('chat complete');
+                sendDiceRollMessage();//////for testing
             } catch (error) {
                 console.error('Error:', error);
                 socket.emit('error', 'Error processing your message');

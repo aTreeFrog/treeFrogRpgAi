@@ -57,6 +57,55 @@ export default function Home() {
   const [shouldStopAi, setShouldStopAi] = useState(false);
   const callSubmitFromAudio = useRef(false);
   const [audioInputData, setAudioInputData] = useState(false);
+  const callSubmitFromDiceRolls = useRef(false);
+  const [diceRollsInputData, setDiceRollsInputData] = useState('');
+  const defaultDiceStates = {
+    d20: {
+      value: [20],
+      isActive: true,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 20,
+      inhibit: false
+    },
+    d10: {
+      value: [10],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 10,
+      inhibit: false
+    },
+    d8: {
+      value: [8],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 8,
+      inhibit: false
+    },
+    d6: {
+      value: [6],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 6,
+      inhibit: false
+    },
+    d4: {
+      value: [4],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 4,
+      inhibit: false
+    }
+  };
+  const [diceStates, setDiceStates] = useState(defaultDiceStates);
+  const [diceRollId, setDiceRollId] = useState();
+  const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
+  const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
+  const latestDiceMsg = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -121,6 +170,7 @@ export default function Home() {
         return updatedChatLog;
       });
     }
+    setMessageQueueTrigger(prev => !prev);
   };
 
   const textToSpeechCall = async (text) => {
@@ -348,14 +398,18 @@ export default function Home() {
       event.preventDefault();
     }
 
-    if (cancelButton !== 0) {
+    //if there is a pending dice roll about to go down, don't allow ai cancellation
+    if (cancelButton !== 0 && !pendingDiceUpdate) {
       stopAi();
       setCancelButton(0);
     }
 
-    //see if data is coming from audio message or normal text, or none at all. Use audio as priority. 
+    //see if data is coming from dice roll completion, audio message or normal text, or none at all.
     let chatMsgData = "";
-    if (audioInputData.length > 0) {
+    if (diceRollsInputData.length > 0) {
+      chatMsgData = diceRollsInputData;
+      setDiceRollsInputData('');
+    } else if (audioInputData.length > 0) {
       chatMsgData = audioInputData;
     } else if (inputValue.length > 0) {
       chatMsgData = inputValue;
@@ -369,12 +423,9 @@ export default function Home() {
 
       sendMessage(chatMsgData);
 
-      // in case user is talking into mic and theres also some text in his chat bar he wants to leave
-      // so only clear that inputvalue if chat text was sent
-      if (audioInputData.length == 0) {
-        setInputValue('');
-        resetUserTextForm();
-      }
+      setInputValue('');
+
+      resetUserTextForm();
 
       setAudioInputData('');
 
@@ -414,7 +465,9 @@ export default function Home() {
 
   // this is called from the audioInput component if someone starts recording when ai is talking
   useEffect(() => {
-    if (shouldStopAi) {
+
+    // only stop AI if theres no pending dice action about to go down. Otherwise prevent cancellations
+    if (shouldStopAi && !pendingDiceUpdate) {
       // Call stopAi function here
       stopAi();
       setShouldStopAi(false); // Reset the state
@@ -513,6 +566,17 @@ export default function Home() {
 
     });
 
+    chatSocket.on('dice roll', (data) => {
+
+      if (messageQueue.current.length > 0) {
+        setPendingDiceUpdate(data); // Save the data for later
+      } else {
+        latestDiceMsg.current = data;
+        updateDiceStates(data); // Update immediately if messageQueue is empty
+      }
+
+    });
+
     // Return a cleanup function to remove the event listener when the component unmounts
     return () => {
       chatSocket.off('chat message', handleChatMessage);
@@ -520,6 +584,143 @@ export default function Home() {
       chatSocket.off('play audio');
     };
   }, []);
+
+  const updateDiceStates = (data) => {
+
+    console.log("updateDiceStates: ", data);
+
+    latestDiceMsg.current = data;
+    setDiceRollId(data.Id);
+
+    setDiceStates({
+      ...diceStates, // Copy all existing dice states
+      d20: {
+        ...diceStates.d20,
+        value: [],
+        displayedValue: null,
+        isActive: data.D20,
+        isGlowActive: data.D20,
+        rolls: 0,
+        inhibit: !data.D20
+      },
+      d10: {
+        ...diceStates.d10,
+        value: [],
+        displayedValue: null,
+        isActive: data.D10,
+        isGlowActive: data.D10,
+        rolls: 0,
+        inhibit: !data.D10
+      },
+      d8: {
+        ...diceStates.d8,
+        value: [],
+        displayedValue: null,
+        isActive: data.D8,
+        isGlowActive: data.D8,
+        rolls: 0,
+        inhibit: !data.D8
+      },
+      d6: {
+        ...diceStates.d6,
+        value: [],
+        displayedValue: null,
+        isActive: data.D6,
+        isGlowActive: data.D6,
+        rolls: 0,
+        inhibit: !data.D6
+      },
+      d4: {
+        ...diceStates.d4,
+        value: [],
+        displayedValue: null,
+        isActive: data.D4,
+        isGlowActive: data.D4,
+        rolls: 0,
+        inhibit: !data.D4
+      }
+    });
+
+  }
+
+  useEffect(() => {
+    if (messageQueue.current.length == 0 && pendingDiceUpdate) {
+      updateDiceStates(pendingDiceUpdate);
+      setPendingDiceUpdate(null); // Clear the pending update
+    }
+  }, [messageQueueTrigger, pendingDiceUpdate]);
+
+  //check if dice rolls are done, and send to server. then bring dice back to init state
+  useEffect(() => {
+
+    let actionsComplete = false;
+    let d20Sum = 0
+    if (!pendingDiceUpdate && latestDiceMsg.current) {
+
+      console.log("dice use effect d20 data: ", diceStates.d20);
+
+      //if d20 dice is active, check and see if actions completed
+      if (latestDiceMsg.current.D20) {
+        if (latestDiceMsg.current.Advantage) {
+          if (diceStates.d20.rolls > 1) {
+            d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
+            actionsComplete = true;
+          }
+        } else if (latestDiceMsg.current.Disadvantage) {
+          if (diceStates.d20.rolls > 1) {
+            d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
+            actionsComplete = true;
+          }
+        } else if (diceStates.d20.rolls > 0) {
+          d20Sum = diceStates.d20.value[0];
+          actionsComplete = true;
+        }
+
+      }
+    }
+    if (actionsComplete) {
+      let d20sumTotal = d20Sum + 2//////////////////change this to whatever the skill check is
+      const rollCompleteData = {
+        User: "aTreeFrog",
+        Total: d20sumTotal,
+        D20Roll: d20Sum,
+        Modifier: 2, /////put whatever the skill level is
+        Skill: latestDiceMsg.current.Skill,
+        Id: latestDiceMsg.current.Id
+      };
+      //send data to the server (not sure yet how to use, prob for logs and others can see)
+      chatSocket.emit('Dice Rolls Complete', rollCompleteData)
+      //Need to send some kind of animation above the dice for being done showing values
+
+      //put outcome to chatbox
+      //delay some time to give people chance to see there stuff, and for visuals on UI
+      latestDiceMsg.current = null;
+      setDiceStates(prevState => ({
+        ...prevState,
+        d20: {
+          ...prevState.d20,
+          inhibit: true,
+          isGlowActive: false
+        }
+      }));
+      setTimeout(() => {
+        callSubmitFromDiceRolls.current = true;
+        setDiceRollsInputData(`I rolled a ${d20sumTotal}`);
+        setDiceStates(defaultDiceStates);
+        console.log("the end");
+      }, 4000);
+
+    }
+  }, [diceStates.d20]);
+
+  useEffect(() => {
+    if (callSubmitFromDiceRolls.current && diceRollsInputData.length > 0) {
+      console.log("submit from dice");
+      callSubmitFromDiceRolls.current = false
+      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+
+    }
+  }, [diceRollsInputData]);
 
   //if audio to text input received, send the data to the handleSubmit but need 
   //to first ensure inputData got updated. So calling it this way. 
@@ -655,7 +856,7 @@ export default function Home() {
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
           <div className="mt-[-90px] ml-[-30px] text-white text-2xl font-semibold"> {/* This is an example value; adjust as needed */}
-            <HexagonDice />
+            <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} />
           </div>
         </div>
       </div>
@@ -749,7 +950,8 @@ export default function Home() {
                 ref={textareaRef}
               ></textarea>
             </div>
-            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300">
+            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className={` ${pendingDiceUpdate ? 'bg-grey-700 hover:bg-grey-700' : 'bg-purple-600 hover:bg-purple-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
+              disabled={pendingDiceUpdate}>
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
