@@ -57,7 +57,9 @@ export default function Home() {
   const [shouldStopAi, setShouldStopAi] = useState(false);
   const callSubmitFromAudio = useRef(false);
   const [audioInputData, setAudioInputData] = useState(false);
-  const [diceStates, setDiceStates] = useState({
+  const callSubmitFromDiceRolls = useRef(false);
+  const [diceRollsInputData, setDiceRollsInputData] = useState('');
+  const defaultDiceStates = {
     d20: {
       value: [20],
       isActive: true,
@@ -98,12 +100,12 @@ export default function Home() {
       displayedValue: 4,
       inhibit: false
     }
-  });
+  };
+  const [diceStates, setDiceStates] = useState(defaultDiceStates);
   const [diceRollId, setDiceRollId] = useState();
   const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
-
-  console.log("my dice", diceStates);
+  const latestDiceMsg = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -402,9 +404,12 @@ export default function Home() {
       setCancelButton(0);
     }
 
-    //see if data is coming from audio message or normal text, or none at all. Use audio as priority. 
+    //see if data is coming from dice roll completion, audio message or normal text, or none at all.
     let chatMsgData = "";
-    if (audioInputData.length > 0) {
+    if (diceRollsInputData.length > 0) {
+      chatMsgData = diceRollsInputData;
+      setDiceRollsInputData('');
+    } else if (audioInputData.length > 0) {
       chatMsgData = audioInputData;
     } else if (inputValue.length > 0) {
       chatMsgData = inputValue;
@@ -566,6 +571,7 @@ export default function Home() {
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(data); // Save the data for later
       } else {
+        latestDiceMsg.current = data;
         updateDiceStates(data); // Update immediately if messageQueue is empty
       }
 
@@ -583,6 +589,7 @@ export default function Home() {
 
     console.log("updateDiceStates: ", data);
 
+    latestDiceMsg.current = data;
     setDiceRollId(data.Id);
 
     setDiceStates({
@@ -642,6 +649,78 @@ export default function Home() {
       setPendingDiceUpdate(null); // Clear the pending update
     }
   }, [messageQueueTrigger, pendingDiceUpdate]);
+
+  //check if dice rolls are done, and send to server. then bring dice back to init state
+  useEffect(() => {
+
+    let actionsComplete = false;
+    let d20Sum = 0
+    if (!pendingDiceUpdate && latestDiceMsg.current) {
+
+      console.log("dice use effect d20 data: ", diceStates.d20);
+
+      //if d20 dice is active, check and see if actions completed
+      if (latestDiceMsg.current.D20) {
+        if (latestDiceMsg.current.Advantage) {
+          if (diceStates.d20.rolls > 1) {
+            d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
+            actionsComplete = true;
+          }
+        } else if (latestDiceMsg.current.Disadvantage) {
+          if (diceStates.d20.rolls > 1) {
+            d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
+            actionsComplete = true;
+          }
+        } else if (diceStates.d20.rolls > 0) {
+          d20Sum = diceStates.d20.value[0];
+          actionsComplete = true;
+        }
+
+      }
+    }
+    if (actionsComplete) {
+      let d20sumTotal = d20Sum + 2//////////////////change this to whatever the skill check is
+      const rollCompleteData = {
+        User: "aTreeFrog",
+        Total: d20sumTotal,
+        D20Roll: d20Sum,
+        Modifier: 2, /////put whatever the skill level is
+        Skill: latestDiceMsg.current.Skill,
+        Id: latestDiceMsg.current.Id
+      };
+      //send data to the server (not sure yet how to use, prob for logs and others can see)
+      chatSocket.emit('Dice Rolls Complete', rollCompleteData)
+      //Need to send some kind of animation above the dice for being done showing values
+
+      //put outcome to chatbox
+      //delay some time to give people chance to see there stuff, and for visuals on UI
+      latestDiceMsg.current = null;
+      setDiceStates(prevState => ({
+        ...prevState,
+        d20: {
+          ...prevState.d20,
+          inhibit: true,
+          isGlowActive: false
+        }
+      }));
+      setTimeout(() => {
+        callSubmitFromDiceRolls.current = true;
+        setDiceRollsInputData(`I rolled a ${d20sumTotal}`);
+        setDiceStates(defaultDiceStates);
+        console.log("the end");
+      }, 4000);
+
+    }
+  }, [diceStates.d20]);
+
+  useEffect(() => {
+    if (callSubmitFromDiceRolls.current && diceRollsInputData.length > 0) {
+      console.log("submit from dice");
+      callSubmitFromDiceRolls.current = false
+      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+
+    }
+  }, [diceRollsInputData]);
 
   //if audio to text input received, send the data to the handleSubmit but need 
   //to first ensure inputData got updated. So calling it this way. 
