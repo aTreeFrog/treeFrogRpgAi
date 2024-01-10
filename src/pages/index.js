@@ -55,6 +55,8 @@ export default function Home() {
   const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000) // some high value for init
   const [shouldStopAi, setShouldStopAi] = useState(false);
+  const callSubmitFromAudio = useRef(false);
+  const [audioInputData, setAudioInputData] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -351,29 +353,46 @@ export default function Home() {
       setCancelButton(0);
     }
 
-    if (inputValue.length > 0) {
+    //see if data is coming from audio message or normal text, or none at all. Use audio as priority. 
+    let chatMsgData = "";
+    if (audioInputData.length > 0) {
+      chatMsgData = audioInputData;
+    } else if (inputValue.length > 0) {
+      chatMsgData = inputValue;
+    }
 
-      chatSocket.emit('resume processing');
-      audio.current = false;
+    if (chatMsgData.length > 0) {
 
-      messageQueue.current = [];
-      chatSocket.emit('reset audio sequence');
-      expectedSequence.current = 0;
-      audioQueue.current = new Map();
+      readyChatAndAudio(chatMsgData);
 
-      setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+      //sendImageMessage(chatMsgData);
 
-      //sendImageMessage(inputValue);
+      sendMessage(chatMsgData);
 
-      sendMessage(inputValue);
+      // in case user is talking into mic and theres also some text in his chat bar he wants to leave
+      // so only clear that inputvalue if chat text was sent
+      if (audioInputData.length == 0) {
+        setInputValue('');
+        resetUserTextForm();
+      }
 
-      setInputValue('');
-
-      resetUserTextForm();
+      setAudioInputData('');
 
 
     }
 
+  }
+
+  const readyChatAndAudio = (inputMessage) => {
+    chatSocket.emit('resume processing');
+    audio.current = false;
+
+    messageQueue.current = [];
+    chatSocket.emit('reset audio sequence');
+    expectedSequence.current = 0;
+    audioQueue.current = new Map();
+
+    setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
   }
 
   const stopAi = () => {
@@ -480,7 +499,10 @@ export default function Home() {
 
     chatSocket.on('speech to text data', (data) => {
 
-      console.log("speech to text input data", data);
+      callSubmitFromAudio.current = true;
+      setAudioInputData(data.text);
+
+      console.log("speech to text input data", data.text);
 
     });
 
@@ -491,6 +513,17 @@ export default function Home() {
       chatSocket.off('play audio');
     };
   }, []);
+
+  //if audio to text input received, send the data to the handleSubmit but need 
+  //to first ensure inputData got updated. So calling it this way. 
+  useEffect(() => {
+    if (callSubmitFromAudio.current) {
+      callSubmitFromAudio.current = false
+      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+      // Optionally reset the flag after calling the function
+
+    }
+  }, [audioInputData]);
 
   const sendImageMessage = (message) => {
     const url = '/api/image';

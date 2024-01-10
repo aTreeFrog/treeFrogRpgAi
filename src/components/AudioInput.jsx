@@ -76,7 +76,6 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
                         console.log("audioBlob: ", audioBlob);
                         sendAudioChunkToAPI(audioBlob);
                     }
-                    stream.getTracks().forEach(track => track.stop()); // Close the mic input
                 };
             });
 
