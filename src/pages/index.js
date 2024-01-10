@@ -54,6 +54,9 @@ export default function Home() {
   const [customTextCells, setCustomTextCells] = useState(['I jump away', 'I check for magic', 'I sneak by', 'I yell Guards', '']);
   const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000) // some high value for init
+  const [shouldStopAi, setShouldStopAi] = useState(false);
+  const callSubmitFromAudio = useRef(false);
+  const [audioInputData, setAudioInputData] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -171,19 +174,6 @@ export default function Home() {
       }).toDestination();
       newAudio.current.connect(reverb);
 
-
-      // newAudio.current.play().then(() => {
-      //   // Do something when audio starts playing if needed
-      // }).catch(err => {
-      //   console.error("Error playing audio:", err);
-      //   audio.current = false;
-      // });
-
-      // newAudio.current.onended = () => {
-      //   audio.current = false;  // Assuming you want to clear the current audio
-      //   expectedSequence.current++;
-      // };
-
       newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
         console.log("make it here?");
@@ -283,18 +273,6 @@ export default function Home() {
     handleScroll();
   };
 
-  // Function to check scrolling and adjust visibility of something based on scroll position
-  // const checkScrolling = () => {
-  //   const scrollableDiv = document.getElementById('scrollableDiv');
-  //   const scrollArrow = document.getElementById('scrollArrow');
-  //   if (scrollableDiv.scrollHeight > scrollableDiv.clientHeight &&
-  //     scrollableDiv.scrollTop < scrollableDiv.scrollHeight - scrollableDiv.clientHeight) {
-  //     //scrollArrow.classList.remove('hidden'); // Show arrow
-  //   } else {
-  //     //scrollArrow.classList.add('hidden'); // Hide arrow
-  //   }
-  // }
-
   useEffect(() => {
     if (scrollableDivRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollableDivRef.current;
@@ -371,47 +349,78 @@ export default function Home() {
     }
 
     if (cancelButton !== 0) {
-      chatSocket.emit('cancel processing');
-      messageQueue.current = [];
-      audioQueue.current = new Map();
+      stopAi();
       setCancelButton(0);
-      setIsLoading(false);
-
-      if (newAudio.current) {
-        if (!newAudio.current.paused) {
-          newAudio.current.stop();
-          newAudio.current.currentTime = 0; // Reset only if it was playing
-          newAudio.current = null;
-        }
-        audio.current = false;
-      }
-
     }
 
-    if (inputValue.length > 0) {
+    //see if data is coming from audio message or normal text, or none at all. Use audio as priority. 
+    let chatMsgData = "";
+    if (audioInputData.length > 0) {
+      chatMsgData = audioInputData;
+    } else if (inputValue.length > 0) {
+      chatMsgData = inputValue;
+    }
 
-      chatSocket.emit('resume processing');
-      audio.current = false;
+    if (chatMsgData.length > 0) {
 
-      messageQueue.current = [];
-      chatSocket.emit('reset audio sequence');
-      expectedSequence.current = 0;
-      audioQueue.current = new Map();
+      readyChatAndAudio(chatMsgData);
 
-      setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputValue }])
+      //sendImageMessage(chatMsgData);
 
-      //sendImageMessage(inputValue);
+      sendMessage(chatMsgData);
 
-      sendMessage(inputValue);
+      // in case user is talking into mic and theres also some text in his chat bar he wants to leave
+      // so only clear that inputvalue if chat text was sent
+      if (audioInputData.length == 0) {
+        setInputValue('');
+        resetUserTextForm();
+      }
 
-      setInputValue('');
-
-      resetUserTextForm();
+      setAudioInputData('');
 
 
     }
 
   }
+
+  const readyChatAndAudio = (inputMessage) => {
+    chatSocket.emit('resume processing');
+    audio.current = false;
+
+    messageQueue.current = [];
+    chatSocket.emit('reset audio sequence');
+    expectedSequence.current = 0;
+    audioQueue.current = new Map();
+
+    setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
+  }
+
+  const stopAi = () => {
+
+    chatSocket.emit('cancel processing');
+    messageQueue.current = [];
+    audioQueue.current = new Map();
+    setIsLoading(false);
+
+    if (newAudio.current) {
+      if (!newAudio.current.paused) {
+        newAudio.current.stop();
+        newAudio.current.currentTime = 0; // Reset only if it was playing
+        newAudio.current = null;
+      }
+      audio.current = false;
+    }
+  }
+
+  // this is called from the audioInput component if someone starts recording when ai is talking
+  useEffect(() => {
+    if (shouldStopAi) {
+      // Call stopAi function here
+      stopAi();
+      setShouldStopAi(false); // Reset the state
+    }
+  }, [shouldStopAi]);
+
 
   const resetUserTextForm = () => {
     // Reset the textarea after form submission
@@ -490,7 +499,10 @@ export default function Home() {
 
     chatSocket.on('speech to text data', (data) => {
 
-      console.log("speech to text input data", data);
+      callSubmitFromAudio.current = true;
+      setAudioInputData(data.text);
+
+      console.log("speech to text input data", data.text);
 
     });
 
@@ -501,6 +513,17 @@ export default function Home() {
       chatSocket.off('play audio');
     };
   }, []);
+
+  //if audio to text input received, send the data to the handleSubmit but need 
+  //to first ensure inputData got updated. So calling it this way. 
+  useEffect(() => {
+    if (callSubmitFromAudio.current) {
+      callSubmitFromAudio.current = false
+      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+      // Optionally reset the flag after calling the function
+
+    }
+  }, [audioInputData]);
 
   const sendImageMessage = (message) => {
     const url = '/api/image';
@@ -768,7 +791,7 @@ export default function Home() {
         )}
         {isAudioOpen && (
           <div>
-            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} />
+            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} />
           </div>
         )}
 
