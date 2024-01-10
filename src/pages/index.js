@@ -57,6 +57,45 @@ export default function Home() {
   const [shouldStopAi, setShouldStopAi] = useState(false);
   const callSubmitFromAudio = useRef(false);
   const [audioInputData, setAudioInputData] = useState(false);
+  const [diceStates, setDiceStates] = useState({
+    d20: {
+      value: [20],
+      isActive: true,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 20
+    },
+    d10: {
+      value: [10],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 10
+    },
+    d8: {
+      value: [8],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 8
+    },
+    d6: {
+      value: [6],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 6
+    },
+    d4: {
+      value: [4],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 4
+    }
+  });
+
+  console.log("my dice", diceStates);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -662,7 +701,7 @@ export default function Home() {
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
           <div className="mt-[-90px] ml-[-30px] text-white text-2xl font-semibold"> {/* This is an example value; adjust as needed */}
-            <HexagonDice />
+            <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} />
           </div>
         </div>
       </div>
