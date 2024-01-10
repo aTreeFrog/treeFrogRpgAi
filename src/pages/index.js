@@ -513,6 +513,13 @@ export default function Home() {
 
     });
 
+    chatSocket.on('dice roll', (data) => {
+
+
+
+
+    });
+
     // Return a cleanup function to remove the event listener when the component unmounts
     return () => {
       chatSocket.off('chat message', handleChatMessage);
