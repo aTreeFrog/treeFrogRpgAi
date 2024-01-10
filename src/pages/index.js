@@ -781,6 +781,7 @@ export default function Home() {
                     key={index}
                     type="text"
                     placeholder="Type here..."
+                    maxLength={50}
                     onKeyDown={newTextEnterKeyDown}
                     onBlur={(e) => handleBlur(index, e.target.value)}
                     className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
