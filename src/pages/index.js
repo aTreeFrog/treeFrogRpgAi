@@ -54,6 +54,7 @@ export default function Home() {
   const [customTextCells, setCustomTextCells] = useState(['I jump away', 'I check for magic', 'I sneak by', 'I yell Guards', '']);
   const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000) // some high value for init
+  const [shouldStopAi, setShouldStopAi] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -171,19 +172,6 @@ export default function Home() {
       }).toDestination();
       newAudio.current.connect(reverb);
 
-
-      // newAudio.current.play().then(() => {
-      //   // Do something when audio starts playing if needed
-      // }).catch(err => {
-      //   console.error("Error playing audio:", err);
-      //   audio.current = false;
-      // });
-
-      // newAudio.current.onended = () => {
-      //   audio.current = false;  // Assuming you want to clear the current audio
-      //   expectedSequence.current++;
-      // };
-
       newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
         console.log("make it here?");
@@ -283,18 +271,6 @@ export default function Home() {
     handleScroll();
   };
 
-  // Function to check scrolling and adjust visibility of something based on scroll position
-  // const checkScrolling = () => {
-  //   const scrollableDiv = document.getElementById('scrollableDiv');
-  //   const scrollArrow = document.getElementById('scrollArrow');
-  //   if (scrollableDiv.scrollHeight > scrollableDiv.clientHeight &&
-  //     scrollableDiv.scrollTop < scrollableDiv.scrollHeight - scrollableDiv.clientHeight) {
-  //     //scrollArrow.classList.remove('hidden'); // Show arrow
-  //   } else {
-  //     //scrollArrow.classList.add('hidden'); // Hide arrow
-  //   }
-  // }
-
   useEffect(() => {
     if (scrollableDivRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollableDivRef.current;
@@ -371,21 +347,8 @@ export default function Home() {
     }
 
     if (cancelButton !== 0) {
-      chatSocket.emit('cancel processing');
-      messageQueue.current = [];
-      audioQueue.current = new Map();
+      stopAi();
       setCancelButton(0);
-      setIsLoading(false);
-
-      if (newAudio.current) {
-        if (!newAudio.current.paused) {
-          newAudio.current.stop();
-          newAudio.current.currentTime = 0; // Reset only if it was playing
-          newAudio.current = null;
-        }
-        audio.current = false;
-      }
-
     }
 
     if (inputValue.length > 0) {
@@ -412,6 +375,33 @@ export default function Home() {
     }
 
   }
+
+  const stopAi = () => {
+
+    chatSocket.emit('cancel processing');
+    messageQueue.current = [];
+    audioQueue.current = new Map();
+    setIsLoading(false);
+
+    if (newAudio.current) {
+      if (!newAudio.current.paused) {
+        newAudio.current.stop();
+        newAudio.current.currentTime = 0; // Reset only if it was playing
+        newAudio.current = null;
+      }
+      audio.current = false;
+    }
+  }
+
+  // this is called from the audioInput component if someone starts recording when ai is talking
+  useEffect(() => {
+    if (shouldStopAi) {
+      // Call stopAi function here
+      stopAi();
+      setShouldStopAi(false); // Reset the state
+    }
+  }, [shouldStopAi]);
+
 
   const resetUserTextForm = () => {
     // Reset the textarea after form submission
@@ -768,7 +758,7 @@ export default function Home() {
         )}
         {isAudioOpen && (
           <div>
-            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} />
+            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} />
           </div>
         )}
 
