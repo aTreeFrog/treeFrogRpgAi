@@ -150,29 +150,29 @@ export default function Home() {
       }).toDestination();
 
       //newAudio.current = new Audio(audioSrc);
-      newAudio.current.volume.value = 1;
+      //newAudio.current.volume.value = 1;
       //newAudio.current.volume = 1;
 
       // Pitch shifting to lower the voice
       // Adjust the pitch shift value as needed
-      const pitchShift = new Tone.PitchShift({
-        pitch: -8, // Try different values, like -8, -10, etc.
-        windowSize: 0.1 // Experiment with this value
-      }).toDestination();
-      newAudio.current.connect(pitchShift);
+      // const pitchShift = new Tone.PitchShift({
+      //   pitch: -1, // Try different values, like -8, -10, etc.
+      //   windowSize: 0.0 // Experiment with this value
+      // }).toDestination();
+      // newAudio.current.connect(pitchShift);
 
-      const lowPassFilter = new Tone.Filter({
-        frequency: 500, // Hz, adjust as needed
-        type: 'lowpass'
-      }).toDestination();
-      newAudio.current.connect(lowPassFilter);
+      // const lowPassFilter = new Tone.Filter({
+      //   frequency: 5000, // Hz, adjust as needed
+      //   type: 'lowpass'
+      // }).toDestination();
+      // newAudio.current.connect(lowPassFilter);
 
       // Adding reverb for a more ominous effect
       const reverb = new Tone.Reverb({
-        decay: 6, // Reverb decay time in seconds
-        wet: 0.5  // Mix between the source and the reverb signal
+        decay: 1, // Reverb decay time in seconds
+        wet: 0.1  // Mix between the source and the reverb signal
       }).toDestination();
-      newAudio.current.connect(reverb);
+      // newAudio.current.connect(reverb);
 
       newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
@@ -499,8 +499,15 @@ export default function Home() {
 
     chatSocket.on('speech to text data', (data) => {
 
-      callSubmitFromAudio.current = true;
-      setAudioInputData(data.text);
+      //if empty audio comes in, for some reason response with a sentence. if so, dont call ai
+      const processedText = data.text.trim().toLowerCase();
+      const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
+
+      //checks if data is thank you for watching or just a bunch of periods. If not, go on
+      if (!(processedText.startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace))) {
+        callSubmitFromAudio.current = true;
+        setAudioInputData(data.text);
+      }
 
       console.log("speech to text input data", data.text);
 
@@ -781,6 +788,7 @@ export default function Home() {
                     key={index}
                     type="text"
                     placeholder="Type here..."
+                    maxLength={50}
                     onKeyDown={newTextEnterKeyDown}
                     onBlur={(e) => handleBlur(index, e.target.value)}
                     className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
