@@ -67,8 +67,8 @@ app.prepare().then(() => {
                 Skill: "Deception",
                 Advantage: false,
                 Disadvantage: false,
-                id: uniqueId,
-                user: "aTreeFrog"
+                Id: uniqueId,
+                User: "aTreeFrog"
             };
             // Sending the message to the connected client
             socket.emit('dice roll', diceRollMessage);
@@ -94,6 +94,7 @@ app.prepare().then(() => {
                 }
                 console.log('made it to chat complete');
                 socket.emit('chat complete');
+                sendDiceRollMessage();//////for testing
             } catch (error) {
                 console.error('Error:', error);
                 socket.emit('error', 'Error processing your message');
