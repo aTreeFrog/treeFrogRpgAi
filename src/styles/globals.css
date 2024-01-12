@@ -712,3 +712,31 @@ textarea {
 .all-cells {
     /* min-height: 65px; */
 }
+
+.placeholder {
+    visibility: hidden;
+    white-space: pre-wrap;
+    /* Preserves spaces and line breaks */
+    word-wrap: break-word;
+    /* To ensure wrapping occurs */
+    min-height: 50px;
+    /* Adjust based on typical message height */
+    /* Add other styles to mimic your actual message styles (padding, margin, etc.) */
+}
+
+.glowingBall {
+    display: inline-block;
+    vertical-align: middle;
+    /* Adjusts the vertical position to align with the text */
+    width: 10px;
+    height: 10px;
+    margin-left: 12px;
+    background-color: black;
+    border-radius: 50%;
+    /* Space between the text and the ball */
+    box-shadow: 0 0 4px white;
+    /* Glowing effect */
+
+    animation: audio-grow-shrink 1s ease-in-out infinite;
+
+}
