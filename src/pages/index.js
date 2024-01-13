@@ -110,6 +110,7 @@ export default function Home() {
   const latestDiceMsg = useRef(null);
   const [chatBallEnable, setChatBallEnable] = useState(false)
   const messageRefs = useRef([]);
+  const [activeSkill, setActiveSkill] = useState("")
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -671,6 +672,7 @@ export default function Home() {
         inhibit: !data.D4
       }
     });
+    setActiveSkill(data.Skill);
 
   }
 
@@ -738,6 +740,7 @@ export default function Home() {
         callSubmitFromDiceRolls.current = true;
         setDiceRollsInputData(`I rolled a ${d20sumTotal}`);
         setDiceStates(defaultDiceStates);
+        setActiveSkill("");
         console.log("the end");
       }, 4000);
 
@@ -846,7 +849,7 @@ export default function Home() {
           <div>
             <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
             <div>
-              <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" />
+              <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} />
             </div>
           </div>
           {/* Toggle Meeting Panel Button */}

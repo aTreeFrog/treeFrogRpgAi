@@ -2,13 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import SkillSheet from './SkillSheet';
 import AttackSheet from './AttackSheet';
 
-export default function CharacterSheet({ name, race, characterClass, level }) {
+export default function CharacterSheet({ name, race, characterClass, level, activeSkill }) {
     const raceRef = useRef(null);
     const classRef = useRef(null);
     const [raceLineWidth, setRaceLineWidth] = useState('0px');
     const [classLineWidth, setClassLineWidth] = useState('0px');
     const [activeTab, setActiveTab] = useState('Skills');
-    const [highlight, setHighlight] = useState("");
 
     useEffect(() => {
         // Calculating for Race
@@ -251,7 +250,7 @@ export default function CharacterSheet({ name, race, characterClass, level }) {
                 {/* Container for skills/attacks/equipment */}
                 {activeTab === 'Skills' && (
                     <div>
-                        <SkillSheet highlight={highlight} />
+                        <SkillSheet highlight={activeSkill} />
                     </div>
                 )}
                 {activeTab === 'Attacks/Spells' && (
