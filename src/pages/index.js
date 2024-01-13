@@ -524,14 +524,9 @@ export default function Home() {
 
   const sendMessage = (message) => {
 
-    const data = {
-      model: "gpt-4",
-      messages: [{ "role": "user", "content": message }],
-      stream: true,
-    };
     console.log("about to send message: ", message);
     // Convert the message object to a string and send it
-    chatSocket.emit('chat message', data);
+    chatSocket.emit('chat message', message);
     setIsLoading(true);
 
   }
@@ -822,8 +817,6 @@ export default function Home() {
     setCustomTextCells(newCells);
 
   };
-
-
 
   // Handles clicking on the cell
   const handleCellClick = (content) => {

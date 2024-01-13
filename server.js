@@ -23,6 +23,8 @@ const shouldContinue = {};
 
 let activityCount = 1;
 
+const chatMessages = [];
+
 app.prepare().then(() => {
     // HTTP Server for Next.js
     const httpServer = express();
@@ -55,7 +57,7 @@ app.prepare().then(() => {
         console.log('a user connected:', socket.id);
 
         //Dice Roll Function Message Creator and sender
-        function sendDiceRollMessage() {
+        function sendDiceRollMessage(skillValue, advantageValue) {
             const uniqueId = `activity${activityCount}-${new Date().toISOString()}`;
             const diceRollMessage = {
                 Action: "DiceRoll",
@@ -64,8 +66,8 @@ app.prepare().then(() => {
                 D8: false,
                 D6: false,
                 D4: false,
-                Skill: "Deception",
-                Advantage: false,
+                Skill: skillValue,
+                Advantage: Boolean(advantageValue),
                 Disadvantage: false,
                 Id: uniqueId,
                 User: "aTreeFrog"
@@ -77,24 +79,37 @@ app.prepare().then(() => {
 
         socket.on('chat message', async (msg) => {
             try {
+                outputMsg = "";
+                chatMessages.push({ "role": "user", "content": msg }); //ToDo: need to identify which user is speaking
                 console.log("is this getting called?")
                 if (shouldContinue[socket.id]) {
-                    const completion = await openai.chat.completions.create(msg);
+                    const data = {
+                        model: "gpt-4-1106-preview",
+                        messages: [{ "role": "user", "content": msg }],
+                        stream: true,
+                    };
 
-                    console.log(completion)
+                    const completion = await openai.chat.completions.create(data);
+
+                    console.log("completion: ", completion);
 
                     for await (const chunk of completion) {
-                        console.log(chunk.choices[0]?.delta?.content);
+
                         // Check if we should continue before emitting the next chunk
                         if (!shouldContinue[socket.id]) {
                             break; // Exit the loop if instructed to stop
                         }
-                        socket.emit('chat message', chunk.choices[0]?.delta?.content || "");
+
+                        outputStream = chunk.choices[0]?.delta?.content;
+                        outputMsg += outputStream;
+                        socket.emit('chat message', outputStream || "");
                     }
                 }
                 console.log('made it to chat complete');
                 socket.emit('chat complete');
-                sendDiceRollMessage();//////for testing
+                chatMessages.push({ "role": "assistant", "content": outputMsg });
+                await checkForFunctionCall();
+
             } catch (error) {
                 console.error('Error:', error);
                 socket.emit('error', 'Error processing your message');
@@ -135,6 +150,56 @@ app.prepare().then(() => {
                     }
                 }
             }
+        }
+
+        async function checkForFunctionCall() {
+            chatMessages.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call?" });
+            const data = {
+                model: "gpt-4-1106-preview",
+                messages: chatMessages,
+                stream: false,
+                tools: [
+                    {
+                        type: "function",
+                        function: {
+                            name: "sendDiceRollMessage",
+                            description: "Request the user to roll a d20 dice and to add a modifier based on Dungeons and Dragons style rules. Want the user to roll to determine the outcome of a decision based on the game. You, the AI bot, is the dungeon master.",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    skill: {
+                                        type: "string",
+                                        description: "Can be the following: deception, stealth, insight, nature, investigation, intelligence."
+                                    },
+                                    advantage: {
+                                        type: "boolean",
+                                        description: "Determine if the roll should be done with advantage. Usually if the player has an advantage in the situation."
+                                    },
+                                    required: ["skill", "advantage"],
+                                }
+                            }
+                        }
+                    }
+                ]
+            };
+
+            chatMessages.pop() //remove what i just added
+            const completion = await openai.chat.completions.create(data);
+            console.log("checking function call completion: ", completion.choices[0].finish_reason);
+
+            if (completion.choices[0].finish_reason == "tool_calls") {
+                functionData = completion.choices[0].message.tool_calls[0].function;
+                console.log("checking function call data : ", functionData);
+
+                if (functionData.name == "sendDiceRollMessage") {
+                    argumentsJson = JSON.parse(obj.arguments);
+                    skillValue = argumentsJson.skill;
+                    advantageValue = argumentsJson.advantage;
+                    sendDiceRollMessage(skillValue, advantageValue);
+                }
+
+            }
+
         }
 
         socket.on('cancel processing', () => {
