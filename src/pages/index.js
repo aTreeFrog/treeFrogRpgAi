@@ -11,6 +11,8 @@ import JitsiMeetComponent from '../components/JitsiMeetComponent';
 import CharacterSheet from '../components/CharacterSheet';
 import AudioInput from '../components/AudioInput'
 import * as Tone from 'tone';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -106,6 +108,8 @@ export default function Home() {
   const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
   const latestDiceMsg = useRef(null);
+  const [chatBallEnable, setChatBallEnable] = useState(false)
+  const messageRefs = useRef([]);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -114,6 +118,34 @@ export default function Home() {
       scrollToBottom();
     }
   }, [chatLog]);
+
+  // useEffect(() => {
+
+  //   const updateBallPosition = () => {
+  //     messageRefs.current.forEach((ref, index) => {
+  //       if (ref && chatLog[index].type === 'bot') {
+  //         const messageElement = ref;
+  //         const ballElement = messageElement.querySelector('.glowingBall');
+
+  //         if (ballElement) {
+  //           const { offsetLeft, offsetTop, offsetWidth } = messageElement.getBoundingClientRect();
+  //           const ballSize = ballElement.offsetWidth;
+
+  //           // Position the ball
+  //           ballElement.style.left = `${offsetLeft + offsetWidth - ballSize / 2}px`;
+  //           ballElement.style.top = `${offsetTop}px`;
+  //         }
+  //       }
+  //     });
+  //   };
+
+  //   updateBallPosition();
+  //   window.addEventListener('resize', updateBallPosition);
+
+  //   return () => {
+  //     window.removeEventListener('resize', updateBallPosition);
+  //   };
+  // }, [chatLog]);
 
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
@@ -169,6 +201,9 @@ export default function Home() {
         lastMessage = updatedChatLog;
         return updatedChatLog;
       });
+      setChatBallEnable(true);
+    } else {
+      setChatBallEnable(false);
     }
     setMessageQueueTrigger(prev => !prev);
   };
@@ -324,11 +359,12 @@ export default function Home() {
   };
 
   useEffect(() => {
+
     if (scrollableDivRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = scrollableDivRef.current;
 
       const isUserAtBottom = () => {
-        const tolerance = 40; // Adjust this value as needed
+        const tolerance = 70; // Adjust this value as needed
         return scrollHeight - scrollTop - clientHeight <= tolerance;
       };
 
@@ -516,7 +552,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            textToSpeechCall(sentence);
+            //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
@@ -806,6 +842,9 @@ export default function Home() {
     setCustomTextCells(newCells);
   };
 
+  //for the ICON that follows the text. only add it to last bot message
+  const lastBotMessageIndex = chatLog.map(e => e.type).lastIndexOf('bot');
+
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -868,21 +907,18 @@ export default function Home() {
         <div ref={scrollableDivRef} className="overflow-y-auto scrollable-container flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
-              <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'
-                }`}>
-                <div className={`${message.type === 'user' ? 'bg-purple-500' : 'bg-gray-800'
-                  } rounded-lg p-2 text-white max-w-sm`}>
+              <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`${message.type === 'user' ? 'bg-purple-500' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
+                  {chatBallEnable && message.type === 'bot' && index === lastBotMessageIndex &&
+                    <span className="wizard-hat inline-block ml-1">
+                      <FontAwesomeIcon icon={faHatWizard} />
+                    </span>
+                  }
                 </div>
               </div>
             ))}
-            {isLoading && (
-              <div key={chatLog.length} className="flex justify-start">
-                <div className="bg-gray-800 rounded-lg p-4 text-white max-w-sm">
-                  <TypingAnimation />
-                </div>
-              </div>
-            )}
+
             {/* Arrow Button at the Bottom Middle, initially hidden */}
             <button
               id="scrollArrow"
