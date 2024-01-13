@@ -550,7 +550,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            //textToSpeechCall(sentence);
+            //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
