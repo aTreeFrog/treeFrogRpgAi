@@ -85,7 +85,7 @@ app.prepare().then(() => {
                 if (shouldContinue[socket.id]) {
                     const data = {
                         model: "gpt-4-1106-preview",
-                        messages: [{ "role": "user", "content": msg }],
+                        messages: chatMessages,
                         stream: true,
                     };
 
@@ -120,7 +120,7 @@ app.prepare().then(() => {
 
         socket.on('audio message', async (msg) => {
             queue.push(msg); // Add incoming messages to the queue
-            processQueue(); // Trigger processing (if not already in progress)
+            //processQueue(); // Trigger processing (if not already in progress)//////TURNED OFF
         });
 
         let sequenceNumber = 0;
@@ -175,8 +175,8 @@ app.prepare().then(() => {
                                         type: "boolean",
                                         description: "Determine if the roll should be done with advantage. Usually if the player has an advantage in the situation."
                                     },
-                                    required: ["skill", "advantage"],
-                                }
+                                },
+                                required: ["skill", "advantage"],
                             }
                         }
                     }
@@ -192,7 +192,7 @@ app.prepare().then(() => {
                 console.log("checking function call data : ", functionData);
 
                 if (functionData.name == "sendDiceRollMessage") {
-                    argumentsJson = JSON.parse(obj.arguments);
+                    argumentsJson = JSON.parse(functionData.arguments);
                     skillValue = argumentsJson.skill;
                     advantageValue = argumentsJson.advantage;
                     sendDiceRollMessage(skillValue, advantageValue);
