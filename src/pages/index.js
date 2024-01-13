@@ -11,6 +11,8 @@ import JitsiMeetComponent from '../components/JitsiMeetComponent';
 import CharacterSheet from '../components/CharacterSheet';
 import AudioInput from '../components/AudioInput'
 import * as Tone from 'tone';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -117,33 +119,33 @@ export default function Home() {
     }
   }, [chatLog]);
 
-  useEffect(() => {
+  // useEffect(() => {
 
-    const updateBallPosition = () => {
-      messageRefs.current.forEach((ref, index) => {
-        if (ref && chatLog[index].type === 'bot') {
-          const messageElement = ref;
-          const ballElement = messageElement.querySelector('.glowingBall');
+  //   const updateBallPosition = () => {
+  //     messageRefs.current.forEach((ref, index) => {
+  //       if (ref && chatLog[index].type === 'bot') {
+  //         const messageElement = ref;
+  //         const ballElement = messageElement.querySelector('.glowingBall');
 
-          if (ballElement) {
-            const { offsetLeft, offsetTop, offsetWidth } = messageElement.getBoundingClientRect();
-            const ballSize = ballElement.offsetWidth;
+  //         if (ballElement) {
+  //           const { offsetLeft, offsetTop, offsetWidth } = messageElement.getBoundingClientRect();
+  //           const ballSize = ballElement.offsetWidth;
 
-            // Position the ball
-            ballElement.style.left = `${offsetLeft + offsetWidth - ballSize / 2}px`;
-            ballElement.style.top = `${offsetTop}px`;
-          }
-        }
-      });
-    };
+  //           // Position the ball
+  //           ballElement.style.left = `${offsetLeft + offsetWidth - ballSize / 2}px`;
+  //           ballElement.style.top = `${offsetTop}px`;
+  //         }
+  //       }
+  //     });
+  //   };
 
-    updateBallPosition();
-    window.addEventListener('resize', updateBallPosition);
+  //   updateBallPosition();
+  //   window.addEventListener('resize', updateBallPosition);
 
-    return () => {
-      window.removeEventListener('resize', updateBallPosition);
-    };
-  }, [chatLog]);
+  //   return () => {
+  //     window.removeEventListener('resize', updateBallPosition);
+  //   };
+  // }, [chatLog]);
 
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
@@ -362,7 +364,7 @@ export default function Home() {
       const { scrollTop, scrollHeight, clientHeight } = scrollableDivRef.current;
 
       const isUserAtBottom = () => {
-        const tolerance = 60; // Adjust this value as needed
+        const tolerance = 70; // Adjust this value as needed
         return scrollHeight - scrollTop - clientHeight <= tolerance;
       };
 
@@ -840,7 +842,7 @@ export default function Home() {
     setCustomTextCells(newCells);
   };
 
-  //for the ball that follows the text. only add it to last bot message
+  //for the ICON that follows the text. only add it to last bot message
   const lastBotMessageIndex = chatLog.map(e => e.type).lastIndexOf('bot');
 
   return (
@@ -908,7 +910,11 @@ export default function Home() {
               <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`${message.type === 'user' ? 'bg-purple-500' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
-                  {chatBallEnable && message.type === 'bot' && index === lastBotMessageIndex && <span className="glowingBall inline-block w-2.5 h-2.5 bg-black rounded-full shadow-md ml-1"></span>}
+                  {chatBallEnable && message.type === 'bot' && index === lastBotMessageIndex &&
+                    <span className="wizard-hat inline-block ml-1">
+                      <FontAwesomeIcon icon={faHatWizard} />
+                    </span>
+                  }
                 </div>
               </div>
             ))}

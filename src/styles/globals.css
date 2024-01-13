@@ -724,6 +724,7 @@ textarea {
     /* Add other styles to mimic your actual message styles (padding, margin, etc.) */
 }
 
+
 .glowingBall {
     display: inline-block;
     vertical-align: middle;
@@ -739,4 +740,19 @@ textarea {
 
     animation: audio-grow-shrink 1s ease-in-out infinite;
 
+}
+
+.wizard-hat {
+    display: inline-block;
+    font-size: 14px;
+    margin-left: 12px;
+    animation: audio-grow-shrink 1s ease-in-out infinite;
+    margin-top: -2px;
+    color: rgb(176, 165, 37);
+    /* Adjust size as needed */
+
+    /* Adjust color as needed */
+    vertical-align: middle;
+    /* Align with text */
+    /* Add any additional styling as needed */
 }
