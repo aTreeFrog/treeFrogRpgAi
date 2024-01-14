@@ -33,6 +33,14 @@ app.prepare().then(() => {
         return handle(req, res);
     });
 
+    console.log("__dirname: ", __dirname);
+    // to handle sending audio urls to front end
+    httpServer.use('/audio', express.static('public/audio'));
+
+    httpServer.all('*', (req, res) => {
+        return handle(req, res);
+    });
+
     const nextJsServer = createServer(httpServer);
 
     nextJsServer.listen(3000, () => {
@@ -40,12 +48,12 @@ app.prepare().then(() => {
     });
 
     // Separate HTTP Server for WebSocket
-    const wsServer = createServer((req, res) => {
-        res.writeHead(404);
-        res.end();
-    });
+    // const wsServer = createServer((req, res) => {
+    //     res.writeHead(404);
+    //     res.end();
+    // });
 
-    const io = new Server(wsServer, {
+    const io = new Server(nextJsServer, {
         path: '/api/chat',
         cors: {
             origin: "*",  // Adjust as necessary
@@ -79,6 +87,7 @@ app.prepare().then(() => {
 
         socket.on('chat message', async (msg) => {
             try {
+                playBackgroundAudio();////////////////////////for testing//////////
                 outputMsg = "";
                 chatMessages.push({ "role": "user", "content": msg }); //ToDo: need to identify which user is speaking
                 console.log("is this getting called?")
@@ -202,6 +211,10 @@ app.prepare().then(() => {
 
         }
 
+        async function playBackgroundAudio() {
+            socket.emit('background music', { url: 'http://localhost:3000/audio/lord_of_the_land.mp3' });
+        }
+
         socket.on('cancel processing', () => {
             shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket
         });
@@ -265,7 +278,7 @@ app.prepare().then(() => {
 
     });
 
-    wsServer.listen(3001, () => {
-        console.log('WebSocket Server is running on http://localhost:3001');
-    });
+    // wsServer.listen(3001, () => {
+    //     console.log('WebSocket Server is running on http://localhost:3001');
+    // });
 });

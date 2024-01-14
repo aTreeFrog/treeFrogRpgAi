@@ -17,7 +17,7 @@ import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
 const inter = Inter({ subsets: ['latin'] })
 
 const chatUrl = '/api/chat';
-const chatSocket = io('http://localhost:3001', { path: chatUrl });
+const chatSocket = io('http://localhost:3000', { path: chatUrl });
 
 chatSocket.onopen = function (event) {
   console.log("Connection established!");
@@ -220,6 +220,17 @@ export default function Home() {
     chatSocket.emit('audio message', data);
 
   };
+
+  // background music
+  const PlayBackgroundAudio = async (data) => {
+
+    console.log("PlayBackgroundAudio data: ", data);
+    await Tone.loaded(); // Ensure Tone.js is ready
+    const player = new Tone.Player(data.url).toDestination();
+    player.autostart = true;
+  };
+
+
 
   // Ref to track if audio is currently playing
   const playNextAudio = () => {
@@ -607,6 +618,10 @@ export default function Home() {
         updateDiceStates(data); // Update immediately if messageQueue is empty
       }
 
+    });
+
+    chatSocket.on('background music', (data) => {
+      PlayBackgroundAudio(data);
     });
 
     // Return a cleanup function to remove the event listener when the component unmounts
