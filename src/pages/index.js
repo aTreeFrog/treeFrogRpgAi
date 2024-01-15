@@ -179,15 +179,59 @@ export default function Home() {
     chatSocket.on('latest user message', (data) => {
       console.log('latest user message', data);
       chatSocket.emit("received user message", data);
-      setChatLog((prevChatLog) => [...prevChatLog, data])
+      setChatLog((prevChatLog) => [...prevChatLog, { "type": 'user', "message": data.content }])
 
     });
+
+    const handleChatMessage = (msg) => {
+      console.log("handleChatMessage", msg);
+      setCancelButton(1);
+      setIsLoading(false);
+      messageQueue.current.push(msg);
+      tempBuffer.current += msg; // Modify tempBuffer ref
+
+      // Process the buffer to extract complete sentences
+      let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
+      for (let i = 0; i < tempBuffer.current.length; i++) {
+        // Check for sentence termination (.,!,?)
+        if (tempBuffer.current[i] === '.' || tempBuffer.current[i] === '!' || tempBuffer.current[i] === '?') {
+          // Extract the sentence
+          let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
+          if (sentence.length > 0) {
+            //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
+          }
+          lastIndex = i + 1;  // Update the last index to the new position
+        }
+      }
+
+      // Keep only the incomplete sentence part in the buffer
+      tempBuffer.current = tempBuffer.current.substring(lastIndex);
+
+
+    };
+
+
+    const onChatComplete = () => {
+      //setCancelButton(0); // Assuming setCancelButton is a state setter function
+      console.log("onChatComplete");
+      if (tempBuffer.current.length > 0) {
+        textToSpeechCall(tempBuffer.current);
+      }
+      tempBuffer.current = '';
+
+    };
+
+    // Attach the event listener only once when the component mounts
+    chatSocket.on('chat message', handleChatMessage);
+    chatSocket.on('chat complete', onChatComplete);
 
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
       chatSocket.off('latest user message');
       chatSocket.off('my user message');
+      chatSocket.off('chat message', handleChatMessage);
+      chatSocket.off('chat complete', onChatComplete);
 
     };
 
@@ -198,7 +242,9 @@ export default function Home() {
   // Function to process a single oldest message from the queue
   const processQueue = () => {
     if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
+
       const msg = messageQueue.current.shift(); // Get the oldest message
+      console.log("processQueue: ", msg);
       setChatLog((prevChatLog) => {
         let updatedChatLog = [...prevChatLog];
         if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
@@ -505,12 +551,6 @@ export default function Home() {
     expectedSequence.current = 0;
     audioQueue.current = new Map();
     console.log("chatLog: ", chatLog);
-    const uniqueId = `user${'aTreeFrog'}-activity${activityCount.current}-${new Date().toISOString()}`;
-    let serverData = { type: 'user', message: inputMessage, "processed": false, "id": uniqueId };
-    activityCount.current++;
-
-    chatSocket.emit('my user message', serverData);
-    console.log("sent my user message", serverData);
     //chatSocket.emit("received user message", serverData);
 
     //setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
@@ -559,53 +599,60 @@ export default function Home() {
   const sendMessage = (message) => {
 
     console.log("about to send message: ", message);
+
+    const uniqueId = `user${'aTreeFrog'}-activity${activityCount.current}-${new Date().toISOString()}`;
+    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId };
+    activityCount.current++;
+    chatSocket.emit('my user message', serverData);
+    console.log("sent my user message", serverData);
     // Convert the message object to a string and send it
-    chatSocket.emit('chat message', message);
+    //chatSocket.emit('chat message', message);
     setIsLoading(true);
 
   }
 
   useEffect(() => {
 
-    const handleChatMessage = (msg) => {
-      setCancelButton(1);
-      setIsLoading(false);
-      messageQueue.current.push(msg);
-      tempBuffer.current += msg; // Modify tempBuffer ref
+    // const handleChatMessage = (msg) => {
+    //   console.log("handleChatMessage", msg);
+    //   setCancelButton(1);
+    //   setIsLoading(false);
+    //   messageQueue.current.push(msg);
+    //   tempBuffer.current += msg; // Modify tempBuffer ref
 
-      // Process the buffer to extract complete sentences
-      let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
-      for (let i = 0; i < tempBuffer.current.length; i++) {
-        // Check for sentence termination (.,!,?)
-        if (tempBuffer.current[i] === '.' || tempBuffer.current[i] === '!' || tempBuffer.current[i] === '?') {
-          // Extract the sentence
-          let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
-          if (sentence.length > 0) {
-            //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
-          }
-          lastIndex = i + 1;  // Update the last index to the new position
-        }
-      }
+    //   // Process the buffer to extract complete sentences
+    //   let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
+    //   for (let i = 0; i < tempBuffer.current.length; i++) {
+    //     // Check for sentence termination (.,!,?)
+    //     if (tempBuffer.current[i] === '.' || tempBuffer.current[i] === '!' || tempBuffer.current[i] === '?') {
+    //       // Extract the sentence
+    //       let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
+    //       if (sentence.length > 0) {
+    //         //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
+    //       }
+    //       lastIndex = i + 1;  // Update the last index to the new position
+    //     }
+    //   }
 
-      // Keep only the incomplete sentence part in the buffer
-      tempBuffer.current = tempBuffer.current.substring(lastIndex);
-
-
-    };
+    //   // Keep only the incomplete sentence part in the buffer
+    //   tempBuffer.current = tempBuffer.current.substring(lastIndex);
 
 
-    const onChatComplete = () => {
-      //setCancelButton(0); // Assuming setCancelButton is a state setter function
-      if (tempBuffer.current.length > 0) {
-        textToSpeechCall(tempBuffer.current);
-      }
-      tempBuffer.current = '';
+    // };
 
-    };
 
-    // Attach the event listener only once when the component mounts
-    chatSocket.on('chat message', handleChatMessage);
-    chatSocket.on('chat complete', onChatComplete);
+    // const onChatComplete = () => {
+    //   //setCancelButton(0); // Assuming setCancelButton is a state setter function
+    //   if (tempBuffer.current.length > 0) {
+    //     textToSpeechCall(tempBuffer.current);
+    //   }
+    //   tempBuffer.current = '';
+
+    // };
+
+    // // Attach the event listener only once when the component mounts
+    // chatSocket.on('chat message', handleChatMessage);
+    // chatSocket.on('chat complete', onChatComplete);
 
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
@@ -648,8 +695,8 @@ export default function Home() {
 
     // Return a cleanup function to remove the event listener when the component unmounts
     return () => {
-      chatSocket.off('chat message', handleChatMessage);
-      chatSocket.off('chat complete', onChatComplete);
+      // chatSocket.off('chat message', handleChatMessage);
+      // chatSocket.off('chat complete', onChatComplete);
       chatSocket.off('play audio');
       chatSocket.off('meeting-created');
       chatSocket.off('resume processing');

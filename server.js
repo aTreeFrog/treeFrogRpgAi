@@ -78,44 +78,49 @@ app.prepare().then(() => {
 
                 if (!waitingForUser) {
 
-                    let unprocessedUserMessages = chatMessages.filter(message => message.type === 'user' && !message.processed);
+                    let unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
 
                     if (unprocessedUserMessages.length > 0) {
+                        let outputMsg = "";
                         chatMessages.forEach(message => {
                             message.processed = true;
                         });
                         console.log("checking chat messages");
                         let messagesFilteredForApi = chatMessages.map(item => ({
-                            type: item.type,
-                            neededProperty2: item.message,
+                            role: item.role,
+                            content: item.content,
                         }));
-                        if (shouldContinue[socket.id]) {
-                            const data = {
-                                model: "gpt-4-1106-preview",
-                                messages: messagesFilteredForApi,
-                                stream: true,
-                            };
 
-                            const completion = await openai.chat.completions.create(data);
+                        const data = {
+                            model: "gpt-4-1106-preview",
+                            messages: messagesFilteredForApi,
+                            stream: true,
+                        };
 
-                            console.log("completion: ", completion);
+                        const completion = await openai.chat.completions.create(data);
 
-                            for await (const chunk of completion) {
+                        console.log("completion: ", completion);
 
-                                // Check if we should continue before emitting the next chunk
-                                if (!shouldContinue[socket.id]) {
-                                    break; // Exit the loop if instructed to stop
-                                }
+                        for await (const chunk of completion) {
 
-                                outputStream = chunk.choices[0]?.delta?.content;
-                                outputMsg += outputStream;
-                                io.to(serverRoomName).emit('chat message', outputStream || "");
-                            }
+                            // // Check if we should continue before emitting the next chunk
+                            // if (!shouldContinue[socket.id]) {
+                            //     break; // Exit the loop if instructed to stop
+                            // }
+
+                            outputStream = chunk.choices[0]?.delta?.content;
+                            outputMsg += outputStream;
+                            io.to(serverRoomName).emit('chat message', outputStream || "");
                         }
+
                         console.log('made it to chat complete');
                         io.to(serverRoomName).emit('chat complete');
                         chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
-                        await checkForFunctionCall();
+
+                        // if all messages are processed, check for function call now
+                        if ((chatMessages.filter(message => !message.processed)).length == 0) {
+                            await checkForFunctionCall();
+                        }
                     };
 
                 }
@@ -149,18 +154,18 @@ app.prepare().then(() => {
             activityCount++;
         }
 
-        socket.on('chat message', async (msg) => {
-            try {
-                playBackgroundAudio();////////////////////////for testing//////////
-                outputMsg = "";
-                chatMessages.push(msg); //ToDo: need to identify which user is speaking
-                console.log("is this getting called?")
+        // socket.on('chat message', async (msg) => {
+        //     try {
+        //         playBackgroundAudio();////////////////////////for testing//////////
+        //         outputMsg = "";
+        //         chatMessages.push(msg); //ToDo: need to identify which user is speaking
+        //         console.log("is this getting called?")
 
-            } catch (error) {
-                console.error('Error:', error);
-                socket.emit('error', 'Error processing your message'); // say to which client
-            }
-        });
+        //     } catch (error) {
+        //         console.error('Error:', error);
+        //         socket.emit('error', 'Error processing your message'); // say to which client
+        //     }
+        // });
 
         const queue = []; // Initialize an empty queue
 
@@ -201,8 +206,8 @@ app.prepare().then(() => {
         async function checkForFunctionCall() {
             ;
             let messagesFilteredForFunction = chatMessages.map(item => ({
-                type: item.type,
-                neededProperty2: item.message,
+                role: item.role,
+                content: item.content,
             }));
             messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call?" })
             const data = {
@@ -259,13 +264,13 @@ app.prepare().then(() => {
 
         socket.on('my user message', (msg) => {
             if (!responseSent.has(msg.id)) {
+                waitingForUser = true;
                 chatMessages.push(msg);
                 console.log("chatMessages: ", chatMessages);
-                waitingForUser = true;
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
-
                 responseSent.set(msg.id, true);
+                playBackgroundAudio();////////////////////////for testing//////////
             }
         });
 
