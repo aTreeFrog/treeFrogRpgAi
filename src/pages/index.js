@@ -176,9 +176,18 @@ export default function Home() {
       setMeetingDetails(data); // Save the meeting details in state
     });
 
+    chatSocket.on('latest user message', (data) => {
+      console.log('latest user message', data);
+      chatSocket.emit("received user message", data);
+      setChatLog((prevChatLog) => [...prevChatLog, data])
+
+    });
+
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
+      chatSocket.off('latest user message');
+      chatSocket.off('my user message');
 
     };
 
@@ -502,17 +511,10 @@ export default function Home() {
 
     chatSocket.emit('my user message', serverData);
     console.log("sent my user message", serverData);
+    //chatSocket.emit("received user message", serverData);
 
     //setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
   }
-
-  chatSocket.on('latest user message', (data) => {
-    console.log('latest user message', data);
-    setChatLog((prevChatLog) => [...prevChatLog, data])
-
-    chatSocket.emit("received user message", data);
-
-  });
 
   const stopAi = () => {
 

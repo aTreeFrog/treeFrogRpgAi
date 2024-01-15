@@ -47,52 +47,6 @@ app.prepare().then(() => {
         return handle(req, res);
     });
 
-    async function processMessages() {
-
-        while (true) {
-
-            if (!waitingForUser) {
-
-                const unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
-
-                if (unprocessedUserMessages.length > 0) {
-                    if (shouldContinue[socket.id]) {
-                        const data = {
-                            model: "gpt-4-1106-preview",
-                            messages: chatMessages,
-                            stream: true,
-                        };
-
-                        const completion = await openai.chat.completions.create(data);
-
-                        console.log("completion: ", completion);
-
-                        for await (const chunk of completion) {
-
-                            // Check if we should continue before emitting the next chunk
-                            if (!shouldContinue[socket.id]) {
-                                break; // Exit the loop if instructed to stop
-                            }
-
-                            outputStream = chunk.choices[0]?.delta?.content;
-                            outputMsg += outputStream;
-                            io.to(serverRoomName).emit('chat message', outputStream || "");
-                        }
-                    }
-                    console.log('made it to chat complete');
-                    io.to(serverRoomName).emit('chat complete');
-                    chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
-                    chatMessages.forEach(message => {
-                        message.processed = true;
-                    });
-                    await checkForFunctionCall();
-                };
-
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 200)); // Wait a bit before checking again
-        }
-    };
 
     const nextJsServer = createServer(httpServer);
 
@@ -104,8 +58,6 @@ app.prepare().then(() => {
 
     nextJsServer.listen(3000, () => {
         console.log('Next.js is ready on http://localhost:3000');
-
-        processMessages();
 
     });
 
@@ -119,6 +71,58 @@ app.prepare().then(() => {
 
 
     io.on('connection', (socket) => {
+
+        async function processMessages() {
+
+            while (true) {
+
+                if (!waitingForUser) {
+
+                    let unprocessedUserMessages = chatMessages.filter(message => message.type === 'user' && !message.processed);
+
+                    if (unprocessedUserMessages.length > 0) {
+                        chatMessages.forEach(message => {
+                            message.processed = true;
+                        });
+                        console.log("checking chat messages");
+                        let messagesFilteredForApi = chatMessages.map(item => ({
+                            type: item.type,
+                            neededProperty2: item.message,
+                        }));
+                        if (shouldContinue[socket.id]) {
+                            const data = {
+                                model: "gpt-4-1106-preview",
+                                messages: messagesFilteredForApi,
+                                stream: true,
+                            };
+
+                            const completion = await openai.chat.completions.create(data);
+
+                            console.log("completion: ", completion);
+
+                            for await (const chunk of completion) {
+
+                                // Check if we should continue before emitting the next chunk
+                                if (!shouldContinue[socket.id]) {
+                                    break; // Exit the loop if instructed to stop
+                                }
+
+                                outputStream = chunk.choices[0]?.delta?.content;
+                                outputMsg += outputStream;
+                                io.to(serverRoomName).emit('chat message', outputStream || "");
+                            }
+                        }
+                        console.log('made it to chat complete');
+                        io.to(serverRoomName).emit('chat complete');
+                        chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
+                        await checkForFunctionCall();
+                    };
+
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 200)); // Wait a bit before checking again
+            }
+        };
 
         socket.join(serverRoomName); //name of conference room
         console.log('a user connected:', socket.id);
@@ -195,10 +199,15 @@ app.prepare().then(() => {
         }
 
         async function checkForFunctionCall() {
-            chatMessages.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call?" });
+            ;
+            let messagesFilteredForFunction = chatMessages.map(item => ({
+                type: item.type,
+                neededProperty2: item.message,
+            }));
+            messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call?" })
             const data = {
                 model: "gpt-4-1106-preview",
-                messages: chatMessages,
+                messages: messagesFilteredForFunction,
                 stream: false,
                 tools: [
                     {
@@ -225,7 +234,7 @@ app.prepare().then(() => {
                 ]
             };
 
-            chatMessages.pop() //remove what i just added
+            messagesFilteredForFunction.pop() //remove what i just added
             const completion = await openai.chat.completions.create(data);
             console.log("checking function call completion: ", completion.choices[0].finish_reason);
 
@@ -250,15 +259,19 @@ app.prepare().then(() => {
 
         socket.on('my user message', (msg) => {
             if (!responseSent.has(msg.id)) {
+                chatMessages.push(msg);
+                console.log("chatMessages: ", chatMessages);
                 waitingForUser = true;
                 console.log("received my user message, ", msg);
+                io.to(serverRoomName).emit('latest user message', msg);
 
-                io.to(serverRoomName).emit('latest user message', msg)
                 responseSent.set(msg.id, true);
             }
         });
 
+
         socket.on('received user message', (msg) => {
+            console.log("all done waiting");
             waitingForUser = false;
         });
 
@@ -320,6 +333,8 @@ app.prepare().then(() => {
             fs.unlinkSync(filePath); // deletes file
 
         });
+
+        processMessages();
 
     });
 
