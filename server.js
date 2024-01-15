@@ -170,8 +170,9 @@ app.prepare().then(() => {
         const queue = []; // Initialize an empty queue
 
         socket.on('audio message', async (msg) => {
+            console.log("audio message: ", msg);
             queue.push(msg); // Add incoming messages to the queue
-            //processQueue(); // Trigger processing (if not already in progress)//////TURNED OFF
+            processQueue(); // Trigger processing (if not already in progress)//////TURNED OFF
         });
 
         let sequenceNumber = 0;

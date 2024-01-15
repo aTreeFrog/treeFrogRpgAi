@@ -198,7 +198,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
+            textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
@@ -659,7 +659,7 @@ export default function Home() {
       console.log("play audio sequence: ", recording.sequence);
       audioQueue.current.set(recording.sequence, audioSrc);
       //audioQueue.current.push(audioSrc);
-      //playNextAudio();
+      playNextAudio();
     });
 
     chatSocket.on('speech to text data', (data) => {
