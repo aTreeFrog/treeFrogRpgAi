@@ -151,6 +151,60 @@ export default function Home() {
     }
   }
 
+  // Ref to track if audio is currently playing
+  const playNextAudio = () => {
+    if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
+      console.log("playNextAudio expectedSequence: ", expectedSequence.current)
+      audio.current = true;
+      const audioSrc = audioQueue.current.get(expectedSequence.current);
+      audioQueue.current.delete(expectedSequence.current);
+
+      Tone.start();
+      newAudio.current = new Tone.Player(audioSrc, () => {
+        console.log("Audio is ready to play");
+        // Start the audio manually after it's loaded and connected to effects
+        newAudio.current.start();
+      }).toDestination();
+
+      //newAudio.current = new Audio(audioSrc);
+      //newAudio.current.volume.value = 1;
+      //newAudio.current.volume = 1;
+
+      // Pitch shifting to lower the voice
+      // Adjust the pitch shift value as needed
+      // const pitchShift = new Tone.PitchShift({
+      //   pitch: -1, // Try different values, like -8, -10, etc.
+      //   windowSize: 0.0 // Experiment with this value
+      // }).toDestination();
+      // newAudio.current.connect(pitchShift);
+
+      // const lowPassFilter = new Tone.Filter({
+      //   frequency: 5000, // Hz, adjust as needed
+      //   type: 'lowpass'
+      // }).toDestination();
+      // newAudio.current.connect(lowPassFilter);
+
+      // Adding reverb for a more ominous effect
+      const reverb = new Tone.Reverb({
+        decay: 1, // Reverb decay time in seconds
+        wet: 0.1  // Mix between the source and the reverb signal
+      }).toDestination();
+      // newAudio.current.connect(reverb);
+
+      newAudio.current.onstop = () => {
+        audio.current = false; // Clear the current audio
+        console.log("make it here?");
+        expectedSequence.current++;
+      };
+
+      newAudio.current.onerror = (error) => {
+        console.error("Error with audio playback", error);
+        audio.current = false;
+      };
+
+    }
+  };
+
 
   useEffect(() => {
 
@@ -225,6 +279,14 @@ export default function Home() {
     chatSocket.on('chat message', handleChatMessage);
     chatSocket.on('chat complete', onChatComplete);
 
+    chatSocket.on('play audio', (recording) => {
+      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
+      console.log("play audio sequence: ", recording.sequence);
+      audioQueue.current.set(recording.sequence, audioSrc);
+      //audioQueue.current.push(audioSrc);
+      playNextAudio();
+    });
+
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
@@ -232,6 +294,7 @@ export default function Home() {
       chatSocket.off('my user message');
       chatSocket.off('chat message', handleChatMessage);
       chatSocket.off('chat complete', onChatComplete);
+      chatSocket.off('play audio');
 
     };
 
@@ -284,65 +347,12 @@ export default function Home() {
   // background music
   const PlayBackgroundAudio = async (data) => {
 
+    Tone.start();
     console.log("PlayBackgroundAudio data: ", data);
     await Tone.loaded(); // Ensure Tone.js is ready
     const player = new Tone.Player(data.url).toDestination();
+    player.volume.value = -10;
     player.autostart = true;
-  };
-
-
-
-  // Ref to track if audio is currently playing
-  const playNextAudio = () => {
-    if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
-      console.log("playNextAudio expectedSequence: ", expectedSequence.current)
-      audio.current = true;
-      const audioSrc = audioQueue.current.get(expectedSequence.current);
-      audioQueue.current.delete(expectedSequence.current);
-
-      newAudio.current = new Tone.Player(audioSrc, () => {
-        console.log("Audio is ready to play");
-        // Start the audio manually after it's loaded and connected to effects
-        newAudio.current.start();
-      }).toDestination();
-
-      //newAudio.current = new Audio(audioSrc);
-      //newAudio.current.volume.value = 1;
-      //newAudio.current.volume = 1;
-
-      // Pitch shifting to lower the voice
-      // Adjust the pitch shift value as needed
-      // const pitchShift = new Tone.PitchShift({
-      //   pitch: -1, // Try different values, like -8, -10, etc.
-      //   windowSize: 0.0 // Experiment with this value
-      // }).toDestination();
-      // newAudio.current.connect(pitchShift);
-
-      // const lowPassFilter = new Tone.Filter({
-      //   frequency: 5000, // Hz, adjust as needed
-      //   type: 'lowpass'
-      // }).toDestination();
-      // newAudio.current.connect(lowPassFilter);
-
-      // Adding reverb for a more ominous effect
-      const reverb = new Tone.Reverb({
-        decay: 1, // Reverb decay time in seconds
-        wet: 0.1  // Mix between the source and the reverb signal
-      }).toDestination();
-      // newAudio.current.connect(reverb);
-
-      newAudio.current.onstop = () => {
-        audio.current = false; // Clear the current audio
-        console.log("make it here?");
-        expectedSequence.current++;
-      };
-
-      newAudio.current.onerror = (error) => {
-        console.error("Error with audio playback", error);
-        audio.current = false;
-      };
-
-    }
   };
 
   const cancelButtonMonitor = () => {
@@ -405,7 +415,7 @@ export default function Home() {
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
       playNextAudio();
-    }, 200);
+    }, 100);
 
     const cancelButtonIntervalId = setInterval(() => {
       cancelButtonMonitor();
@@ -613,6 +623,11 @@ export default function Home() {
 
   useEffect(() => {
 
+    //to enable audio after re-render
+    if (Tone.context.state !== 'running') {
+      Tone.context.resume();
+    }
+
     // const handleChatMessage = (msg) => {
     //   console.log("handleChatMessage", msg);
     //   setCancelButton(1);
@@ -654,13 +669,7 @@ export default function Home() {
     // chatSocket.on('chat message', handleChatMessage);
     // chatSocket.on('chat complete', onChatComplete);
 
-    chatSocket.on('play audio', (recording) => {
-      const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
-      console.log("play audio sequence: ", recording.sequence);
-      audioQueue.current.set(recording.sequence, audioSrc);
-      //audioQueue.current.push(audioSrc);
-      playNextAudio();
-    });
+
 
     chatSocket.on('speech to text data', (data) => {
 
@@ -690,7 +699,7 @@ export default function Home() {
     });
 
     chatSocket.on('background music', (data) => {
-      PlayBackgroundAudio(data);
+      PlayBackgroundAudio(data); /////////////////turned off////////////////////////
     });
 
     // Return a cleanup function to remove the event listener when the component unmounts
