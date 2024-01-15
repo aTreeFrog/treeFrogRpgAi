@@ -12,7 +12,7 @@ import AudioInput from '../components/AudioInput'
 import * as Tone from 'tone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
-import { chatSocket } from '../context/SocketSingleton';
+import SocketContext from '../context/SocketContext';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -101,6 +101,7 @@ export default function Home() {
   const messageRefs = useRef([]);
   const [activeSkill, setActiveSkill] = useState("")
   const activityCount = useRef(0);
+  const chatSocket = useContext(SocketContext);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
