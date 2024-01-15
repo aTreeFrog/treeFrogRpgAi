@@ -151,15 +151,22 @@ export default function Home() {
     }
   }
 
+  const resumeAudioContext = async () => {
+    if (Tone.context.state !== 'running') {
+      await Tone.context.resume();
+    }
+  };
+
   // Ref to track if audio is currently playing
   const playNextAudio = () => {
     if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
+      resumeAudioContext();
       console.log("playNextAudio expectedSequence: ", expectedSequence.current)
       audio.current = true;
       const audioSrc = audioQueue.current.get(expectedSequence.current);
       audioQueue.current.delete(expectedSequence.current);
 
-      Tone.start();
+      //Tone.start();
       newAudio.current = new Tone.Player(audioSrc, () => {
         console.log("Audio is ready to play");
         // Start the audio manually after it's loaded and connected to effects
@@ -365,6 +372,7 @@ export default function Home() {
   }
 
   const handleKeyDown = (e) => {
+    resumeAudioContext();
     // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault(); // Prevent the default action (new line)
@@ -623,11 +631,6 @@ export default function Home() {
 
   useEffect(() => {
 
-    //to enable audio after re-render
-    if (Tone.context.state !== 'running') {
-      Tone.context.resume();
-    }
-
     // const handleChatMessage = (msg) => {
     //   console.log("handleChatMessage", msg);
     //   setCancelButton(1);
@@ -699,6 +702,7 @@ export default function Home() {
     });
 
     chatSocket.on('background music', (data) => {
+      resumeAudioContext();
       PlayBackgroundAudio(data); /////////////////turned off////////////////////////
     });
 
