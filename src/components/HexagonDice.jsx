@@ -120,7 +120,7 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
     return (
 
         <div className="inline-flex">
-            <div class={`triangle-container`}>
+            <div className={`triangle-container`}>
                 <div className={`triangle-glow triangle  ${isD4Spinning ? 'spinning' : ''} ${isD4Spinning ? 'no-glow' : ''} ${diceStates.d4.isGlowActive ? 'glow-active' : ''} ${diceStates.d4.isActive ? 'triangle-active' : 'triangle-inactive'}`}
                     onClick={() => {
                         if (!diceStates.d4.inhibit) {
@@ -128,7 +128,7 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
                         }
                     }}
                 >
-                    <span class="triangle-text"> {diceStates.d4.displayedValue}</span>
+                    <span className="triangle-text"> {diceStates.d4.displayedValue}</span>
                 </div>
             </div>
             <div className={`hexagon-glow square ${isD6Spinning ? 'spinning no-glow' : ''} ${diceStates.d6.isGlowActive ? 'glow-active' : ''} ${diceStates.d6.isActive ? 'square-active' : 'square-inactive'}`}
