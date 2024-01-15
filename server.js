@@ -25,6 +25,12 @@ let activityCount = 1;
 
 const chatMessages = [];
 
+let waitingForUser = false;
+const clients = {};
+let responseSent = new Map();
+
+serverRoomName = "WizardsAndGoblinsRoom";
+
 app.prepare().then(() => {
     // HTTP Server for Next.js
     const httpServer = express();
@@ -41,17 +47,67 @@ app.prepare().then(() => {
         return handle(req, res);
     });
 
-    const nextJsServer = createServer(httpServer);
+    async function processMessages() {
 
-    nextJsServer.listen(3000, () => {
-        console.log('Next.js is ready on http://localhost:3000');
-    });
+        while (true) {
+
+            if (!waitingForUser) {
+
+                const unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
+
+                if (unprocessedUserMessages.length > 0) {
+                    if (shouldContinue[socket.id]) {
+                        const data = {
+                            model: "gpt-4-1106-preview",
+                            messages: chatMessages,
+                            stream: true,
+                        };
+
+                        const completion = await openai.chat.completions.create(data);
+
+                        console.log("completion: ", completion);
+
+                        for await (const chunk of completion) {
+
+                            // Check if we should continue before emitting the next chunk
+                            if (!shouldContinue[socket.id]) {
+                                break; // Exit the loop if instructed to stop
+                            }
+
+                            outputStream = chunk.choices[0]?.delta?.content;
+                            outputMsg += outputStream;
+                            io.to(serverRoomName).emit('chat message', outputStream || "");
+                        }
+                    }
+                    console.log('made it to chat complete');
+                    io.to(serverRoomName).emit('chat complete');
+                    chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
+                    chatMessages.forEach(message => {
+                        message.processed = true;
+                    });
+                    await checkForFunctionCall();
+                };
+
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 200)); // Wait a bit before checking again
+        }
+    };
+
+    const nextJsServer = createServer(httpServer);
 
     // Separate HTTP Server for WebSocket
     // const wsServer = createServer((req, res) => {
     //     res.writeHead(404);
     //     res.end();
     // });
+
+    nextJsServer.listen(3000, () => {
+        console.log('Next.js is ready on http://localhost:3000');
+
+        processMessages();
+
+    });
 
     const io = new Server(nextJsServer, {
         path: '/api/chat',
@@ -61,8 +117,12 @@ app.prepare().then(() => {
         }
     });
 
+
     io.on('connection', (socket) => {
+
+        socket.join(serverRoomName); //name of conference room
         console.log('a user connected:', socket.id);
+        clients[socket.id] = socket;
 
         //Dice Roll Function Message Creator and sender
         function sendDiceRollMessage(skillValue, advantageValue) {
@@ -81,7 +141,7 @@ app.prepare().then(() => {
                 User: "aTreeFrog"
             };
             // Sending the message to the connected client
-            socket.emit('dice roll', diceRollMessage);
+            socket.emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
             activityCount++;
         }
 
@@ -89,39 +149,12 @@ app.prepare().then(() => {
             try {
                 playBackgroundAudio();////////////////////////for testing//////////
                 outputMsg = "";
-                chatMessages.push({ "role": "user", "content": msg }); //ToDo: need to identify which user is speaking
+                chatMessages.push(msg); //ToDo: need to identify which user is speaking
                 console.log("is this getting called?")
-                if (shouldContinue[socket.id]) {
-                    const data = {
-                        model: "gpt-4-1106-preview",
-                        messages: chatMessages,
-                        stream: true,
-                    };
-
-                    const completion = await openai.chat.completions.create(data);
-
-                    console.log("completion: ", completion);
-
-                    for await (const chunk of completion) {
-
-                        // Check if we should continue before emitting the next chunk
-                        if (!shouldContinue[socket.id]) {
-                            break; // Exit the loop if instructed to stop
-                        }
-
-                        outputStream = chunk.choices[0]?.delta?.content;
-                        outputMsg += outputStream;
-                        socket.emit('chat message', outputStream || "");
-                    }
-                }
-                console.log('made it to chat complete');
-                socket.emit('chat complete');
-                chatMessages.push({ "role": "assistant", "content": outputMsg });
-                await checkForFunctionCall();
 
             } catch (error) {
                 console.error('Error:', error);
-                socket.emit('error', 'Error processing your message');
+                socket.emit('error', 'Error processing your message'); // say to which client
             }
         });
 
@@ -148,7 +181,7 @@ app.prepare().then(() => {
                     const mp3 = await openai.audio.speech.create(msg);
                     const buffer = Buffer.from(await mp3.arrayBuffer());
                     // Emit the buffer to the client
-                    socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence });
+                    socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence }); //ToDo. for specific user
 
                 } catch (error) {
                     console.error('Error:', error);
@@ -212,8 +245,23 @@ app.prepare().then(() => {
         }
 
         async function playBackgroundAudio() {
-            socket.emit('background music', { url: 'http://localhost:3000/audio/lord_of_the_land.mp3' });
+            io.to(serverRoomName).emit('background music', { url: 'http://localhost:3000/audio/lord_of_the_land.mp3' });
         }
+
+        socket.on('my user message', (msg) => {
+            if (!responseSent.has(msg.id)) {
+                waitingForUser = true;
+                console.log("received my user message, ", msg);
+
+                io.to(serverRoomName).emit('latest user message', msg)
+                responseSent.set(msg.id, true);
+            }
+        });
+
+        socket.on('received user message', (msg) => {
+            waitingForUser = false;
+        });
+
 
         socket.on('cancel processing', () => {
             shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket
@@ -231,12 +279,9 @@ app.prepare().then(() => {
         // Handle creating a meeting
         socket.on('create-meeting', () => {
             const roomName = "Room-" + Date.now(); // Generate unique room name
-            const meetingUrl = `https://meet.jit.si/${encodeURIComponent(roomName)}`;
-
-
 
             // Emit back the room details
-            socket.emit('meeting-created', {
+            io.to(serverRoomName).emit('meeting-created', {
                 roomName: roomName,
                 meetingUrl: `https://meet.jit.si/${encodeURIComponent(roomName)}`,
                 message: "Meeting created"
@@ -277,6 +322,10 @@ app.prepare().then(() => {
         });
 
     });
+
+    setInterval(() => {
+        responseSent.clear();
+    }, 1000 * 60 * 30); // Clear every 30 mins, for example
 
     // wsServer.listen(3001, () => {
     //     console.log('WebSocket Server is running on http://localhost:3001');

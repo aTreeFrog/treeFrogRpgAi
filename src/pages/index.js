@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from 'next/font/google'
@@ -6,30 +6,19 @@ import styles from '@/styles/Home.module.css'
 import axios from 'axios';
 import TypingAnimation from "../components/TypingAnimation";
 import HexagonDice from "../components/HexagonDice"
-import io from 'Socket.IO-client'
 import JitsiMeetComponent from '../components/JitsiMeetComponent';
 import CharacterSheet from '../components/CharacterSheet';
 import AudioInput from '../components/AudioInput'
 import * as Tone from 'tone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
+import { chatSocket } from '../context/SocketSingleton';
 
 const inter = Inter({ subsets: ['latin'] })
 
-const chatUrl = '/api/chat';
-const chatSocket = io('http://localhost:3000', { path: chatUrl });
+//let chatUrl = '/api/chat';
+//let chatSocket = io('http://localhost:3000', { path: chatUrl });
 
-chatSocket.onopen = function (event) {
-  console.log("Connection established!");
-};
-
-chatSocket.onerror = function (error) {
-  console.error("WebSocket Error: ", error);
-};
-
-chatSocket.onclose = function (event) {
-  console.log("Connection closed:", event);
-};
 
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
@@ -111,6 +100,7 @@ export default function Home() {
   const [chatBallEnable, setChatBallEnable] = useState(false)
   const messageRefs = useRef([]);
   const [activeSkill, setActiveSkill] = useState("")
+  const activityCount = useRef(0);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -162,6 +152,19 @@ export default function Home() {
 
 
   useEffect(() => {
+
+    chatSocket.onopen = function (event) {
+      console.log("Connection established!");
+    };
+
+    chatSocket.onerror = function (error) {
+      console.error("WebSocket Error: ", error);
+    };
+
+    chatSocket.onclose = function (event) {
+      console.log("Connection closed:", event);
+    };
+
     // Emit event to server to create a meeting when component mounts
     chatSocket.emit('create-meeting');
 
@@ -175,6 +178,7 @@ export default function Home() {
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
+
     };
 
   }, []);
@@ -439,7 +443,7 @@ export default function Home() {
 
   const handleSubmit = (event) => {
 
-    console.log("meeting details", meetingDetails.meetingUr);
+    console.log("meeting details", meetingDetails?.meetingUrl);
 
     // Prevent the default form submission if an event is provided
     if (event && typeof event.preventDefault === 'function') {
@@ -490,9 +494,24 @@ export default function Home() {
     chatSocket.emit('reset audio sequence');
     expectedSequence.current = 0;
     audioQueue.current = new Map();
+    console.log("chatLog: ", chatLog);
+    const uniqueId = `user${'aTreeFrog'}-activity${activityCount.current}-${new Date().toISOString()}`;
+    let serverData = { type: 'user', message: inputMessage, "processed": false, "id": uniqueId };
+    activityCount.current++;
 
-    setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
+    chatSocket.emit('my user message', serverData);
+    console.log("sent my user message", serverData);
+
+    //setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
   }
+
+  chatSocket.on('latest user message', (data) => {
+    console.log('latest user message', data);
+    setChatLog((prevChatLog) => [...prevChatLog, data])
+
+    chatSocket.emit("received user message", data);
+
+  });
 
   const stopAi = () => {
 
@@ -629,6 +648,16 @@ export default function Home() {
       chatSocket.off('chat message', handleChatMessage);
       chatSocket.off('chat complete', onChatComplete);
       chatSocket.off('play audio');
+      chatSocket.off('meeting-created');
+      chatSocket.off('resume processing');
+      chatSocket.off('reset audio sequence');
+      chatSocket.off('latest user message');
+      chatSocket.off('my user message');
+      chatSocket.off('chat message');
+      chatSocket.off('speech to text data');
+      chatSocket.off('dice roll');
+      chatSocket.off('background music');
+
     };
   }, []);
 
@@ -1003,15 +1032,15 @@ export default function Home() {
             </button>
           </div>
           <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
-            class="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
+            className="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
             onClick={() => {
               setIsAudioOpen(prevState => !prevState);
               setIsCustomTextOpen(false);
             }}
           >
-            <div class="w-1 bg-white h-2"></div>
-            <div class="w-1 bg-white h-3 mx-0.5"></div>
-            <div class="w-1 bg-white h-2.5"></div>
+            <div className="w-1 bg-white h-2"></div>
+            <div className="w-1 bg-white h-3 mx-0.5"></div>
+            <div className="w-1 bg-white h-2.5"></div>
           </button>
         </form>
         {isCustomTextOpen && (

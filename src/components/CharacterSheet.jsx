@@ -229,7 +229,7 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
                     </div>
                     {/* Heart Shape with number "30" inside */}
                     <div className="heart">
-                        <div class="heart-text">30</div>
+                        <div className="heart-text">30</div>
                     </div>
                 </div>
                 <div className="flex align-self-end justify-end space-x-0.5 mt-70" style={{
