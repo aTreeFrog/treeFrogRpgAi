@@ -211,7 +211,7 @@ app.prepare().then(() => {
                 role: item.role,
                 content: item.content,
             }));
-            messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call?" })
+            messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call? Should only ask if the last message by the assistant or bot specifically said to roll a d20 dice." })
             const data = {
                 model: "gpt-4-1106-preview",
                 messages: messagesFilteredForFunction,
@@ -221,7 +221,7 @@ app.prepare().then(() => {
                         type: "function",
                         function: {
                             name: "sendDiceRollMessage",
-                            description: "Request the user to roll a d20 dice and to add a modifier based on Dungeons and Dragons style rules. Want the user to roll to determine the outcome of a decision based on the game. You, the AI bot, is the dungeon master.",
+                            description: "Request the user to roll a d20 dice and to add a modifier based on Dungeons and Dragons style rules. Want the user to roll to determine the outcome of a decision based on the game. You, the AI bot, is the dungeon master. You should only call this function if the last message from the assistant, bot, ai specifically said to roll a d20 dice.",
                             parameters: {
                                 type: "object",
                                 properties: {
