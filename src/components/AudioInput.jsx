@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { stopAi } from '../pages/index'
 
 
-export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, setLastAudioInputSequence, setShouldStopAi }) {
+export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, setLastAudioInputSequence, setShouldStopAi, isRecording, setIsRecording }) {
     // Define constraints for the audio
     const constraints = { audio: true };
     const [recordText, setRecordText] = useState("Click to Start recording")
-    const [isRecording, setIsRecording] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const audioChunks = useRef([]);
     const cancelled = useRef(false);

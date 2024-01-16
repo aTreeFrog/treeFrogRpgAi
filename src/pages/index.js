@@ -105,6 +105,8 @@ export default function Home() {
   const diceTone = useRef(null);
   const backgroundTone = useRef(null);
   const [diceSelectionOption, setDiceSelectionOption] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const speechTurnedOffMusic = useRef(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1021,6 +1023,22 @@ export default function Home() {
     setDiceSelectionOption(event.target.value);
   };
 
+  // if speech to text panel opened or closed, close or resume background audio. 
+  // But only resume audio if this panel was the thing that paused it
+  useEffect(() => {
+    console.log("made it to speech recording");
+    if (isRecording && backgroundTone?.current?.state === "started") {
+      console.log("speech recording hi");
+      backgroundTone?.current?.stop();
+      speechTurnedOffMusic.current = true;
+
+    } else if (!isRecording && speechTurnedOffMusic.current) {
+      speechTurnedOffMusic.current = false;
+      backgroundTone?.current?.start();
+    }
+  }, [isRecording]);
+
+
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1263,7 +1281,7 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} />
             </div>
           )
         }
