@@ -1,5 +1,5 @@
 // HexagonDice.js
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 const HexagonDice = ({ diceStates, setDiceStates }) => {
     const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning state
@@ -7,6 +7,7 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
     const [isD8Spinning, setIsD8Spinning] = useState(false);
     const [isD6Spinning, setIsD6Spinning] = useState(false);
     const [isD4Spinning, setIsD4Spinning] = useState(false);
+    const [floatingValue, setFloatingValue] = useState(null);
 
     const rollDice = (maxNumber) => {
 
@@ -69,6 +70,13 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
                     }
                 }));
                 setIsD20Spinning(false);
+                // set floating number animation for d20
+                if (maxNumber == 20) {
+                    setFloatingValue(newValue); // Use newValue directly
+                    setTimeout(() => {
+                        setFloatingValue(null);
+                    }, 8000);
+                }
             } else if (maxNumber == 4) {
                 setDiceStates(prevState => ({
                     ...prevState,
@@ -118,8 +126,12 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
     };
 
     return (
-
-        <div className="inline-flex">
+        <div className="inline-flex relative">
+            {floatingValue !== null && (
+                <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-orange-500 font-bold shiny-text blur-text">
+                    {floatingValue} + 2 Deception  :  {floatingValue + 2}
+                </div>
+            )}
             <div className={`triangle-container`}>
                 <div className={`triangle-glow triangle  ${isD4Spinning ? 'spinning' : ''} ${isD4Spinning ? 'no-glow' : ''} ${diceStates.d4.isGlowActive ? 'glow-active' : ''} ${diceStates.d4.isActive ? 'triangle-active' : 'triangle-inactive'}`}
                     onClick={() => {

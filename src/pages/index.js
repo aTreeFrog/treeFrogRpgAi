@@ -52,11 +52,11 @@ export default function Home() {
   const [diceRollsInputData, setDiceRollsInputData] = useState('');
   const defaultDiceStates = {
     d20: {
-      value: [20],
+      value: [],
       isActive: true,
       isGlowActive: false,
       rolls: 0,
-      displayedValue: 20,
+      displayedValue: null,
       inhibit: false
     },
     d10: {
@@ -102,6 +102,8 @@ export default function Home() {
   const [activeSkill, setActiveSkill] = useState("")
   const activityCount = useRef(0);
   const chatSocket = useContext(SocketContext);
+  const diceTone = useRef(null);
+  const backgroundTone = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -209,6 +211,12 @@ export default function Home() {
         audio.current = false;
       };
 
+      newAudio.current.onended = () => {
+        console.log('Playback ended');
+        newAudio.current.disconnect(); // Disconnect the player
+        newAudio.current.dispose();
+      };
+
     }
   };
 
@@ -294,6 +302,40 @@ export default function Home() {
       playNextAudio();
     });
 
+    chatSocket.on('dice roll', (data) => {
+      console.log("dice roll received");
+
+      if (messageQueue.current.length > 0) {
+        setPendingDiceUpdate(data); // Save the data for later
+      } else {
+        latestDiceMsg.current = data;
+        updateDiceStates(data); // Update immediately if messageQueue is empty
+      }
+
+    });
+
+
+    chatSocket.on('speech to text data', (data) => {
+
+      //if empty audio comes in, for some reason response with a sentence. if so, dont call ai
+      const processedText = data.text.trim().toLowerCase();
+      const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
+
+      //checks if data is thank you for watching or just a bunch of periods. If not, go on
+      if (!(processedText.startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace))) {
+        callSubmitFromAudio.current = true;
+        setAudioInputData(data.text);
+      }
+
+      console.log("speech to text input data", data.text);
+
+    });
+
+    chatSocket.on('background music', (data) => {
+      resumeAudioContext();
+      PlayBackgroundAudio(data); /////////////////turned off////////////////////////
+    });
+
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
@@ -302,10 +344,13 @@ export default function Home() {
       chatSocket.off('chat message', handleChatMessage);
       chatSocket.off('chat complete', onChatComplete);
       chatSocket.off('play audio');
+      chatSocket.off('dice roll');
+      chatSocket.off('speech to text data');
+      chatSocket.off('background music');
 
     };
 
-  }, []);
+  }, [chatSocket]);
 
 
   let lastMessage = [];
@@ -357,9 +402,12 @@ export default function Home() {
     Tone.start();
     console.log("PlayBackgroundAudio data: ", data);
     await Tone.loaded(); // Ensure Tone.js is ready
-    const player = new Tone.Player(data.url).toDestination();
-    player.volume.value = -10;
-    player.autostart = true;
+    backgroundTone.current = new Tone.Player({
+      url: data.url,
+      loop: true // This will make the audio loop
+    }).toDestination();
+    backgroundTone.current.volume.value = -10;
+    backgroundTone.current.autostart = true;
   };
 
   const cancelButtonMonitor = () => {
@@ -674,52 +722,39 @@ export default function Home() {
 
 
 
-    chatSocket.on('speech to text data', (data) => {
+    // chatSocket.on('speech to text data', (data) => {
 
-      //if empty audio comes in, for some reason response with a sentence. if so, dont call ai
-      const processedText = data.text.trim().toLowerCase();
-      const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
+    //   //if empty audio comes in, for some reason response with a sentence. if so, dont call ai
+    //   const processedText = data.text.trim().toLowerCase();
+    //   const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
 
-      //checks if data is thank you for watching or just a bunch of periods. If not, go on
-      if (!(processedText.startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace))) {
-        callSubmitFromAudio.current = true;
-        setAudioInputData(data.text);
-      }
+    //   //checks if data is thank you for watching or just a bunch of periods. If not, go on
+    //   if (!(processedText.startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace))) {
+    //     callSubmitFromAudio.current = true;
+    //     setAudioInputData(data.text);
+    //   }
 
-      console.log("speech to text input data", data.text);
+    //   console.log("speech to text input data", data.text);
 
-    });
+    // });
 
-    chatSocket.on('dice roll', (data) => {
-
-      if (messageQueue.current.length > 0) {
-        setPendingDiceUpdate(data); // Save the data for later
-      } else {
-        latestDiceMsg.current = data;
-        updateDiceStates(data); // Update immediately if messageQueue is empty
-      }
-
-    });
-
-    chatSocket.on('background music', (data) => {
-      resumeAudioContext();
-      PlayBackgroundAudio(data); /////////////////turned off////////////////////////
-    });
+    // chatSocket.on('background music', (data) => {
+    //   resumeAudioContext();
+    //   PlayBackgroundAudio(data); /////////////////turned off////////////////////////
+    // });
 
     // Return a cleanup function to remove the event listener when the component unmounts
     return () => {
       // chatSocket.off('chat message', handleChatMessage);
       // chatSocket.off('chat complete', onChatComplete);
-      chatSocket.off('play audio');
-      chatSocket.off('meeting-created');
-      chatSocket.off('resume processing');
-      chatSocket.off('reset audio sequence');
-      chatSocket.off('latest user message');
-      chatSocket.off('my user message');
-      chatSocket.off('chat message');
-      chatSocket.off('speech to text data');
-      chatSocket.off('dice roll');
-      chatSocket.off('background music');
+      // chatSocket.off('meeting-created');
+      // chatSocket.off('resume processing');
+      // chatSocket.off('reset audio sequence');
+      // chatSocket.off('latest user message');
+      // chatSocket.off('my user message');
+      // chatSocket.off('chat message');
+      // chatSocket.off('speech to text data');
+      // chatSocket.off('background music');
 
     };
   }, []);
@@ -819,7 +854,24 @@ export default function Home() {
       }
     }
     if (actionsComplete) {
+
       let d20sumTotal = d20Sum + 2//////////////////change this to whatever the skill check is
+
+      if (d20sumTotal > 14) {
+        resumeAudioContext();
+        diceTone.current = new Tone.Player({
+          url: "/audio/level_up_sound_effect.mp3",
+        }).toDestination();
+
+        diceTone.current.autostart = true;
+
+        diceTone.current.onended = () => {
+          console.log('Playback ended');
+          diceTone.current.disconnect(); // Disconnect the player
+        };
+
+      }
+
       const rollCompleteData = {
         User: "aTreeFrog",
         Total: d20sumTotal,
@@ -849,7 +901,7 @@ export default function Home() {
         setDiceStates(defaultDiceStates);
         setActiveSkill("");
         console.log("the end");
-      }, 4000);
+      }, 3000);
 
     }
   }, [diceStates.d20]);
