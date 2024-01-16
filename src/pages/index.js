@@ -591,12 +591,12 @@ export default function Home() {
       } else if (diceSelectionOption) {
         chatMsgData = "I rolled a " + diceSelectionOption;
         // clean up all dice states
+        latestDiceMsg.current = null;
         setPendingDiceUpdate(null);
         setDiceSelectionOption(null);
         setDiceRollsInputData('');
         setDiceStates(defaultDiceStates);
         setActiveSkill("");
-        latestDiceMsg.current = null;
       } else if (audioInputData.length > 0) {
         chatMsgData = audioInputData;
       } else if (inputValue.length > 0) {
