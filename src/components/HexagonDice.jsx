@@ -71,7 +71,7 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
                 }));
                 setIsD20Spinning(false);
                 // set floating number animation for d20
-                if (maxNumber == 20) {
+                if (maxNumber == 20 && diceStates.d20.isGlowActive) {
                     setFloatingValue(newValue); // Use newValue directly
                     setTimeout(() => {
                         setFloatingValue(null);

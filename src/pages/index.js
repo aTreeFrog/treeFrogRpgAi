@@ -94,9 +94,7 @@ export default function Home() {
   };
   const [diceStates, setDiceStates] = useState(defaultDiceStates);
   const [diceRollId, setDiceRollId] = useState();
-  ///////////////////////////////////////////////////////
-  const [pendingDiceUpdate, setPendingDiceUpdate] = useState('hi');/////////////change to null!!!!!!!!
-  /////////////////////////////////////////////////////
+  const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
   const latestDiceMsg = useRef(null);
   const [chatBallEnable, setChatBallEnable] = useState(false)
@@ -417,7 +415,8 @@ export default function Home() {
 
   const cancelButtonMonitor = () => {
 
-    if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
+    //if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
+    if (messageQueue.current.length > 0) {
       setCancelButton(prevValue => Math.min(prevValue + 2, 8));
     } else {
       setCancelButton(prevValue => Math.max(0, prevValue - 1));
@@ -581,43 +580,45 @@ export default function Home() {
     if (cancelButton !== 0 && !pendingDiceUpdate) {
       stopAi();
       setCancelButton(0);
-    }
+    } else {
 
-    //see if data is coming from dice roll completion, audio message or normal text, or none at all.
-    let chatMsgData = "";
-    if (diceRollsInputData.length > 0) {
-      chatMsgData = diceRollsInputData;
-      setDiceRollsInputData('');
-      setDiceSelectionOption(null);
-    } else if (setDiceSelectionOption && pendingDiceUpdate) {
-      chatMsgData = "I rolled a " + diceSelectionOption;
-      // clean up all dice states
-      setPendingDiceUpdate(null);
-      setDiceSelectionOption(null);
-      setDiceRollsInputData('');
-      setDiceStates(defaultDiceStates);
-      setActiveSkill("");
-    } else if (audioInputData.length > 0) {
-      chatMsgData = audioInputData;
-    } else if (inputValue.length > 0) {
-      chatMsgData = inputValue;
-    }
-
-    if (chatMsgData.length > 0) {
-
-      readyChatAndAudio(chatMsgData);
-
-      //sendImageMessage(chatMsgData);
-
-      sendMessage(chatMsgData);
-
-      setInputValue('');
-
-      resetUserTextForm();
-
-      setAudioInputData('');
+      //see if data is coming from dice roll completion, audio message or normal text, or none at all.
+      let chatMsgData = "";
+      if (diceRollsInputData.length > 0) {
+        chatMsgData = diceRollsInputData;
+        setDiceRollsInputData('');
+        setDiceSelectionOption(null);
+      } else if (diceSelectionOption) {
+        chatMsgData = "I rolled a " + diceSelectionOption;
+        // clean up all dice states
+        setPendingDiceUpdate(null);
+        setDiceSelectionOption(null);
+        setDiceRollsInputData('');
+        setDiceStates(defaultDiceStates);
+        setActiveSkill("");
+      } else if (audioInputData.length > 0) {
+        chatMsgData = audioInputData;
+      } else if (inputValue.length > 0) {
+        chatMsgData = inputValue;
+      }
 
 
+      if (chatMsgData.length > 0) {
+
+        readyChatAndAudio(chatMsgData);
+
+        //sendImageMessage(chatMsgData);
+
+        sendMessage(chatMsgData);
+
+        setInputValue('');
+
+        resetUserTextForm();
+
+        setAudioInputData('');
+
+
+      }
     }
 
   }
@@ -835,7 +836,7 @@ export default function Home() {
   useEffect(() => {
     if (messageQueue.current.length == 0 && pendingDiceUpdate) {
       updateDiceStates(pendingDiceUpdate);
-      //setPendingDiceUpdate(null); // Clear the pending update !!!!!!!PUT THIS BAC
+      setPendingDiceUpdate(null); // Clear the pending update !!!!!!!PUT THIS BAC
     }
   }, [messageQueueTrigger, pendingDiceUpdate]);
 
@@ -1019,10 +1020,6 @@ export default function Home() {
     setDiceSelectionOption(event.target.value);
   };
 
-  useEffect(() => {
-    console.log(`pendingDiceUpdate: ${pendingDiceUpdate}, diceSelectionOption: ${diceSelectionOption}`);
-  }, [pendingDiceUpdate, diceSelectionOption]);
-
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1153,7 +1150,7 @@ export default function Home() {
           <div className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
             {/* Make sure the input container can grow and the button stays aligned */}
             <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
-              {pendingDiceUpdate ?
+              {diceStates.d20.isGlowActive ?
                 <>
                   <textarea
                     className=" px-4 py-2 bg-transparent text-white focus:outline-none"
@@ -1207,8 +1204,8 @@ export default function Home() {
               }
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-              className={`${(!pendingDiceUpdate || (pendingDiceUpdate && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={pendingDiceUpdate && !diceSelectionOption}>
+              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
+              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
