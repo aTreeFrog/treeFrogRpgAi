@@ -417,7 +417,7 @@ export default function Home() {
 
     //if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
     if (messageQueue.current.length > 0) {
-      setCancelButton(prevValue => Math.min(prevValue + 2, 8));
+      setCancelButton(prevValue => Math.min(prevValue + 2, 3));
     } else {
       setCancelButton(prevValue => Math.max(0, prevValue - 1));
     }
@@ -596,6 +596,7 @@ export default function Home() {
         setDiceRollsInputData('');
         setDiceStates(defaultDiceStates);
         setActiveSkill("");
+        latestDiceMsg.current = null;
       } else if (audioInputData.length > 0) {
         chatMsgData = audioInputData;
       } else if (inputValue.length > 0) {
