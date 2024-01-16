@@ -1094,13 +1094,7 @@ export default function Home() {
               </div>
             ))}
 
-            {/* Arrow Button at the Bottom Middle, initially hidden */}
-            <button
-              id="scrollArrow"
-              className={`${isAtBottom ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
-              onClick={scrollToBottom}>
-              ↓
-            </button>
+
           </div>
         </div>
         {/* Fixed Send Message Form or other bottom content */}
@@ -1148,6 +1142,16 @@ export default function Home() {
             <span style={{ paddingBottom: '4px' }}>+</span>
           </button>
           <div className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
+            {/* Arrow Button at the Bottom Middle, initially hidden */}
+            <button
+              type="button"
+              id="scrollArrow"
+              className={`${isAtBottom ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
+              style={{ bottom: `${inputTextHeight + 35}px` }}
+              onClick={scrollToBottom}
+            >
+              ↓
+            </button>
             {/* Make sure the input container can grow and the button stays aligned */}
             <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
               {diceStates.d20.isGlowActive ?
