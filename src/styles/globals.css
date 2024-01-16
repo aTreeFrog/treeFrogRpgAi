@@ -756,3 +756,25 @@ textarea {
     /* Align with text */
     /* Add any additional styling as needed */
 }
+
+@keyframes blurFadeIn {
+    0% {
+        filter: blur(12px);
+        opacity: 0;
+    }
+
+    100% {
+        filter: blur(0px);
+        /* Ensure no blur at the end */
+        opacity: 1;
+    }
+}
+
+.shiny-text {
+    text-shadow: 0 0 8px rgba(255, 165, 0, 0.1);
+    /* Adjust for desired shininess */
+}
+
+.blur-text {
+    animation: blurFadeIn 1.5s ease-out forwards;
+}

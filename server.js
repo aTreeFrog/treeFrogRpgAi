@@ -150,7 +150,7 @@ app.prepare().then(() => {
                 User: "aTreeFrog"
             };
             // Sending the message to the connected client
-            socket.emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
+            io.to(serverRoomName).emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
             activityCount++;
         }
 
@@ -170,6 +170,30 @@ app.prepare().then(() => {
         const queue = []; // Initialize an empty queue
 
         socket.on('audio message', async (msg) => {
+
+            async function processQueue() {
+                if (shouldContinue[socket.id] && queue.length > 0) {
+                    const msg = queue.shift();
+                    const currentSequence = sequenceNumber++;
+                    try {
+                        console.log("audio is getting called?");
+                        console.log("audio msg: ", msg);
+                        const mp3 = await openai.audio.speech.create(msg);
+                        const buffer = Buffer.from(await mp3.arrayBuffer());
+                        // Emit the buffer to the client
+                        socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence }); //ToDo. for specific user
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        socket.emit('error', 'Error processing your audio message: ', 'sequence', currentSequence);
+                    } finally {
+                        if (queue.length > 0) {
+                            processQueue(); // If there are more items, continue processing
+                        }
+                    }
+                }
+            }
+
             console.log("audio message: ", msg);
             queue.push(msg); // Add incoming messages to the queue
             processQueue(); // Trigger processing (if not already in progress)//////TURNED OFF
@@ -181,31 +205,8 @@ app.prepare().then(() => {
             sequenceNumber = 0;
         });
 
-        async function processQueue() {
-            if (shouldContinue[socket.id] && queue.length > 0) {
-                const msg = queue.shift();
-                const currentSequence = sequenceNumber++;
-                try {
-                    console.log("audio is getting called?")
-                    console.log("audio msg: ", msg);
-                    const mp3 = await openai.audio.speech.create(msg);
-                    const buffer = Buffer.from(await mp3.arrayBuffer());
-                    // Emit the buffer to the client
-                    socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence }); //ToDo. for specific user
-
-                } catch (error) {
-                    console.error('Error:', error);
-                    socket.emit('error', 'Error processing your audio message: ', 'sequence', currentSequence);
-                } finally {
-                    if (queue.length > 0) {
-                        processQueue(); // If there are more items, continue processing
-                    }
-                }
-            }
-        }
-
         async function checkForFunctionCall() {
-            ;
+
             let messagesFilteredForFunction = chatMessages.map(item => ({
                 role: item.role,
                 content: item.content,
