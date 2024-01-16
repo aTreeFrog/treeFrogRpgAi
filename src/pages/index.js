@@ -104,6 +104,7 @@ export default function Home() {
   const chatSocket = useContext(SocketContext);
   const diceTone = useRef(null);
   const backgroundTone = useRef(null);
+  const [diceSelectionOption, setDiceSelectionOption] = useState(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -140,6 +141,7 @@ export default function Home() {
   //     window.removeEventListener('resize', updateBallPosition);
   //   };
   // }, [chatLog]);
+
 
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
@@ -307,6 +309,7 @@ export default function Home() {
 
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(data); // Save the data for later
+        setDiceSelectionOption(null);
       } else {
         latestDiceMsg.current = data;
         updateDiceStates(data); // Update immediately if messageQueue is empty
@@ -412,7 +415,8 @@ export default function Home() {
 
   const cancelButtonMonitor = () => {
 
-    if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
+    //if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
+    if (messageQueue.current.length > 0) {
       setCancelButton(prevValue => Math.min(prevValue + 2, 8));
     } else {
       setCancelButton(prevValue => Math.max(0, prevValue - 1));
@@ -576,34 +580,45 @@ export default function Home() {
     if (cancelButton !== 0 && !pendingDiceUpdate) {
       stopAi();
       setCancelButton(0);
-    }
+    } else {
 
-    //see if data is coming from dice roll completion, audio message or normal text, or none at all.
-    let chatMsgData = "";
-    if (diceRollsInputData.length > 0) {
-      chatMsgData = diceRollsInputData;
-      setDiceRollsInputData('');
-    } else if (audioInputData.length > 0) {
-      chatMsgData = audioInputData;
-    } else if (inputValue.length > 0) {
-      chatMsgData = inputValue;
-    }
-
-    if (chatMsgData.length > 0) {
-
-      readyChatAndAudio(chatMsgData);
-
-      //sendImageMessage(chatMsgData);
-
-      sendMessage(chatMsgData);
-
-      setInputValue('');
-
-      resetUserTextForm();
-
-      setAudioInputData('');
+      //see if data is coming from dice roll completion, audio message or normal text, or none at all.
+      let chatMsgData = "";
+      if (diceRollsInputData.length > 0) {
+        chatMsgData = diceRollsInputData;
+        setDiceRollsInputData('');
+        setDiceSelectionOption(null);
+      } else if (diceSelectionOption) {
+        chatMsgData = "I rolled a " + diceSelectionOption;
+        // clean up all dice states
+        setPendingDiceUpdate(null);
+        setDiceSelectionOption(null);
+        setDiceRollsInputData('');
+        setDiceStates(defaultDiceStates);
+        setActiveSkill("");
+      } else if (audioInputData.length > 0) {
+        chatMsgData = audioInputData;
+      } else if (inputValue.length > 0) {
+        chatMsgData = inputValue;
+      }
 
 
+      if (chatMsgData.length > 0) {
+
+        readyChatAndAudio(chatMsgData);
+
+        //sendImageMessage(chatMsgData);
+
+        sendMessage(chatMsgData);
+
+        setInputValue('');
+
+        resetUserTextForm();
+
+        setAudioInputData('');
+
+
+      }
     }
 
   }
@@ -821,7 +836,7 @@ export default function Home() {
   useEffect(() => {
     if (messageQueue.current.length == 0 && pendingDiceUpdate) {
       updateDiceStates(pendingDiceUpdate);
-      setPendingDiceUpdate(null); // Clear the pending update
+      setPendingDiceUpdate(null); // Clear the pending update !!!!!!!PUT THIS BAC
     }
   }, [messageQueueTrigger, pendingDiceUpdate]);
 
@@ -1000,6 +1015,11 @@ export default function Home() {
   //for the ICON that follows the text. only add it to last bot message
   const lastBotMessageIndex = chatLog.map(e => e.type).lastIndexOf('bot');
 
+  const handleDropdownChange = (event) => {
+    console.log("handleDropdownChange: ", event.target.value);
+    setDiceSelectionOption(event.target.value);
+  };
+
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1127,22 +1147,65 @@ export default function Home() {
             }}>
             <span style={{ paddingBottom: '4px' }}>+</span>
           </button>
-          <div className=" ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
+          <div className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
             {/* Make sure the input container can grow and the button stays aligned */}
             <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
-              <textarea
-                className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
-                placeholder="Type your message..."
-                value={inputValue}
-                onKeyDown={handleKeyDown}
-                onChange={(e) => handleInputChange(e)}
-                style={{ minHeight: '10px' }} // Adjust as needed
-                rows={1} // Start with one row
-                ref={textareaRef}
-              ></textarea>
+              {diceStates.d20.isGlowActive ?
+                <>
+                  <textarea
+                    className=" px-4 py-2 bg-transparent text-white focus:outline-none"
+                    placeholder="Type your message..."
+                    value={"I rolled a"}
+                    readOnly
+                    style={{ minHeight: '10px' }}
+                    rows={1}
+                    ref={textareaRef}
+                  ></textarea>
+                  <select
+                    className="bg-gray-700 text-white rounded px-4 py-1"
+                    onChange={(e) => handleDropdownChange(e)}
+                    style={{ position: 'absolute', right: '10px', top: '46%', transform: 'translateY(-50%)' }}
+                  >
+                    {/* Add your dropdown options here */}
+                    <option value="" disabled selected>Selection</option>
+                    <option value="20 + 2 Modifier">20 + 2 Modifier</option>
+                    <option value="19 + 2 Modifier">19 + 2 Modifier</option>
+                    <option value="18 + 2 Modifier">18 + 2 Modifier</option>
+                    <option value="17 + 2 Modifier">17 + 2 Modifier</option>
+                    <option value="16 + 2 Modifier">16 + 2 Modifier</option>
+                    <option value="15 + 2 Modifier">15 + 2 Modifier</option>
+                    <option value="14 + 2 Modifier">14 + 2 Modifier</option>
+                    <option value="13 + 2 Modifier">13 + 2 Modifier</option>
+                    <option value="12 + 2 Modifier">12 + 2 Modifier</option>
+                    <option value="11 + 2 Modifier">11 + 2 Modifier</option>
+                    <option value="10 + 2 Modifier">10 + 2 Modifier</option>
+                    <option value="9 + 2 Modifier">  9 + 2 Modifier</option>
+                    <option value="8 + 2 Modifier">  8 + 2 Modifier</option>
+                    <option value="7 + 2 Modifier">  7 + 2 Modifier</option>
+                    <option value="6 + 2 Modifier">  6 + 2 Modifier</option>
+                    <option value="5 + 2 Modifier">  5 + 2 Modifier</option>
+                    <option value="4 + 2 Modifier">  4 + 2 Modifier</option>
+                    <option value="3 + 2 Modifier">  3 + 2 Modifier</option>
+                    <option value="2 + 2 Modifier">  2 + 2 Modifier</option>
+                    <option value="1 + 2 Modifier">  1 + 2 Modifier</option>
+                  </select>
+                </>
+                :
+                <textarea
+                  className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
+                  placeholder="Type your message..."
+                  value={inputValue}
+                  onKeyDown={handleKeyDown}
+                  onChange={(e) => handleInputChange(e)}
+                  style={{ minHeight: '10px' }}
+                  rows={1}
+                  ref={textareaRef}
+                ></textarea>
+              }
             </div>
-            <button type="submit" style={{ position: 'relative', zIndex: 1 }} className={` ${pendingDiceUpdate ? 'bg-grey-700 hover:bg-grey-700' : 'bg-purple-600 hover:bg-purple-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={pendingDiceUpdate}>
+            <button type="submit" style={{ position: 'relative', zIndex: 1 }}
+              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
+              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
               {cancelButton !== 0 ? '▮▮' : 'Send'}
             </button>
           </div>
@@ -1158,45 +1221,49 @@ export default function Home() {
             <div className="w-1 bg-white h-2.5"></div>
           </button>
         </form>
-        {isCustomTextOpen && (
-          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
-            <div className="grid grid-cols-3 gap-2 all-cells">
-              {/* Render cells */}
-              {customTextCells.map((content, index) => (
-                content ?
-                  // Cell with text and cancel area
-                  <div key={index} className="flex items-center gap-1">
-                    {/* Cell with text */}
-                    <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                      onClick={() => handleCellClick(content)}
-                    >
-                      {content}
-                    </button>
-                    {/* Cancel button */}
-                    <button className=" all-cells text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
-                  </div>
-                  :
-                  // Input cell
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Type here..."
-                    maxLength={50}
-                    onKeyDown={newTextEnterKeyDown}
-                    onBlur={(e) => handleBlur(index, e.target.value)}
-                    className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
-                  />
-              ))}
+        {
+          isCustomTextOpen && (
+            <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+              <div className="grid grid-cols-3 gap-2 all-cells">
+                {/* Render cells */}
+                {customTextCells.map((content, index) => (
+                  content ?
+                    // Cell with text and cancel area
+                    <div key={index} className="flex items-center gap-1">
+                      {/* Cell with text */}
+                      <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                        onClick={() => handleCellClick(content)}
+                      >
+                        {content}
+                      </button>
+                      {/* Cancel button */}
+                      <button className=" all-cells text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
+                    </div>
+                    :
+                    // Input cell
+                    <input
+                      key={index}
+                      type="text"
+                      placeholder="Type here..."
+                      maxLength={50}
+                      onKeyDown={newTextEnterKeyDown}
+                      onBlur={(e) => handleBlur(index, e.target.value)}
+                      className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
+                    />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {isAudioOpen && (
-          <div>
-            <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} />
-          </div>
-        )}
+          )
+        }
+        {
+          isAudioOpen && (
+            <div>
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} />
+            </div>
+          )
+        }
 
-      </div>
+      </div >
     </div >
   )
 
