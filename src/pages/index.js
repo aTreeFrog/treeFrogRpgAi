@@ -13,12 +13,13 @@ import * as Tone from 'tone';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
 import SocketContext from '../context/SocketContext';
+import CustomSelect from '../components/CustomSelect'; // Import the above created component
+
 
 const inter = Inter({ subsets: ['latin'] })
 
 //let chatUrl = '/api/chat';
 //let chatSocket = io('http://localhost:3000', { path: chatUrl });
-
 
 export default function Home() {
   const [inputValue, setInputValue] = useState('');
@@ -115,35 +116,6 @@ export default function Home() {
       scrollToBottom();
     }
   }, [chatLog]);
-
-  // useEffect(() => {
-
-  //   const updateBallPosition = () => {
-  //     messageRefs.current.forEach((ref, index) => {
-  //       if (ref && chatLog[index].type === 'bot') {
-  //         const messageElement = ref;
-  //         const ballElement = messageElement.querySelector('.glowingBall');
-
-  //         if (ballElement) {
-  //           const { offsetLeft, offsetTop, offsetWidth } = messageElement.getBoundingClientRect();
-  //           const ballSize = ballElement.offsetWidth;
-
-  //           // Position the ball
-  //           ballElement.style.left = `${offsetLeft + offsetWidth - ballSize / 2}px`;
-  //           ballElement.style.top = `${offsetTop}px`;
-  //         }
-  //       }
-  //     });
-  //   };
-
-  //   updateBallPosition();
-  //   window.addEventListener('resize', updateBallPosition);
-
-  //   return () => {
-  //     window.removeEventListener('resize', updateBallPosition);
-  //   };
-  // }, [chatLog]);
-
 
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
@@ -271,7 +243,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
+            //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
@@ -695,88 +667,6 @@ export default function Home() {
 
   }
 
-  useEffect(() => {
-
-    // const handleChatMessage = (msg) => {
-    //   console.log("handleChatMessage", msg);
-    //   setCancelButton(1);
-    //   setIsLoading(false);
-    //   messageQueue.current.push(msg);
-    //   tempBuffer.current += msg; // Modify tempBuffer ref
-
-    //   // Process the buffer to extract complete sentences
-    //   let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
-    //   for (let i = 0; i < tempBuffer.current.length; i++) {
-    //     // Check for sentence termination (.,!,?)
-    //     if (tempBuffer.current[i] === '.' || tempBuffer.current[i] === '!' || tempBuffer.current[i] === '?') {
-    //       // Extract the sentence
-    //       let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
-    //       if (sentence.length > 0) {
-    //         //textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
-    //       }
-    //       lastIndex = i + 1;  // Update the last index to the new position
-    //     }
-    //   }
-
-    //   // Keep only the incomplete sentence part in the buffer
-    //   tempBuffer.current = tempBuffer.current.substring(lastIndex);
-
-
-    // };
-
-
-    // const onChatComplete = () => {
-    //   //setCancelButton(0); // Assuming setCancelButton is a state setter function
-    //   if (tempBuffer.current.length > 0) {
-    //     textToSpeechCall(tempBuffer.current);
-    //   }
-    //   tempBuffer.current = '';
-
-    // };
-
-    // // Attach the event listener only once when the component mounts
-    // chatSocket.on('chat message', handleChatMessage);
-    // chatSocket.on('chat complete', onChatComplete);
-
-
-
-    // chatSocket.on('speech to text data', (data) => {
-
-    //   //if empty audio comes in, for some reason response with a sentence. if so, dont call ai
-    //   const processedText = data.text.trim().toLowerCase();
-    //   const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
-
-    //   //checks if data is thank you for watching or just a bunch of periods. If not, go on
-    //   if (!(processedText.startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace))) {
-    //     callSubmitFromAudio.current = true;
-    //     setAudioInputData(data.text);
-    //   }
-
-    //   console.log("speech to text input data", data.text);
-
-    // });
-
-    // chatSocket.on('background music', (data) => {
-    //   resumeAudioContext();
-    //   PlayBackgroundAudio(data); /////////////////turned off////////////////////////
-    // });
-
-    // Return a cleanup function to remove the event listener when the component unmounts
-    return () => {
-      // chatSocket.off('chat message', handleChatMessage);
-      // chatSocket.off('chat complete', onChatComplete);
-      // chatSocket.off('meeting-created');
-      // chatSocket.off('resume processing');
-      // chatSocket.off('reset audio sequence');
-      // chatSocket.off('latest user message');
-      // chatSocket.off('my user message');
-      // chatSocket.off('chat message');
-      // chatSocket.off('speech to text data');
-      // chatSocket.off('background music');
-
-    };
-  }, []);
-
   const updateDiceStates = (data) => {
 
     console.log("updateDiceStates: ", data);
@@ -839,7 +729,7 @@ export default function Home() {
   useEffect(() => {
     if (messageQueue.current.length == 0 && pendingDiceUpdate) {
       updateDiceStates(pendingDiceUpdate);
-      setPendingDiceUpdate(null); // Clear the pending update !!!!!!!PUT THIS BAC
+      setPendingDiceUpdate(null); // Clear the pending update
     }
   }, [messageQueueTrigger, pendingDiceUpdate]);
 
@@ -1018,10 +908,25 @@ export default function Home() {
   //for the ICON that follows the text. only add it to last bot message
   const lastBotMessageIndex = chatLog.map(e => e.type).lastIndexOf('bot');
 
-  const handleDropdownChange = (event) => {
-    console.log("handleDropdownChange: ", event.target.value);
-    setDiceSelectionOption(event.target.value);
+  const handleDropdownChange = (option) => {
+
+    setDiceSelectionOption(option);
   };
+
+  const options = [
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+  ];
 
   // if speech to text panel opened or closed, close or resume background audio. 
   // But only resume audio if this panel was the thing that paused it
@@ -1172,46 +1077,25 @@ export default function Home() {
               ↓
             </button>
             {/* Make sure the input container can grow and the button stays aligned */}
-            <div className="message-input-container flex-grow" style={{ minHeight: `${inputTextHeight}px`, position: 'relative', zIndex: 2 }}>
+            <div className="flex items-center" style={{ position: 'relative', zIndex: 2, flexGrow: 1 }}>
               {diceStates.d20.isGlowActive ?
                 <>
                   <textarea
-                    className=" px-4 py-2 bg-transparent text-white focus:outline-none"
+                    className="bg-transparent text-white focus:outline-none"
                     placeholder="Type your message..."
                     value={"I rolled a"}
                     readOnly
-                    style={{ minHeight: '10px' }}
+                    style={{ maxWidth: '70px', minHeight: '10px', marginRight: '1px', marginLeft: '15px' }} // Set a fixed width
                     rows={1}
                     ref={textareaRef}
                   ></textarea>
-                  <select
-                    className="bg-gray-700 text-white rounded px-4 py-1"
-                    onChange={(e) => handleDropdownChange(e)}
-                    style={{ position: 'absolute', right: '10px', top: '46%', transform: 'translateY(-50%)' }}
-                  >
-                    {/* Add your dropdown options here */}
-                    <option value="" disabled selected>Selection</option>
-                    <option value="20 + 2 Modifier">20 + 2 Modifier</option>
-                    <option value="19 + 2 Modifier">19 + 2 Modifier</option>
-                    <option value="18 + 2 Modifier">18 + 2 Modifier</option>
-                    <option value="17 + 2 Modifier">17 + 2 Modifier</option>
-                    <option value="16 + 2 Modifier">16 + 2 Modifier</option>
-                    <option value="15 + 2 Modifier">15 + 2 Modifier</option>
-                    <option value="14 + 2 Modifier">14 + 2 Modifier</option>
-                    <option value="13 + 2 Modifier">13 + 2 Modifier</option>
-                    <option value="12 + 2 Modifier">12 + 2 Modifier</option>
-                    <option value="11 + 2 Modifier">11 + 2 Modifier</option>
-                    <option value="10 + 2 Modifier">10 + 2 Modifier</option>
-                    <option value="9 + 2 Modifier">  9 + 2 Modifier</option>
-                    <option value="8 + 2 Modifier">  8 + 2 Modifier</option>
-                    <option value="7 + 2 Modifier">  7 + 2 Modifier</option>
-                    <option value="6 + 2 Modifier">  6 + 2 Modifier</option>
-                    <option value="5 + 2 Modifier">  5 + 2 Modifier</option>
-                    <option value="4 + 2 Modifier">  4 + 2 Modifier</option>
-                    <option value="3 + 2 Modifier">  3 + 2 Modifier</option>
-                    <option value="2 + 2 Modifier">  2 + 2 Modifier</option>
-                    <option value="1 + 2 Modifier">  1 + 2 Modifier</option>
-                  </select>
+                  <CustomSelect
+                    options={options}
+                    value={diceSelectionOption}
+                    onChange={handleDropdownChange}
+
+                  />
+
                 </>
                 :
                 <textarea
@@ -1226,6 +1110,8 @@ export default function Home() {
                 ></textarea>
               }
             </div>
+
+
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
               className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
               disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
