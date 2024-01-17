@@ -111,6 +111,8 @@ export default function Home() {
   const speechTurnedOffMusic = useRef(false);
   const [customCellValue, setCustomCellValue] = useState('');
   const [teamGmOption, setTeamGmOption] = useState({ value: 'All', label: 'All' });
+  const musicThreadControlActive = useRef(false);
+  const [enableCellButton, setEnableCellButton] = useState(true);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -314,6 +316,7 @@ export default function Home() {
     chatSocket.on('background music', (data) => {
       resumeAudioContext();
       PlayBackgroundAudio(data); /////////////////turned off////////////////////////
+
     });
 
     // Cleanup listener when component unmounts
@@ -376,24 +379,46 @@ export default function Home() {
 
   };
 
-  // background music
+  // play background music and handle multiple calls in tight sequence
   const PlayBackgroundAudio = async (data) => {
-
-    //stop any existing background music
-    if (backgroundTone?.current?.state === "started") {
-      backgroundTone?.current?.stop();
+    if (musicThreadControlActive.current) {
+      console.log("Music already getting prepped or playing");
+      return;
     }
 
-    Tone.start();
-    console.log("PlayBackgroundAudio data: ", data);
-    await Tone.loaded(); // Ensure Tone.js is ready
-    backgroundTone.current = new Tone.Player({
-      url: data.url,
-      loop: true // This will make the audio loop
-    }).toDestination();
-    backgroundTone.current.volume.value = -10;
-    backgroundTone.current.autostart = true;
+    musicThreadControlActive.current = true;
+
+    try {
+      // Stop any existing background music
+      if (backgroundTone.current && backgroundTone.current.state === "started") {
+        await backgroundTone.current.stop();
+        backgroundTone.current = null;
+      }
+
+      // Double-check if another thread has started the music
+      if (musicThreadControlActive.current) {
+        Tone.start();
+        console.log("PlayBackgroundAudio data: ", data);
+        await Tone.loaded(); // Ensure Tone.js is ready
+
+        backgroundTone.current = new Tone.Player({
+          url: data.url,
+          loop: true
+        }).toDestination();
+
+        backgroundTone.current.volume.value = -10;
+        backgroundTone.current.autostart = true;
+      }
+    } catch (error) {
+      console.error("Error in playing audio", error);
+    } finally {
+      // Allow new music to be played after a short delay
+      setTimeout(() => {
+        musicThreadControlActive.current = false;
+      }, 100); // Adjust this delay as needed
+    }
   };
+
 
   const cancelButtonMonitor = () => {
 
@@ -901,8 +926,19 @@ export default function Home() {
 
   // Handles clicking on the cell
   const handleCellClick = (content) => {
+
+    if (!enableCellButton) return;
+
+    setEnableCellButton(false);
+
     console.log(`Cell clicked with content: ${content}`);
     setCustomCellValue(content);
+
+    // Re-enable the button after 2 seconds
+    setTimeout(() => {
+      setEnableCellButton(true);
+    }, 2000);
+
   };
 
   useEffect(() => {
