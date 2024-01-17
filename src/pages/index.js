@@ -14,6 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
 import SocketContext from '../context/SocketContext';
 import CustomSelect from '../components/CustomSelect'; // Import the above created component
+import TeamOrGmSelect from "../components/TeamOrGMSelect";
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -55,7 +56,7 @@ export default function Home() {
     d20: {
       value: [],
       isActive: true,
-      isGlowActive: true,
+      isGlowActive: false,
       rolls: 0,
       displayedValue: null,
       inhibit: false
@@ -109,6 +110,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const speechTurnedOffMusic = useRef(false);
   const [customCellValue, setCustomCellValue] = useState('');
+  const [teamGmOption, setTeamGmOption] = useState({ value: 'All', label: 'All' });
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -225,7 +227,7 @@ export default function Home() {
     chatSocket.on('latest user message', (data) => {
       console.log('latest user message', data);
       chatSocket.emit("received user message", data);
-      setChatLog((prevChatLog) => [...prevChatLog, { "type": 'user', "message": data.content }])
+      setChatLog((prevChatLog) => [...prevChatLog, { "type": 'user', "message": data.content, "mode": data.mode }])
 
     });
 
@@ -376,6 +378,11 @@ export default function Home() {
 
   // background music
   const PlayBackgroundAudio = async (data) => {
+
+    //stop any existing background music
+    if (backgroundTone?.current?.state === "started") {
+      backgroundTone?.current?.stop();
+    }
 
     Tone.start();
     console.log("PlayBackgroundAudio data: ", data);
@@ -661,7 +668,7 @@ export default function Home() {
     console.log("about to send message: ", message);
 
     const uniqueId = `user${'aTreeFrog'}-activity${activityCount.current}-${new Date().toISOString()}`;
-    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId };
+    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": teamGmOption.value };
     activityCount.current++;
     chatSocket.emit('my user message', serverData);
     console.log("sent my user message", serverData);
@@ -927,7 +934,6 @@ export default function Home() {
 
   const options = [
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '.20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
@@ -937,6 +943,18 @@ export default function Home() {
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+  ];
+
+  const handleTeamGmChange = (option) => {
+
+    console.log("handleTeamGmChange ", option);
+    setTeamGmOption(option);
+  };
+
+  const teamGmOptionsList = [
+    { value: 'All', label: 'All' },
+    { value: 'Team', label: 'Team' },
   ];
 
   // if speech to text panel opened or closed, close or resume background audio. 
@@ -1018,7 +1036,7 @@ export default function Home() {
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
               <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`${message.type === 'user' ? 'bg-purple-500' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
+                <div className={`${message.type === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.type === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'}  rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
                   {chatBallEnable && message.type === 'bot' && index === lastBotMessageIndex &&
                     <span className="wizard-hat inline-block ml-1">
@@ -1094,7 +1112,7 @@ export default function Home() {
                 <>
                   <textarea
                     className="bg-transparent text-white focus:outline-none"
-                    placeholder="Type your message..."
+                    placeholder=""
                     value={"I rolled a"}
                     readOnly
                     style={{ maxWidth: '70px', minHeight: '10px', marginRight: '1px', marginLeft: '15px' }} // Set a fixed width
@@ -1110,16 +1128,23 @@ export default function Home() {
 
                 </>
                 :
-                <textarea
-                  className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
-                  placeholder="Type your message..."
-                  value={inputValue}
-                  onKeyDown={handleKeyDown}
-                  onChange={(e) => handleInputChange(e)}
-                  style={{ minHeight: '10px' }}
-                  rows={1}
-                  ref={textareaRef}
-                ></textarea>
+                <>
+                  <TeamOrGmSelect
+                    options={teamGmOptionsList}
+                    value={teamGmOption}
+                    onChange={handleTeamGmChange}
+                  />
+                  <textarea
+                    className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
+                    placeholder="Type your message..."
+                    value={inputValue}
+                    onKeyDown={handleKeyDown}
+                    onChange={(e) => handleInputChange(e)}
+                    style={{ minHeight: '10px' }}
+                    rows={1}
+                    ref={textareaRef}
+                  ></textarea>
+                </>
               }
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
