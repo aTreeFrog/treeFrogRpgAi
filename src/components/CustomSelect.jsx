@@ -14,7 +14,7 @@ const DropdownIndicator = (props) => {
 
 const CustomSelect = ({ options, onChange, value }) => {
     const customStyles = {
-        control: (provided) => ({
+        control: (provided, state) => ({
             ...provided,
             backgroundColor: 'gray', // Control background
             color: 'white', // Text color
@@ -23,6 +23,11 @@ const CustomSelect = ({ options, onChange, value }) => {
             minHeight: '25px', // Adjust minimum height as needed
             height: '25px', // Set a fixed height
             fontWeight: 'semi-bold',
+            boxShadow: state.isFocused ? '0 0 0 1px rgba(107, 33, 168, 1)' : 'none',
+            outline: state.isFocused ? '1px solid rgba(107, 33, 168, 1)' : 'none',
+            '&:hover': {
+                borderColor: 'gray' // Purple on hover
+            },
         }),
         valueContainer: (provided) => ({
             ...provided,
@@ -48,7 +53,7 @@ const CustomSelect = ({ options, onChange, value }) => {
                 width: '8px',
             },
             '::-webkit-scrollbar-track': {
-                background: 'rgba(75, 0, 130, 0.5)', // Same as the dropdown background
+                background: 'rgba(75, 0, 130, 1)', // Same as the dropdown background
             },
             '::-webkit-scrollbar-thumb': {
                 background: 'rgba(204, 119, 34, 1)', // Dark amber yellow
@@ -58,13 +63,13 @@ const CustomSelect = ({ options, onChange, value }) => {
                 background: 'rgba(230, 135, 45, 1)', // Slightly lighter amber on hover
             },
         }),
-        option: (provided, state) => ({
+        option: (provided) => ({
             ...provided,
             textAlign: 'left', // Centering text
-            backgroundColor: 'rgba(75, 0, 130, 0.5)', // Background of options
+            backgroundColor: 'rgba(75, 0, 130, 1)', // Background of options
             color: 'white', // Text color of options
             '&:hover': {
-                backgroundColor: 'rgba(40, 0, 70, 0.8)', // Background of options on hover
+                backgroundColor: 'rgba(40, 0, 70, 1)', // Background of options on hover
             },
         }),
         singleValue: (provided) => ({
