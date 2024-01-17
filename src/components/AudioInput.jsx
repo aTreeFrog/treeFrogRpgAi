@@ -9,8 +9,15 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const audioChunks = useRef([]);
     const cancelled = useRef(false);
+    const [isButtonEnabled, setIsButtonEnabled] = useState(true);
 
     const handleButton = () => {
+
+
+        if (!isButtonEnabled) return;
+
+        setIsButtonEnabled(false);
+
         if (mediaRecorder && mediaRecorder.state === "recording") {
             cancelled.current = false;
             mediaRecorder.stop();
@@ -25,6 +32,11 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
             setIsRecording(true);
             setRecordText("Click to finish recording");
         }
+
+        // Re-enable the button after 2 seconds
+        setTimeout(() => {
+            setIsButtonEnabled(true);
+        }, 2000);
 
     }
 
