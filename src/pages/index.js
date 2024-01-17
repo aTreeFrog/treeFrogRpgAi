@@ -55,7 +55,7 @@ export default function Home() {
     d20: {
       value: [],
       isActive: true,
-      isGlowActive: false,
+      isGlowActive: true,
       rolls: 0,
       displayedValue: null,
       inhibit: false
@@ -108,6 +108,7 @@ export default function Home() {
   const [diceSelectionOption, setDiceSelectionOption] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const speechTurnedOffMusic = useRef(false);
+  const [customCellValue, setCustomCellValue] = useState('');
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -563,7 +564,7 @@ export default function Home() {
         setDiceRollsInputData('');
         setDiceSelectionOption(null);
       } else if (diceSelectionOption) {
-        chatMsgData = "I rolled a " + diceSelectionOption;
+        chatMsgData = "I rolled a " + diceSelectionOption.value;
         // clean up all dice states
         latestDiceMsg.current = null;
         setPendingDiceUpdate(null);
@@ -573,10 +574,11 @@ export default function Home() {
         setActiveSkill("");
       } else if (audioInputData.length > 0) {
         chatMsgData = audioInputData;
+      } else if (customCellValue.length > 0) {
+        chatMsgData = customCellValue;
       } else if (inputValue.length > 0) {
         chatMsgData = inputValue;
       }
-
 
       if (chatMsgData.length > 0) {
 
@@ -591,6 +593,8 @@ export default function Home() {
         resetUserTextForm();
 
         setAudioInputData('');
+
+        setCustomCellValue("");
 
 
       }
@@ -891,8 +895,14 @@ export default function Home() {
   // Handles clicking on the cell
   const handleCellClick = (content) => {
     console.log(`Cell clicked with content: ${content}`);
-    // Perform action here, such as updating the textarea with this content
+    setCustomCellValue(content);
   };
+
+  useEffect(() => {
+    if (customCellValue.length > 0) {
+      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+    }
+  }, [customCellValue]);
 
   // Deletes the content of the cell, making it an input again
   const deleteCellContent = (index) => {
@@ -910,13 +920,14 @@ export default function Home() {
 
   const handleDropdownChange = (option) => {
 
+    console.log("handleDropdownChange ", option);
+
     setDiceSelectionOption(option);
   };
 
   const options = [
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: '20 + 2 Modifier', label: '.20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
     { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
@@ -1039,6 +1050,7 @@ export default function Home() {
                           <div key={index} className="flex items-center gap-1">
                             {/* Cell with text */}
                             <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                              disabled={cancelButton !== 0 || diceStates.d20.isGlowActive}
                               onClick={() => handleCellClick(content)}
                             >
                               {content}
@@ -1110,8 +1122,6 @@ export default function Home() {
                 ></textarea>
               }
             </div>
-
-
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
               className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
               disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
@@ -1141,6 +1151,7 @@ export default function Home() {
                     <div key={index} className="flex items-center gap-1">
                       {/* Cell with text */}
                       <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                        disabled={cancelButton !== 0 || diceStates.d20.isGlowActive}
                         onClick={() => handleCellClick(content)}
                       >
                         {content}
@@ -1167,7 +1178,7 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} />
             </div>
           )
         }
