@@ -379,6 +379,7 @@ export default function Home() {
   // background music
   const PlayBackgroundAudio = async (data) => {
 
+    //stop any existing background music
     if (backgroundTone?.current?.state === "started") {
       backgroundTone?.current?.stop();
     }
