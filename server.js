@@ -267,7 +267,11 @@ app.prepare().then(() => {
         socket.on('my user message', (msg) => {
             if (!responseSent.has(msg.id)) {
                 waitingForUser = true;
-                chatMessages.push(msg);
+
+                //means ai is supposed to see and respond to this message
+                if (msg.mode.toLowerCase() == "all") {
+                    chatMessages.push(msg);
+                }
                 console.log("chatMessages: ", chatMessages);
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
