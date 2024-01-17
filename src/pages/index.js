@@ -1025,6 +1025,7 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
           <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }}
             className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold "
+            disabled={diceStates.d20.isGlowActive}
             onClick={() => {
               setIsCustomTextOpen(prevState => !prevState);
               setIsAudioOpen(false); {/* probably have some audio clean up to do too */ }
@@ -1110,8 +1111,6 @@ export default function Home() {
                 ></textarea>
               }
             </div>
-
-
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
               className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
               disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
@@ -1120,6 +1119,7 @@ export default function Home() {
           </div>
           <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
             className="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
+            disabled={diceStates.d20.isGlowActive}
             onClick={() => {
               setIsAudioOpen(prevState => !prevState);
               setIsCustomTextOpen(false);
@@ -1131,7 +1131,7 @@ export default function Home() {
           </button>
         </form>
         {
-          isCustomTextOpen && (
+          isCustomTextOpen && !diceStates.d20.isGlowActive && (
             <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
               <div className="grid grid-cols-3 gap-2 all-cells">
                 {/* Render cells */}
@@ -1165,7 +1165,7 @@ export default function Home() {
           )
         }
         {
-          isAudioOpen && (
+          isAudioOpen && !diceStates.d20.isGlowActive && (
             <div>
               <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} />
             </div>
