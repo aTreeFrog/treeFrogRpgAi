@@ -338,6 +338,12 @@ export default function Home() {
 
     });
 
+    chatSocket.on('dall e image', (url) => {
+      console.log("dall e image made, ", url);
+      setDalleImageUrl(url);
+
+    });
+
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
@@ -896,23 +902,23 @@ export default function Home() {
     }
   }, [audioInputData]);
 
-  const sendImageMessage = (message) => {
-    const url = '/api/image';
-    const data = {
-      model: "dall-e-3",
-      prompt: "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night",
-      n: 1,
-      size: "1024x1024",
-      quality: "hd",
-    };
+  // const sendImageMessage = (message) => {
+  //   const url = '/api/image';
+  //   const data = {
+  //     model: "dall-e-3",
+  //     prompt: "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night",
+  //     n: 1,
+  //     size: "1024x1024",
+  //     quality: "hd",
+  //   };
 
-    axios.post(url, data).then((response) => {
-      setDalleImageUrl(response.data.data[0].url);
-      console.log("dalleImageUrl", dalleImageUrl);
-    }).catch((error) => {
-      console.log(error);
-    })
-  }
+  //   axios.post(url, data).then((response) => {
+  //     setDalleImageUrl(response.data.data[0].url);
+  //     console.log("dalleImageUrl", dalleImageUrl);
+  //   }).catch((error) => {
+  //     console.log(error);
+  //   })
+  // }
 
   const newTextEnterKeyDown = (event) => {
     if (event.key === 'Enter') {
