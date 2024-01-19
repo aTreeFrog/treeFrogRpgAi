@@ -18,6 +18,12 @@ body,
     /* Glowing effect */
 }
 
+.popup-glow {
+    /* or other display as necessary */
+    filter: drop-shadow(0 0 10px rgba(204, 51, 0, 0.3));
+    /* Glowing effect */
+}
+
 @keyframes diceGlowAnimation {
 
     0%,

@@ -15,6 +15,7 @@ import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
 import SocketContext from '../context/SocketContext';
 import CustomSelect from '../components/CustomSelect'; // Import the above created component
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
+import MoveOnPopup from "../components/MoveOnPopup"
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -113,6 +114,15 @@ export default function Home() {
   const [teamGmOption, setTeamGmOption] = useState({ value: 'All', label: 'All' });
   const musicThreadControlActive = useRef(false);
   const [enableCellButton, setEnableCellButton] = useState(true);
+  const [showMoveOnPopup, setShowMoveOnPopup] = useState(false);
+  const storyModePopupWarning = "Are you sure?\n AI will wrap up scene and move onto next act.";
+  const diceModePopupWarning = "Are you sure?\n AI will end dice mode and re-enable chatbox.";
+  const battleModePopupWarning = "Are you sure?\n AI will wrap up battle and move onto next act.";
+  const storyModeMoveOnButton = "Move On";
+  const diceModeMoveOnButton = "End Roll";
+  const battleModeMoveOnButton = "End Battle";
+  const [popupText, setPopupText] = useState(storyModePopupWarning);
+  const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1008,6 +1018,21 @@ export default function Home() {
     }
   }, [isRecording]);
 
+  const MoveOnClick = () => {
+    setShowMoveOnPopup(prevState => !prevState);
+
+  };
+
+  const MoveOnClose = () => {
+    setShowMoveOnPopup(false);
+  };
+
+  const MoveOnConfirm = () => {
+    // Perform the action
+    console.log('Confirmed!');
+    setShowMoveOnPopup(false);
+  };
+
 
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
@@ -1021,22 +1046,33 @@ export default function Home() {
             </div>
           </div>
           {/* Toggle Meeting Panel Button */}
-          <button
-            onClick={() => {
-              // First, check if the panel is currently open
-              // if (isPanelOpen) {
-              //   // If the panel is open, it means we're about to close it,
-              //   // so call the function to end the Jitsi meeting.
-              //   disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
-              // }
-              // Next, toggle the panel's open state regardless of the current state.
-              // If it was open, this will close it, and vice versa.
-              setIsPanelOpen(prevState => !prevState);
-            }}
-            className="absolute bottom-0 left-20 mb-9 ml-12 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
-          >
-            {isPanelOpen ? 'Hide Party' : 'Open Party'}
-          </button>
+          <div className="flex">
+            <button
+              onClick={() => {
+                // First, check if the panel is currently open
+                // if (isPanelOpen) {
+                //   // If the panel is open, it means we're about to close it,
+                //   // so call the function to end the Jitsi meeting.
+                //   disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
+                // }
+                // Next, toggle the panel's open state regardless of the current state.
+                // If it was open, this will close it, and vice versa.
+                setIsPanelOpen(prevState => !prevState);
+              }}
+              className="absolute bottom-0 left-20 mb-10 ml-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+            >
+              {isPanelOpen ? 'Hide Party' : 'Open Party'}
+            </button>
+            <button
+              onClick={MoveOnClick}
+              className="absolute bottom-0 left-60 mb-10 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+            >
+              {moveOnButtonText}
+            </button>
+            {showMoveOnPopup && (
+              <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />
+            )}
+          </div>
           {/* Floating Jitsi Meeting Panel */}
           <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'visible w-96 h-[30rem]' : 'invisible h-0 overflow-hidden'}`}>
             <JitsiMeetComponent meetingRoom={meetingDetails?.roomName} onApiReady={handleApiReady} />

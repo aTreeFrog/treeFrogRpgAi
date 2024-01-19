@@ -16,8 +16,8 @@ const TeamOrGmSelect = ({ options, onChange, value }) => {
                 color: 'white', // Text color
                 borderColor: 'rgba(91, 145, 60, 0.5)', // Border color
                 width: '29px',
-                minHeight: '38px', // Adjust minimum height as needed
-                height: '38px', // Set a fixed height
+                minHeight: '42px', // Adjust minimum height as needed
+                height: '42px', // Set a fixed height
                 marginLeft: '0px',
                 //fontWeight: 'semi-bold',
                 fontSize: '12px',
@@ -55,7 +55,7 @@ const TeamOrGmSelect = ({ options, onChange, value }) => {
             backgroundColor: 'rgba(169, 169, 169, 0.3)',
             width: '70px',
             fontSize: '16px',
-            borderRadius: '4px',
+            borderRadius: '8px',
 
         }),
         menuList: (provided) => ({
