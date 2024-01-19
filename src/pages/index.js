@@ -16,6 +16,7 @@ import SocketContext from '../context/SocketContext';
 import CustomSelect from '../components/CustomSelect'; // Import the above created component
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import MoveOnPopup from "../components/MoveOnPopup"
+import BattleMap from '../components/BattleMap';
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -1128,6 +1129,9 @@ export default function Home() {
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-12"
             />
           )}
+          <BattleMap
+            src="/images/battlemap_green_terrain.png" gridSpacing={50}
+            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
