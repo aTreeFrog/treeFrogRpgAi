@@ -92,7 +92,7 @@ app.prepare().then(() => {
                         }));
 
                         const data = {
-                            model: "gpt-4-1106-preview",
+                            model: "gpt-4",
                             messages: messagesFilteredForApi,
                             stream: true,
                         };
@@ -151,7 +151,34 @@ app.prepare().then(() => {
             // Sending the message to the connected client
             io.to(serverRoomName).emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
             activityCount++;
-        }
+        };
+
+
+
+
+        async function createDallEImage(prompt) {
+
+            const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
+
+            const data = {
+                model: "dall-e-3",
+                prompt: ("a dungeons and dragons like book image with the following specification: ", prompt),
+                n: 1,
+                size: "1024x1024",
+                quality: "hd",
+            };
+
+            let image = await openai.images.generate(data);
+
+            io.to(serverRoomName).emit('dall e image', image.data[0].url);
+
+            console.log("image: ", image.data);
+
+        };
+
+
+
+
 
         // socket.on('chat message', async (msg) => {
         //     try {
@@ -210,9 +237,9 @@ app.prepare().then(() => {
                 role: item.role,
                 content: item.content,
             }));
-            messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call? Should only ask if the last message by the assistant or bot specifically said to roll a d20 dice." })
+            messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call? Only do call if the last message by the assistant or bot specifically said to roll a d20 dice with some type of modifier. Do not call if the assistant or bot was saying the results of a role. But if you are sure that the message is requesting the user to roll the D20 dice again. Example would be please roll your D20 with a perception modifier. Ensure the message is not talking about the past explaining the outcome of a roll." })
             const data = {
-                model: "gpt-4-1106-preview",
+                model: "gpt-4",
                 messages: messagesFilteredForFunction,
                 stream: false,
                 tools: [
@@ -253,8 +280,53 @@ app.prepare().then(() => {
                     skillValue = argumentsJson.skill;
                     advantageValue = argumentsJson.advantage;
                     sendDiceRollMessage(skillValue, advantageValue);
+
+                    // return; //dont check for any other function to get called
                 }
 
+            }
+
+
+            //check if dall e function should be called
+            messagesFilteredForFunction.push({ "role": "user", "content": "Based on this prompt history, has a new scenery change just been made? If so, call the function createDallEImage." })
+            const dallEdata = {
+                model: "gpt-4",
+                messages: messagesFilteredForFunction,
+                stream: false,
+                tools: [
+                    {
+                        type: "function",
+                        function: {
+                            name: "createDallEImage",
+                            description: "creates a Dall E image based on the prompt given. The prompt should always be in a dungeons and dragons game theme. Fantasy descriptions and worlds. The prompt will produce an image you would see in a fantasy role playing game book. The prompt should be describing the new scenery we are in.",
+                            parameters: {
+                                type: "object",
+                                properties: {
+                                    prompt: {
+                                        type: "string",
+                                        description: "The prompt describing what the image should entale. The image should be in the fantasy setting and resemble artwork used in dungeon and dragons role playing games."
+                                    },
+                                },
+                                required: ["prompt"],
+                            }
+                        }
+                    }
+                ]
+            };
+
+            messagesFilteredForFunction.pop() //remove what i just added
+            const dallEcompletion = await openai.chat.completions.create(dallEdata);
+            console.log("checking function call completion: ", dallEcompletion.choices[0].finish_reason);
+
+            if (dallEcompletion.choices[0].finish_reason == "tool_calls") {
+                functionData = dallEcompletion.choices[0].message.tool_calls[0].function;
+                console.log("checking function call data : ", functionData);
+
+                if (functionData.name == "createDallEImage") {
+                    argumentsJson = JSON.parse(functionData.arguments);
+                    promptValue = argumentsJson.prompt;
+                    createDallEImage(promptValue);
+                }
             }
 
         }
@@ -275,7 +347,8 @@ app.prepare().then(() => {
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
                 responseSent.set(msg.id, true);
-                playBackgroundAudio();////////////////////////for testing//////////
+                //playBackgroundAudio();////////////////////////for testing//////////
+                //createDallEImage("two wizards walking through the forest. Both male. Looking like there could be trouble nearby. lush green forest. nature in an mystical world.");
             }
         });
 
