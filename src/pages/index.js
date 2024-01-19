@@ -630,12 +630,7 @@ export default function Home() {
       } else if (diceSelectionOption) {
         chatMsgData = "I rolled a " + diceSelectionOption.value;
         // clean up all dice states
-        latestDiceMsg.current = null;
-        setPendingDiceUpdate(null);
-        setDiceSelectionOption(null);
-        setDiceRollsInputData('');
-        setDiceStates(defaultDiceStates);
-        setActiveSkill("");
+        cleanUpDiceStates();
       } else if (audioInputData.length > 0) {
         chatMsgData = audioInputData;
       } else if (customCellValue.length > 0) {
@@ -664,6 +659,15 @@ export default function Home() {
       }
     }
 
+  }
+
+  const cleanUpDiceStates = () => {
+    latestDiceMsg.current = null;
+    setPendingDiceUpdate(null);
+    setDiceSelectionOption(null);
+    setDiceRollsInputData('');
+    setDiceStates(defaultDiceStates);
+    setActiveSkill("");
   }
 
   const readyChatAndAudio = (inputMessage) => {
@@ -803,6 +807,16 @@ export default function Home() {
 
   //check if dice rolls are done, and send to server. then bring dice back to init state
   useEffect(() => {
+
+
+    //control move on button text.  Use is glow active until better state figured out
+    if (diceStates.d20.isGlowActive) {
+      setPopupText(diceModePopupWarning);
+      setMoveOnButtonText(diceModeMoveOnButton);
+    } else {
+      setPopupText(storyModePopupWarning);
+      setMoveOnButtonText(storyModeMoveOnButton);
+    }
 
     let actionsComplete = false;
     let d20Sum = 0
@@ -1052,6 +1066,7 @@ export default function Home() {
   const MoveOnConfirm = () => {
     // Perform the action
     console.log('Confirmed!');
+    cleanUpDiceStates();
     setShowMoveOnPopup(false);
   };
 
