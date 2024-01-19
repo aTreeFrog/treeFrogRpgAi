@@ -9,6 +9,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
     const gridX = 1; // Column
     const gridY = 1; // Row
 
+
     // Translate to pixel coordinates
     const pixelX = gridX * gridSpacing + gridSpacing / 2;
     const pixelY = gridY * gridSpacing + gridSpacing / 2;
