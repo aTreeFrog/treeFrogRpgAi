@@ -131,7 +131,6 @@ app.prepare().then(() => {
 
         socket.join(serverRoomName); //name of conference room
         console.log('a user connected:', socket.id);
-        clients[socket.id] = socket;
 
         //Dice Roll Function Message Creator and sender
         function sendDiceRollMessage(skillValue, advantageValue) {
@@ -323,6 +322,15 @@ app.prepare().then(() => {
         // Handle disconnect
         socket.on('disconnect', () => {
             console.log('User disconnected');
+            // Remove the user from the map on disconnect
+            for (let userName in clients) {
+                if (clients[userName] === socket.id) {
+                    delete clients[userName];
+                    break;
+                }
+            }
+            // Emit the updated list of connected users
+            io.emit('connected users', Object.keys(clients));
         });
 
         socket.on('player audio stream', async arrayBuffer => {
@@ -343,6 +351,29 @@ app.prepare().then(() => {
             const sttData = await openai.audio.transcriptions.create(data);
             socket.emit('speech to text data', sttData);
             fs.unlinkSync(filePath); // deletes file
+
+        });
+
+        socket.on('user name', (userName) => {
+
+            if (clients[userName] && clients[userName] !== socket.id) {
+                // Disconnect the previous socket
+                let oldSocket = io.sockets.sockets.get(clients[userName]);
+                if (oldSocket) {
+                    oldSocket.disconnect(true);
+                }
+            }
+
+            // Update the map with the new socket ID
+            clients[userName] = socket.id;
+
+            io.emit('connected users', Object.keys(clients));
+
+        });
+
+        socket.on('obtain all users', () => {
+
+            io.emit('connected users', Object.keys(clients));
 
         });
 
