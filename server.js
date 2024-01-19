@@ -337,7 +337,8 @@ app.prepare().then(() => {
             const data = {
                 model: "whisper-1",
                 file: readStream,
-                language: "en"
+                language: "en",
+                prompt: "ignore silence in the audio file." // helps produce same output if silent audio coming in
             };
             const sttData = await openai.audio.transcriptions.create(data);
             socket.emit('speech to text data', sttData);
