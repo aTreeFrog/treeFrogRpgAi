@@ -314,7 +314,9 @@ export default function Home() {
       const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
 
       //checks if data is thank you for watching or just a bunch of periods. If not, go on
-      if (!(processedText.startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace))) {
+      //i have a prompt in the api silence in the audio file which is what it outputs if theres no audio voice coming in
+      if (!(processedText.toLowerCase().startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace)
+        || processedText.toLowerCase().includes("silence in the audio file"))) {
         callSubmitFromAudio.current = true;
         setAudioInputData(data.text);
       }
