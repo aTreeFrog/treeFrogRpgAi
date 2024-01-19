@@ -612,6 +612,12 @@ textarea {
     border-bottom-left-radius: 0.375rem;
 }
 
+.attackRowLeftHovered {
+    background-color: rgba(108, 112, 107, 0.2);
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
+}
+
 .hoverAttackRowLeft:hover {
     background-color: rgba(235, 220, 48, 0.2);
     border-top-left-radius: 0.375rem;
@@ -622,12 +628,22 @@ textarea {
     background-color: rgba(235, 220, 48, 0.2);
 }
 
+.attackRowHovered {
+    background-color: rgba(108, 112, 107, 0.2);
+}
+
 .hoverAttackRow:hover {
-    background-color: rgba(235, 220, 48, 0.2);
+    background-color: rgba(108, 112, 107, 0.2);
 }
 
 .attackRowRightClicked {
     background-color: rgba(235, 220, 48, 0.2);
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
+}
+
+.attackRowRightHovered {
+    background-color: rgba(108, 112, 107, 0.2);
     border-top-right-radius: 0.375rem;
     border-bottom-right-radius: 0.375rem;
 }

@@ -14,6 +14,16 @@ const yourDataArray = [
 
 export default function AttackSheet() {
     const [selectedRow, setSelectedRow] = useState(null);
+    const [hoveredRow, setHoveredRow] = useState(null);
+
+    const getClassName = (item, position) => {
+        if (selectedRow === item) {
+            return `attackRow${position}Clicked`; // Replace with your selected class names
+        } else if (hoveredRow === item) {
+            return `attackRow${position}Hovered`; // Replace with your hovered class names
+        }
+        return "";
+    };
 
     return (
         <div className="relative block p-3 "
@@ -35,9 +45,23 @@ export default function AttackSheet() {
                     {/* Use a mapping function to generate the data cells dynamically */}
                     {yourDataArray.map((item, index) => (
                         <React.Fragment key={index}>
-                            <button onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${selectedRow === item ? "attackRowLeftClicked" : ""}`}>{item.name}</button>
-                            <button onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${selectedRow === item ? "attackRowClicked" : ""}`}> {item.atkBonus}</button>
-                            <button onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${selectedRow === item ? "attackRowRightClicked" : ""}`}>{item.type}</button>
+                            <button
+                                onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
+                                onMouseEnter={() => setHoveredRow(item)}
+                                onMouseLeave={() => setHoveredRow(null)}>
+                                {item.name}
+                            </button>
+                            <button
+                                onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
+                                onMouseEnter={() => setHoveredRow(item)}
+                                onMouseLeave={() => setHoveredRow(null)}
+                            > {item.atkBonus}
+                            </button>
+                            <button onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
+                                onMouseEnter={() => setHoveredRow(item)}
+                                onMouseLeave={() => setHoveredRow(null)}
+                            >{item.type}
+                            </button>
                         </React.Fragment>
                     ))}
                 </div>
