@@ -6,7 +6,7 @@ export default function MoveOnPopup({ popupText, MoveOnClose, MoveOnConfirm }) {
             <pre>{popupText}</pre>
             <div className="flex justify-around mt-4">
                 <button className="font-semibold px-4 py-2 rounded bg-purple-900 text-white hover:bg-gray-600 rounded-md" onClick={MoveOnConfirm}>Yes</button>
-                <button className="font-semibold px-4 py-2 rounded bg-purple-900 text-white hover:bg-red-600 rounded-md" onClick={MoveOnClose}>Cancel</button>
+                <button className="font-semibold px-4 py-2 rounded bg-purple-900 text-white hover:bg-red-500 rounded-md" onClick={MoveOnClose}>Cancel</button>
             </div>
         </div>
     );
