@@ -123,6 +123,7 @@ export default function Home() {
   const battleModeMoveOnButton = "End Battle";
   const [popupText, setPopupText] = useState(storyModePopupWarning);
   const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
+  const [usersInServer, setUsersInServer] = useState([]);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -304,6 +305,12 @@ export default function Home() {
         updateDiceStates(data); // Update immediately if messageQueue is empty
       }
 
+    });
+
+    //detect all users in the server
+    chatSocket.on('connected users', (clients) => {
+      console.log("connected users: ", clients);
+      setUsersInServer(clients);
     });
 
 
@@ -491,6 +498,11 @@ export default function Home() {
       processQueue();
     }, 235);
 
+    // Set up the interval to check all users in server room
+    const checkAllUsers = setInterval(() => {
+      chatSocket.emit('obtain all users');
+    }, 5000);
+
     // Set up the interval to process audio queue every x ms
     const audioIntervalId = setInterval(() => {
       playNextAudio();
@@ -503,6 +515,8 @@ export default function Home() {
       clearInterval(intervalId); // Clear the interval on component unmount
       clearInterval(audioIntervalId); // Clear the interval on component unmount
       clearInterval(cancelButtonIntervalId);
+      clearInterval(checkAllUsers);
+
     };
   }, []);
 
@@ -1109,8 +1123,14 @@ export default function Home() {
         <div ref={scrollableDivRef} className="overflow-y-auto scrollable-container flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
-              <div key={index} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`${message.type === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.type === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'}  rounded-lg p-2 text-white max-w-sm`}>
+              <div key={index} className={`flex flex-col ${message.type === 'user' ? 'items-end' : 'items-start'}`}>
+                {/* Conditional rendering of the user's name */}
+                {message.type === 'user' && (usersInServer.length > 1) && (
+                  <div className="text-sm mb-1 mr-1 text-white">
+                    aTreeFrog
+                  </div>
+                )}
+                <div className={`${message.type === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.type === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
                   {chatBallEnable && message.type === 'bot' && index === lastBotMessageIndex &&
                     <span className="wizard-hat inline-block ml-1">
@@ -1120,8 +1140,6 @@ export default function Home() {
                 </div>
               </div>
             ))}
-
-
           </div>
         </div>
         {/* Fixed Send Message Form or other bottom content */}

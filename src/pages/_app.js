@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 
 export default function App({ Component, pageProps }) {
   const [socket, setSocket] = useState(null);
+  const userName = "aTreeFrog";
 
   useEffect(() => {
     // Initialize the WebSocket connection
@@ -16,6 +17,7 @@ export default function App({ Component, pageProps }) {
 
         newSocket.on('connect', () => {
           console.log('Connected to socket');
+          newSocket.emit('user name', userName);
           setSocket(newSocket);
         });
 
