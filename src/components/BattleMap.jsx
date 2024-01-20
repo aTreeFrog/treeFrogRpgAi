@@ -11,6 +11,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
     const gridX = 2; // Column
     const gridY = 2; // Row
     const [travelZonePosition, setTravelZonePosition] = useState({ x: 150, y: 200 }); // Default position
+
     const travelZoneRadius = 200;
 
     const [wizardScale, setWizardScale] = useState(1);
@@ -21,6 +22,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
 
     // Initial circle position state
     const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
+
 
     // Calculate wizard scale after image is loaded
     useEffect(() => {

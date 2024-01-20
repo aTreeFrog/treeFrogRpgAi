@@ -10,7 +10,7 @@ const stream = require('stream');
 const FormData = require('form-data');
 // Dynamically import 'node-fetch'
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
+const { player } = require('./lib/objects/player');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -27,6 +27,7 @@ const chatMessages = [];
 
 let waitingForUser = false;
 const clients = {};
+const players = {};
 let responseSent = new Map();
 
 serverRoomName = "WizardsAndGoblinsRoom";
@@ -399,11 +400,22 @@ app.prepare().then(() => {
             for (let userName in clients) {
                 if (clients[userName] === socket.id) {
                     delete clients[userName];
+
+                    //remove the user from the players array
+                    if (userName in players) {
+                        delete players[userName]
+                    }
+
                     break;
                 }
             }
             // Emit the updated list of connected users
-            io.emit('connected users', Object.keys(clients));
+            io.to(serverRoomName).emit('connected users', Object.keys(clients));
+
+
+            io.to(serverRoomName).emit('players dictionary', players);
+
+
         });
 
         socket.on('player audio stream', async arrayBuffer => {
@@ -440,13 +452,48 @@ app.prepare().then(() => {
             // Update the map with the new socket ID
             clients[userName] = socket.id;
 
-            io.emit('connected users', Object.keys(clients));
+            io.to(serverRoomName).emit('connected users', Object.keys(clients));
+
+            //delete existing player data if already there and start fresh if user connects
+            if (userName in players) {
+                delete players[userName]
+            }
+
+            //mock obtaining player info from mongodb
+            let newPlayer = {
+                ...playerTemplate, // This copies all keys from playerTemplate
+                name: userName,
+                active: false,
+                away: false,
+                class: "Wizard",
+                race: "Elf",
+                distance: 30,
+                attacks: [{
+                    name: "staff",
+                    attackBonus: 5,
+                    damage: "2d6+2",
+                    type: "melee",
+                    distance: 5
+                }],
+                initiative: 5,
+                armorClass: 14,
+                maxHealth: 30,
+                currentHealth: 30,
+                xPosition: 0,
+                yPosition: 0,
+            };
+
+            players[userName] = newPlayer;
+
+            io.to(serverRoomName).emit('players dictionary', players);
 
         });
 
         socket.on('obtain all users', () => {
 
             io.emit('connected users', Object.keys(clients));
+
+            io.emit('players dictionary', players);
 
         });
 
