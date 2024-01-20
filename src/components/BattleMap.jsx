@@ -11,7 +11,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
     const gridX = 2; // Column
     const gridY = 2; // Row
     const [travelZonePosition, setTravelZonePosition] = useState({ x: 150, y: 200 }); // Default position
-
+    const travelZoneRadius = 200;
 
     const [wizardScale, setWizardScale] = useState(1);
     const wizardSize = wizardIcImage?.width * wizardScale;
@@ -65,12 +65,20 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
 
-        // Calculate the top-left of the nearest grid cell
-        const gridX = Math.floor(pointerPosition.x / gridSpacing) * gridSpacing;
-        const gridY = Math.floor(pointerPosition.y / gridSpacing) * gridSpacing;
+        // Calculate distance from the click position to the center of the travel zone
+        const distance = Math.sqrt(
+            Math.pow(pointerPosition.x - travelZonePosition.x, 2) +
+            Math.pow(pointerPosition.y - travelZonePosition.y, 2)
+        );
 
-        // Center the wizard in the grid cell
-        setWizardPosition({ x: gridX + gridSpacing / 2 - wizardSize / 2, y: gridY + gridSpacing / 2 - wizardSize / 2 });
+        if (distance <= travelZoneRadius) {
+            // Calculate the top-left of the nearest grid cell
+            const gridX = Math.floor(pointerPosition.x / gridSpacing) * gridSpacing;
+            const gridY = Math.floor(pointerPosition.y / gridSpacing) * gridSpacing;
+
+            // Center the wizard in the grid cell
+            setWizardPosition({ x: gridX + gridSpacing / 2 - wizardSize / 2, y: gridY + gridSpacing / 2 - wizardSize / 2 });
+        }
     };
 
     const handleDragEnd = (e) => {
@@ -78,14 +86,29 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         const wizardX = e.target.x();
         const wizardY = e.target.y();
 
-        // Calculate the center of the nearest grid cell
-        // We use Math.round here to snap to the nearest grid cell based on the icon's current position
-        const centerGridX = Math.round(wizardX / gridSpacing) * gridSpacing;
-        const centerGridY = Math.round(wizardY / gridSpacing) * gridSpacing;
+        // Calculate distance from the wizard's center to the center of the travel zone
+        const distance = Math.sqrt(
+            Math.pow(wizardX - travelZonePosition.x, 2) +
+            Math.pow(wizardY - travelZonePosition.y, 2)
+        );
 
-        // Adjust the wizard's position to the center of the cell
-        // Subtract half the wizard's size to align the center of the wizard with the center of the cell
-        setWizardPosition({ x: centerGridX + gridSpacing / 2 - wizardSize / 2, y: centerGridY + gridSpacing / 2 - wizardSize / 2 });
+        if (distance <= travelZoneRadius) {
+            // Calculate the center of the nearest grid cell
+            // We use Math.round here to snap to the nearest grid cell based on the icon's current position
+            const centerGridX = Math.round(wizardX / gridSpacing) * gridSpacing;
+            const centerGridY = Math.round(wizardY / gridSpacing) * gridSpacing;
+
+            // Adjust the wizard's position to the center of the cell
+            // Subtract half the wizard's size to align the center of the wizard with the center of the cell
+            setWizardPosition({ x: centerGridX + gridSpacing / 2 - wizardSize / 2, y: centerGridY + gridSpacing / 2 - wizardSize / 2 });
+        } else {
+            // Revert to original position if the wizard is dragged outside the travel zone
+            e.target.to({
+                x: wizardPosition.x,
+                y: wizardPosition.y,
+                duration: 0.2 // Transition duration in seconds
+            });
+        }
     };
 
 
@@ -101,7 +124,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
                     <Circle
                         x={travelZonePosition.x}
                         y={travelZonePosition.y}
-                        radius={200} // Larger radius for the travel zone
+                        radius={travelZoneRadius} // Larger radius for the travel zone
                         fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
                     />
                     <Image
