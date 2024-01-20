@@ -5,6 +5,9 @@ import useImage from 'use-image';
 const BattleMap = ({ src, gridSpacing, className }) => {
     const [image] = useImage(src);
     const [scale, setScale] = useState(1); // Default scale is 1
+    const [wizardIcImage] = useImage('/icons/wizard.svg');
+    const wizardScale = 45 / wizardIcImage?.width;
+    const wizardSize = wizardIcImage?.width * wizardScale;
     // Specific grid coordinates
     const gridX = 1; // Column
     const gridY = 1; // Row
@@ -30,7 +33,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         const lines = [];
         const width = scale * (image ? image.width : 0);
         const height = scale * (image ? image.height : 0);
-        const strokeWidth = 1.3;
+        const strokeWidth = 0.5;
 
         // Horizontal lines
         for (let i = 0; i <= height; i += gridSpacing) {
@@ -44,31 +47,33 @@ const BattleMap = ({ src, gridSpacing, className }) => {
     };
 
     const handleClick = (e) => {
-        // Get the click position relative to the Stage
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
 
-        // Calculate the nearest grid cell center
-        const gridX = Math.round(pointerPosition.x / gridSpacing - 0.5) * gridSpacing;
-        const gridY = Math.round(pointerPosition.y / gridSpacing - 0.5) * gridSpacing;
+        // Calculate the top-left of the nearest grid cell
+        const gridX = Math.floor(pointerPosition.x / gridSpacing) * gridSpacing;
+        const gridY = Math.floor(pointerPosition.y / gridSpacing) * gridSpacing;
 
-        // Update the circle's position to the center of the cell
-        setCirclePosition({ x: gridX + gridSpacing / 2, y: gridY + gridSpacing / 2 });
+        // Center the wizard in the grid cell
+        setCirclePosition({ x: gridX + gridSpacing / 2 - wizardSize / 2, y: gridY + gridSpacing / 2 - wizardSize / 2 });
     };
-
 
     const handleDragEnd = (e) => {
-        // Get the position of the center of the circle
-        const circleCenterX = e.target.x() + gridSpacing / 2;
-        const circleCenterY = e.target.y() + gridSpacing / 2;
+        // Get the position of the dragged icon
+        const wizardX = e.target.x();
+        const wizardY = e.target.y();
 
-        // Snap the center of the circle to the nearest grid cell center
-        const snappedX = Math.round(circleCenterX / gridSpacing) * gridSpacing;
-        const snappedY = Math.round(circleCenterY / gridSpacing) * gridSpacing;
+        // Calculate the center of the nearest grid cell
+        // We use Math.round here to snap to the nearest grid cell based on the icon's current position
+        const centerGridX = Math.round(wizardX / gridSpacing) * gridSpacing;
+        const centerGridY = Math.round(wizardY / gridSpacing) * gridSpacing;
 
-        // Update the circle's position to the top-left of the cell
-        setCirclePosition({ x: snappedX - gridSpacing / 2, y: snappedY - gridSpacing / 2 });
+        // Adjust the wizard's position to the center of the cell
+        // Subtract half the wizard's size to align the center of the wizard with the center of the cell
+        setCirclePosition({ x: centerGridX + gridSpacing / 2 - wizardSize / 2, y: centerGridY + gridSpacing / 2 - wizardSize / 2 });
     };
+
+
 
     return (
         <div className={className}>
@@ -78,13 +83,16 @@ const BattleMap = ({ src, gridSpacing, className }) => {
                 <Layer>
                     <Image image={image} scaleX={scale} scaleY={scale} />
                     {drawGrid()}
-                    <Circle
+                    <Image
+                        image={wizardIcImage}
                         x={circlePosition.x}
                         y={circlePosition.y}
                         radius={gridSpacing / 3}
-                        fill="green"
+                        // fill="green"
                         draggable
                         onDragEnd={handleDragEnd}
+                        scaleX={wizardScale}
+                        scaleY={wizardScale}
                     />
                 </Layer>
             </Stage>
