@@ -126,6 +126,8 @@ export default function Home() {
   const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
   const [usersInServer, setUsersInServer] = useState([]);
 
+  const [players, setPlayers] = useState();
+
   // Whenever chatLog updates, update the ref
   useEffect(() => {
     chatLogRef.current = chatLog;
