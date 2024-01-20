@@ -6,19 +6,34 @@ const BattleMap = ({ src, gridSpacing, className }) => {
     const [image] = useImage(src);
     const [scale, setScale] = useState(1); // Default scale is 1
     const [wizardIcImage] = useImage('/icons/wizard.svg');
-    const wizardScale = 45 / wizardIcImage?.width;
+
+    // put this in an object that comes into the function
+    const gridX = 2; // Column
+    const gridY = 2; // Row
+    const [travelZonePosition, setTravelZonePosition] = useState({ x: 150, y: 200 }); // Default position
+
+
+    const [wizardScale, setWizardScale] = useState(1);
     const wizardSize = wizardIcImage?.width * wizardScale;
-    // Specific grid coordinates
-    const gridX = 1; // Column
-    const gridY = 1; // Row
-
-
     // Translate to pixel coordinates
     const pixelX = gridX * gridSpacing + gridSpacing / 2;
     const pixelY = gridY * gridSpacing + gridSpacing / 2;
 
     // Initial circle position state
-    const [circlePosition, setCirclePosition] = useState({ x: pixelX, y: pixelY });
+    const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
+
+    // Calculate wizard scale after image is loaded
+    useEffect(() => {
+        if (wizardIcImage) {
+            const desiredWizardSize = gridSpacing * 0.8; // Adjust as needed
+            const newScale = desiredWizardSize / wizardIcImage.width;
+            setWizardScale(newScale);
+            const wizardSize = wizardIcImage.width * newScale;
+            const initialX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
+            const initialY = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
+            setWizardPosition({ x: initialX, y: initialY });
+        }
+    }, [wizardIcImage, gridSpacing]);
 
 
     useEffect(() => {
@@ -55,7 +70,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         const gridY = Math.floor(pointerPosition.y / gridSpacing) * gridSpacing;
 
         // Center the wizard in the grid cell
-        setCirclePosition({ x: gridX + gridSpacing / 2 - wizardSize / 2, y: gridY + gridSpacing / 2 - wizardSize / 2 });
+        setWizardPosition({ x: gridX + gridSpacing / 2 - wizardSize / 2, y: gridY + gridSpacing / 2 - wizardSize / 2 });
     };
 
     const handleDragEnd = (e) => {
@@ -70,7 +85,7 @@ const BattleMap = ({ src, gridSpacing, className }) => {
 
         // Adjust the wizard's position to the center of the cell
         // Subtract half the wizard's size to align the center of the wizard with the center of the cell
-        setCirclePosition({ x: centerGridX + gridSpacing / 2 - wizardSize / 2, y: centerGridY + gridSpacing / 2 - wizardSize / 2 });
+        setWizardPosition({ x: centerGridX + gridSpacing / 2 - wizardSize / 2, y: centerGridY + gridSpacing / 2 - wizardSize / 2 });
     };
 
 
@@ -83,10 +98,16 @@ const BattleMap = ({ src, gridSpacing, className }) => {
                 <Layer>
                     <Image image={image} scaleX={scale} scaleY={scale} />
                     {drawGrid()}
+                    <Circle
+                        x={travelZonePosition.x}
+                        y={travelZonePosition.y}
+                        radius={200} // Larger radius for the travel zone
+                        fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
+                    />
                     <Image
                         image={wizardIcImage}
-                        x={circlePosition.x}
-                        y={circlePosition.y}
+                        x={wizardPosition.x}
+                        y={wizardPosition.y}
                         radius={gridSpacing / 3}
                         // fill="green"
                         draggable
