@@ -111,8 +111,6 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         }
     };
 
-
-
     return (
         <div className={className}>
             <Stage
