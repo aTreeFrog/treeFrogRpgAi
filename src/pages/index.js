@@ -1130,7 +1130,7 @@ export default function Home() {
             />
           )}
           <BattleMap
-            src="/images/battlemap_green_terrain.png" gridSpacing={50}
+            src="/images/battlemap_green_terrain.png" gridSpacing={45}
             className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
