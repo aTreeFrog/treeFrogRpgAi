@@ -4,21 +4,21 @@ import SocketContext from '../context/SocketContext'
 import { useState, useEffect, useRef } from "react";
 
 export default function App({ Component, pageProps }) {
-  const [socket, setSocket] = useState(null);
+  const [chatSocket, setChatSocket] = useState(null);
   const userName = "aTreeFrog";
 
   useEffect(() => {
     // Initialize the WebSocket connection
     let newSocket = null;
     const connectToSocket = () => {
-      if (!socket) {
+      if (!chatSocket) {
         const chatUrl = '/api/chat';
         const newSocket = io('http://localhost:3000', { path: chatUrl });
 
         newSocket.on('connect', () => {
           console.log('Connected to socket');
           newSocket.emit('user name', userName);
-          setSocket(newSocket);
+          setChatSocket(newSocket);
         });
 
         newSocket.on('connect_error', (err) => {
@@ -34,12 +34,12 @@ export default function App({ Component, pageProps }) {
 
     }
 
-    if (!socket) {
+    if (!chatSocket) {
       connectToSocket();
     }
 
     return () => {
-      if (socket) {
+      if (chatSocket) {
         newSocket.off('connect');
         newSocket.off('connect_error');
         newSocket.disconnect();
@@ -50,12 +50,12 @@ export default function App({ Component, pageProps }) {
 
   useEffect(() => {
     // Initialize the WebSocket connection
-    console.log("socket: ", socket)
-  }, [socket]);
+    console.log("socket: ", chatSocket)
+  }, [chatSocket]);
 
   return (
-    <SocketContext.Provider value={socket} className="bg-gray-800">
-      {socket ? <Component {...pageProps} /> : <div>Loading...</div>}
+    <SocketContext.Provider value={{ chatSocket, userName }} className="bg-gray-800">
+      {chatSocket ? <Component {...pageProps} /> : <div>Loading...</div>}
     </SocketContext.Provider>
   )
 }

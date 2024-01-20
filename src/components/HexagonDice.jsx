@@ -153,7 +153,7 @@ const HexagonDice = ({ diceStates, setDiceStates }) => {
                 <span className="square-text">{diceStates.d6.displayedValue}</span>
             </div>
             <div
-                className={`hexagon-glow hexagon ${isD20Spinning ? 'spinning' : ''} ${isD20Spinning ? 'no-glow' : ''} ${diceStates.d20.isGlowActive ? 'glow-active' : ''} ${diceStates.d20.isActive ? 'hexagon-active' : 'hexagon-inactive'}`}
+                className={`hexagon-glow hexagon ${isD20Spinning ? 'spinning' : ''} ${isD20Spinning ? 'no-glow' : ''} ${(diceStates.d20.isGlowActive) ? 'glow-active' : ''} ${(diceStates.d20.isGlowActive) ? 'hexagon-active' : 'hexagon-inactive'}`}
                 onClick={() => {
                     if (!diceStates.d20.inhibit) {
                         rollDice(20);

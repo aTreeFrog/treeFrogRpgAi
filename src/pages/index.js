@@ -101,11 +101,11 @@ export default function Home() {
   const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
   const latestDiceMsg = useRef(null);
-  const [chatBallEnable, setChatBallEnable] = useState(false)
+  const [chatBallEnable, setWiazardHatEnable] = useState(false)
   const messageRefs = useRef([]);
   const [activeSkill, setActiveSkill] = useState("")
   const activityCount = useRef(0);
-  const chatSocket = useContext(SocketContext);
+  const { chatSocket, userName } = useContext(SocketContext);
   const diceTone = useRef(null);
   const backgroundTone = useRef(null);
   const [diceSelectionOption, setDiceSelectionOption] = useState(null);
@@ -125,8 +125,8 @@ export default function Home() {
   const [popupText, setPopupText] = useState(storyModePopupWarning);
   const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
   const [usersInServer, setUsersInServer] = useState([]);
-
   const [players, setPlayers] = useState();
+  const playersMsgActIds = useRef([]);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -297,15 +297,43 @@ export default function Home() {
       playNextAudio();
     });
 
+    // chatSocket.on('dice roll', (data) => {
+    //   console.log("dice roll received");
+
+    //   if (messageQueue.current.length > 0) {
+    //     setPendingDiceUpdate(data); // Save the data for later
+    //     setDiceSelectionOption(null);
+    //   } else {
+    //     latestDiceMsg.current = data;
+    //     updateDiceStates(data); // Update immediately if messageQueue is empty
+    //   }
+
+    // });
+
+    // dice roll initializer message (server only sends when starting dice mode)
     chatSocket.on('dice roll', (data) => {
       console.log("dice roll received");
 
-      if (messageQueue.current.length > 0) {
-        setPendingDiceUpdate(data); // Save the data for later
-        setDiceSelectionOption(null);
-      } else {
-        latestDiceMsg.current = data;
-        updateDiceStates(data); // Update immediately if messageQueue is empty
+      //check if already processed this message
+      if (playersMsgActIds.current.includes(data[userName].activityId)) {
+        return;
+      }
+      // add to list of received messages
+      playersMsgActIds.current.push(data[userName].activityId);
+
+      //grab all players info
+      setPlayers(data);
+
+      if (data[userName].mode == "dice") {
+
+        if (messageQueue.current.length > 0) {
+          setPendingDiceUpdate(data[userName]); // Save the data for later
+          setDiceSelectionOption(null);
+        } else {
+          latestDiceMsg.current = data[userName];
+          updateDiceStates(data[userName]); // Update immediately if messageQueue is empty
+        }
+
       }
 
     });
@@ -388,9 +416,9 @@ export default function Home() {
         lastMessage = updatedChatLog;
         return updatedChatLog;
       });
-      setChatBallEnable(true);
+      setWiazardHatEnable(true);
     } else {
-      setChatBallEnable(false);
+      setWiazardHatEnable(false);
     }
     setMessageQueueTrigger(prev => !prev);
   };
@@ -747,7 +775,7 @@ export default function Home() {
     console.log("updateDiceStates: ", data);
 
     latestDiceMsg.current = data;
-    setDiceRollId(data.Id);
+    setDiceRollId(data.activityId);
 
     setDiceStates({
       ...diceStates, // Copy all existing dice states
@@ -755,56 +783,61 @@ export default function Home() {
         ...diceStates.d20,
         value: [],
         displayedValue: null,
-        isActive: data.D20,
-        isGlowActive: data.D20,
+        isActive: data.diceStates.D20.isActive,
+        isGlowActive: data.diceStates.D20.isGlowActive,
         rolls: 0,
-        inhibit: !data.D20
+        inhibit: data.diceStates.D20.inhibit,
+        advantage: data.diceStates.D20.advantage
       },
       d10: {
         ...diceStates.d10,
         value: [],
         displayedValue: null,
-        isActive: data.D10,
-        isGlowActive: data.D10,
+        isActive: data.diceStates.d10.isActive,
+        isGlowActive: data.diceStates.d10.isGlowActive,
         rolls: 0,
-        inhibit: !data.D10
+        inhibit: data.diceStates.d10.inhibit,
+        advantage: data.diceStates.d10.advantage
       },
       d8: {
         ...diceStates.d8,
         value: [],
         displayedValue: null,
-        isActive: data.D8,
-        isGlowActive: data.D8,
+        isActive: data.diceStates.d8.isActive,
+        isGlowActive: data.diceStates.d8.isGlowActive,
         rolls: 0,
-        inhibit: !data.D8
+        inhibit: data.diceStates.d8.inhibit,
+        advantage: data.diceStates.d8.advantage
       },
       d6: {
         ...diceStates.d6,
         value: [],
         displayedValue: null,
-        isActive: data.D6,
-        isGlowActive: data.D6,
+        isActive: data.diceStates.d6.isActive,
+        isGlowActive: data.diceStates.d6.isGlowActive,
         rolls: 0,
-        inhibit: !data.D6
+        inhibit: data.diceStates.d6.inhibit,
+        advantage: data.diceStates.d6.advantage
       },
       d4: {
         ...diceStates.d4,
         value: [],
         displayedValue: null,
-        isActive: data.D4,
-        isGlowActive: data.D4,
+        isActive: data.diceStates.d4.isActive,
+        isGlowActive: data.diceStates.d4.isGlowActive,
         rolls: 0,
-        inhibit: !data.D4
+        inhibit: data.diceStates.d4.inhibit,
+        advantage: data.diceStates.d4.advantage
       }
     });
-    setActiveSkill(data.Skill);
+    setActiveSkill(data.skill);
 
   }
 
   useEffect(() => {
     if (messageQueue.current.length == 0 && pendingDiceUpdate) {
       updateDiceStates(pendingDiceUpdate);
-      setPendingDiceUpdate(null); // Clear the pending update
+      setPendingDiceUpdate(false); // Clear the pending update
     }
   }, [messageQueueTrigger, pendingDiceUpdate]);
 
@@ -828,13 +861,13 @@ export default function Home() {
       console.log("dice use effect d20 data: ", diceStates.d20);
 
       //if d20 dice is active, check and see if actions completed
-      if (latestDiceMsg.current.D20) {
-        if (latestDiceMsg.current.Advantage) {
+      if (latestDiceMsg.current.diceStates.D20.isActive) {
+        if (latestDiceMsg.current.diceStates.D20.Advantage) {
           if (diceStates.d20.rolls > 1) {
             d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
             actionsComplete = true;
           }
-        } else if (latestDiceMsg.current.Disadvantage) {
+        } else if (latestDiceMsg.current.diceStates.D20.Disadvantage) {
           if (diceStates.d20.rolls > 1) {
             d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
             actionsComplete = true;
@@ -866,15 +899,15 @@ export default function Home() {
       }
 
       const rollCompleteData = {
-        User: "aTreeFrog",
+        User: userName,
         Total: d20sumTotal,
         D20Roll: d20Sum,
         Modifier: 2, /////put whatever the skill level is
         Skill: latestDiceMsg.current.Skill,
-        Id: latestDiceMsg.current.Id
+        Id: latestDiceMsg.current.activityId
       };
       //send data to the server (not sure yet how to use, prob for logs and others can see)
-      chatSocket.emit('Dice Rolls Complete', rollCompleteData)
+      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
       //Need to send some kind of animation above the dice for being done showing values
 
       //put outcome to chatbox
@@ -890,7 +923,7 @@ export default function Home() {
       }));
       setTimeout(() => {
         callSubmitFromDiceRolls.current = true;
-        setDiceRollsInputData(`I rolled a ${d20sumTotal}`);
+        setDiceRollsInputData(`I rolled a ${d20Sum} +2 modifier`);
         setDiceStates(defaultDiceStates);
         setActiveSkill("");
         console.log("the end");
