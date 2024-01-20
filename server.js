@@ -19,6 +19,54 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const speechFile = path.resolve("./speech.mp3");
 
+const defaultDiceStates = {
+    d20: {
+        value: [],
+        isActive: true,
+        isGlowActive: false,
+        rolls: 0,
+        displayedValue: null,
+        inhibit: false,
+        advantage: false,
+    },
+    d10: {
+        value: [10],
+        isActive: false,
+        isGlowActive: false,
+        rolls: 0,
+        displayedValue: 10,
+        inhibit: false,
+        advantage: false,
+    },
+    d8: {
+        value: [8],
+        isActive: false,
+        isGlowActive: false,
+        rolls: 0,
+        displayedValue: 8,
+        inhibit: false,
+        advantage: false,
+    },
+    d6: {
+        value: [6],
+        isActive: false,
+        isGlowActive: false,
+        rolls: 0,
+        displayedValue: 6,
+        inhibit: false,
+        advantage: false,
+    },
+    d4: {
+        value: [4],
+        isActive: false,
+        isGlowActive: false,
+        rolls: 0,
+        displayedValue: 4,
+        inhibit: false,
+        advantage: false,
+    }
+};
+
 const shouldContinue = {};
 
 let activityCount = 1;
@@ -134,23 +182,56 @@ app.prepare().then(() => {
         console.log('a user connected:', socket.id);
 
         //Dice Roll Function Message Creator and sender
-        function sendDiceRollMessage(skillValue, advantageValue) {
-            const uniqueId = `activity${activityCount}-${new Date().toISOString()}`;
-            const diceRollMessage = {
-                Action: "DiceRoll",
-                D20: true,
-                D10: false,
-                D8: false,
-                D6: false,
-                D4: false,
-                Skill: skillValue,
-                Advantage: Boolean(advantageValue),
-                Disadvantage: false,
-                Id: uniqueId,
-                User: "aTreeFrog"
-            };
+        function sendDiceRollMessage(skillValue, advantageValue, users) {
+
+
+
+            var namesArray = users.split(',');
+
+            for (var i = 0; i < namesArray.length; i++) {
+                let user = namesArray[i].trim();
+
+                console.log("user: ", user)
+
+                if (players[user].mode != "dice") {
+
+                    players[user].mode = "dice";
+                    players[user].activeSkill = skillValue.length > 0;
+                    players[user].skill = skillValue;
+                    players[user].activityId = `activity${activityCount}-${new Date().toISOString()}`;
+
+                    players[user].diceStates.D20 = {
+                        value: [],
+                        isActive: true,
+                        isGlowActive: true,
+                        rolls: 0,
+                        displayedValue: null,
+                        inhibit: false,
+                        advantage: advantageValue,
+                    }
+                }
+
+            }
+
+            // const activityId = `activity${activityCount}-${new Date().toISOString()}`;
+            // const diceRollMessage = {
+            //     Action: "DiceRoll",
+            //     D20: true,
+            //     D10: false,
+            //     D8: false,
+            //     D6: false,
+            //     D4: false,
+            //     Skill: skillValue,
+            //     Advantage: Boolean(advantageValue),
+            //     Disadvantage: false,
+            //     Id: uniqueId,
+            //     User: "aTreeFrog"
+            // };
             // Sending the message to the connected client
-            io.to(serverRoomName).emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
+            //io.to(serverRoomName).emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
+
+            io.to(serverRoomName).emit('dice roll', players);
+
             activityCount++;
         };
 
@@ -254,14 +335,20 @@ app.prepare().then(() => {
                                 properties: {
                                     skill: {
                                         type: "string",
-                                        description: "Can be the following: deception, stealth, insight, nature, investigation, intelligence."
+                                        enum: ['intelligence', 'investigation', 'nature', 'insight', 'stealth', 'deception'],
+                                        description: "Based on the latest conversation from the assistant or bot, what type of skill modifier should be added to the d20 dice roll."
                                     },
                                     advantage: {
                                         type: "boolean",
-                                        description: "Determine if the roll should be done with advantage. Usually if the player has an advantage in the situation."
+                                        description: "Determine if the d20 dice roll should be rolled with advantage. The message from the bot or assistant would say the words advantage indicating to do so."
+                                    },
+                                    users: {
+                                        type: "array",
+                                        enum: Object.keys(clients),
+                                        description: "Based on the latest conversation history. the Assistant or bot says exactly which players should roll the d20. look for all the players that need to role and add them to this array."
                                     },
                                 },
-                                required: ["skill", "advantage"],
+                                required: ["skill", "advantage", "users"],
                             }
                         }
                     }
@@ -280,7 +367,8 @@ app.prepare().then(() => {
                     argumentsJson = JSON.parse(functionData.arguments);
                     skillValue = argumentsJson.skill;
                     advantageValue = argumentsJson.advantage;
-                    sendDiceRollMessage(skillValue, advantageValue);
+                    usersValue = argumentsJson.users
+                    sendDiceRollMessage(skillValue, advantageValue, usersValue);
 
                     // return; //dont check for any other function to get called
                 }
@@ -481,9 +569,13 @@ app.prepare().then(() => {
                 currentHealth: 30,
                 xPosition: 0,
                 yPosition: 0,
+                diceStates: defaultDiceStates,
+                mode: "story"
             };
 
             players[userName] = newPlayer;
+
+            console.log("new players joined: ", players);
 
             io.to(serverRoomName).emit('players dictionary', players);
 
