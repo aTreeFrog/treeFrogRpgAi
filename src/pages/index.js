@@ -311,18 +311,23 @@ export default function Home() {
     // });
 
     // dice roll initializer message (server only sends when starting dice mode)
-    chatSocket.on('dice roll', (data) => {
-      console.log("dice roll received");
+    chatSocket.on('players objects', (data) => {
+      console.log("players objects received");
+
+      //grab all players info
+      setPlayers(data);
 
       //check if already processed this message
       if (playersMsgActIds.current.includes(data[userName].activityId)) {
         return;
       }
+
       // add to list of received messages
       playersMsgActIds.current.push(data[userName].activityId);
 
-      //grab all players info
-      setPlayers(data);
+      if (!data[userName].active || data[userName].away) {
+        cleanUpDiceStates();
+      }
 
       if (data[userName].mode == "dice") {
 
@@ -334,7 +339,7 @@ export default function Home() {
           updateDiceStates(data[userName]); // Update immediately if messageQueue is empty
         }
 
-      }
+      } // other mode cases cover here
 
     });
 
@@ -386,6 +391,7 @@ export default function Home() {
       chatSocket.off('dice roll');
       chatSocket.off('speech to text data');
       chatSocket.off('background music');
+      chatSocket.off('players objects');
 
     };
 

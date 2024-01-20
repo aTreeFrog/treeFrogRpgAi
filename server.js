@@ -16,7 +16,6 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const speechFile = path.resolve("./speech.mp3");
 
 const defaultDiceStates = {
@@ -68,15 +67,14 @@ const defaultDiceStates = {
 };
 
 const shouldContinue = {};
-
-let activityCount = 1;
-
+const activityCount = useRef(1);
 const chatMessages = [];
-
 let waitingForUser = false;
 const clients = {};
 const players = {};
 let responseSent = new Map();
+const waitingForRolls = false;
+const awayPlayerCount = useRef(1)
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -125,7 +123,7 @@ app.prepare().then(() => {
 
             while (true) {
 
-                if (!waitingForUser) {
+                if (!waitingForUser && !waitingForRolls) {
 
                     let unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
 
@@ -184,8 +182,15 @@ app.prepare().then(() => {
         //Dice Roll Function Message Creator and sender
         function sendDiceRollMessage(skillValue, advantageValue, users) {
 
+            //find number of active players. If more then one, set timer to make game faster
+            let activePlayers = 0;
+            for (let key in players) {
+                if (players.hasOwnProperty(key) && !players[key].away) {
+                    activePlayers++;
+                }
+            }
 
-
+            //ai sends the users as a string with , seperated. instead of an array. So need to filter
             var namesArray = users.split(',');
 
             for (var i = 0; i < namesArray.length; i++) {
@@ -193,12 +198,13 @@ app.prepare().then(() => {
 
                 console.log("user: ", user)
 
-                if (players[user].mode != "dice") {
+                if (players[user] && players[user]?.mode != "dice" && !players[user].away) {
 
+                    players[user].active = true;
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `activity${activityCount}-${new Date().toISOString()}`;
+                    players[user].activityId = `user${user}-activity${activityCount.current}-${new Date().toISOString()}`;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -209,7 +215,48 @@ app.prepare().then(() => {
                         inhibit: false,
                         advantage: advantageValue,
                     }
+                    waitingForRolls = true;
+
+                    if (activePlayers > 1) {
+                        players[user].timer.duration = 30000;
+                        players[user].timer.enabled = true;
+                        setTimeout(forceResetCheck(players[user]), players[user].timer.duration);
+                    }
                 }
+
+            }
+
+            // if timer expired and player is still active, set them to away and not active and
+            // send default dice roll message to AI to take them out of the game. 
+            function forceResetCheck(player) {
+                if (player.active) {
+
+                    let message = "I stepped away from the game."
+                    const uniqueId = `user${player.name}-activity${awayPlayerCount.current}-${new Date().toISOString()}`;
+                    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
+                    awayPlayerCount.current++;
+                    //send message to users and ai
+                    chatMessages.push(serverData);
+                    io.to(serverRoomName).emit('latest user message', serverData);
+                    responseSent.set(serverData.id, true);
+                    makePlayerInactive(player)
+
+                }
+            }
+
+            function makePlayerInactive(player) {
+                player.active = false;
+                player.away = true;
+                player.mode = "story";
+                player.diceStates = defaultDiceStates;
+                player.skill = "";
+                player.activeSkill = false;
+                player.timer.enabled = false;
+                player.activityId = `user${player.name}-activity${activityCount.current}-${new Date().toISOString()}`;
+                activityCount.current++;
+
+                //send updated entire players object to room
+                io.emit('players objects', players);
 
             }
 
@@ -230,9 +277,9 @@ app.prepare().then(() => {
             // Sending the message to the connected client
             //io.to(serverRoomName).emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
 
-            io.to(serverRoomName).emit('dice roll', players);
+            io.to(serverRoomName).emit('players objects', players);
 
-            activityCount++;
+            activityCount.current++;
         };
 
 
@@ -501,7 +548,7 @@ app.prepare().then(() => {
             io.to(serverRoomName).emit('connected users', Object.keys(clients));
 
 
-            io.to(serverRoomName).emit('players dictionary', players);
+            io.to(serverRoomName).emit('players objects', players);
 
 
         });
@@ -570,14 +617,18 @@ app.prepare().then(() => {
                 xPosition: 0,
                 yPosition: 0,
                 diceStates: defaultDiceStates,
-                mode: "story"
+                mode: "story",
+                timers: {
+                    duration: 30000, //milliseconds
+                    enabled: false
+                }
             };
 
             players[userName] = newPlayer;
 
             console.log("new players joined: ", players);
 
-            io.to(serverRoomName).emit('players dictionary', players);
+            io.to(serverRoomName).emit('players objects', players);
 
         });
 
@@ -585,13 +636,51 @@ app.prepare().then(() => {
 
             io.emit('connected users', Object.keys(clients));
 
-            io.emit('players dictionary', players);
+            io.emit('players objects', players);
 
         });
 
         processMessages();
 
     });
+
+    async function checkPlayersState() {
+
+        let anyPlayerRoll = false
+        Object.entries(players).forEach(([userName, playerData]) => {
+
+            if (playerData.mode == "dice" && playerData.active && !playerData.away) {
+                anyPlayerRoll = true;
+            }
+
+        });
+
+        if (anyPlayerRoll) {
+            waitingForRolls = true;
+        } else {
+            waitingForRolls = false;
+        }
+
+        io.emit('players objects', players);
+
+    };
+
+    socket.on('D20 Dice Roll Complete', (diceData) => {
+
+        players[diceData.User].active = false;
+        players[diceData.User].away = false;
+        players[diceData.User].mode = "story";
+        players[diceData.User].diceStates = defaultDiceStates;
+        players[diceData.User].skill = "";
+        players[diceData.User].activeSkill = false;
+        players[diceData.User].timer.enabled = false;
+        players[diceData.User].activityId = `user${diceData.User}-activity${activityCount.current}-${new Date().toISOString()}`;
+        activityCount.current++;
+        io.emit('players objects', players);
+
+    });
+
+    setInterval(checkPlayersState, 1000);
 
     setInterval(() => {
         responseSent.clear();
