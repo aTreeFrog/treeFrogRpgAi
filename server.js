@@ -461,7 +461,7 @@ app.prepare().then(() => {
 
             //mock obtaining player info from mongodb
             let newPlayer = {
-                ...playerTemplate, // This copies all keys from playerTemplate
+                ...players, // This copies all keys from players object
                 name: userName,
                 active: false,
                 away: false,
