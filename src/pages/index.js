@@ -128,6 +128,8 @@ export default function Home() {
   const [usersInServer, setUsersInServer] = useState([]);
   const [players, setPlayers] = useState();
   const playersMsgActIds = useRef([]);
+  const [awayMode, setAwayMode] = useState(false);
+  const iAmBack = useRef(false)
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -263,7 +265,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            textToSpeechCall(sentence); ///////////////////////////////////////////////////////////
+            //textToSpeechCall(sentence); ////////////////TURN BACK ON!!!!///////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
@@ -335,7 +337,11 @@ export default function Home() {
         cleanUpDiceStates();
       }
 
-      if (data[userName]?.mode == "dice" && data[userName].active && !data[userName].away) {
+      if (data[userName]?.away) {
+        setAwayMode(true);
+      }
+
+      if (data[userName]?.mode == "dice" && data[userName]?.active && !data[userName]?.away) {
 
         if (messageQueue.current.length > 0) {
           setPendingDiceUpdate(data[userName]); // Save the data for later
@@ -666,7 +672,10 @@ export default function Home() {
 
       //see if data is coming from dice roll completion, audio message or normal text, or none at all.
       let chatMsgData = "";
-      if (diceRollsInputData.length > 0) {
+      if (iAmBack.current) {
+        iAmBack.current = false
+        chatMsgData = "I am back in the game."
+      } else if (diceRollsInputData.length > 0) {
         chatMsgData = diceRollsInputData;
         setDiceRollsInputData('');
         setDiceSelectionOption(null);
@@ -694,6 +703,14 @@ export default function Home() {
       }
 
       if (chatMsgData.length > 0) {
+
+        //since you sent a message, auto say playing again
+        if (players[userName].away) {
+          chatSocket.emit('playing again', userName);
+        }
+
+        setAwayMode(false);
+        iAmBack.current = false;
 
         readyChatAndAudio(chatMsgData);
 
@@ -1136,12 +1153,21 @@ export default function Home() {
         Id: latestDiceMsg.current.activityId
       };
       //send data to the server (not sure yet how to use, prob for logs and others can see)
-      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
+      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData);
 
+    } else if (players[userName]?.mode == "story") {
+      chatSocket.emit('story move on');
     }
 
     cleanUpDiceStates();
     setShowMoveOnPopup(false);
+  };
+
+  const handleImBack = () => {
+    chatSocket.emit('playing again', userName);
+    iAmBack.current = true;
+    setAwayMode(false);
+    handleSubmit({ preventDefault: () => { } });
   };
 
 
@@ -1149,46 +1175,60 @@ export default function Home() {
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
       <div className="flex-1 max-w-[400px] border border-white">
-        <div className="flex flex-col h-screen justify-between"> {/* Adjusted for spacing */}
-          <div>
-            <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
-            <div>
-              <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} />
+        {awayMode ? (
+          <div className="flex items-center justify-center h-screen bg-purple-500 bg-opacity-30 backdrop-blur ">
+            <div className="text-center">
+              <p className="text-white text-2xl font-semibold mb-4">You stepped away</p>
+              <button
+                onClick={handleImBack}
+                className="bg-white text-purple-500 font-semibold py-2 px-4 rounded"
+              >
+                I'm back
+              </button>
             </div>
           </div>
-          {/* Toggle Meeting Panel Button */}
-          <div className="flex">
-            <button
-              onClick={() => {
-                // First, check if the panel is currently open
-                // if (isPanelOpen) {
-                //   // If the panel is open, it means we're about to close it,
-                //   // so call the function to end the Jitsi meeting.
-                //   disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
-                // }
-                // Next, toggle the panel's open state regardless of the current state.
-                // If it was open, this will close it, and vice versa.
-                setIsPanelOpen(prevState => !prevState);
-              }}
-              className="absolute bottom-0 left-20 mb-10 ml-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
-            >
-              {isPanelOpen ? 'Hide Party' : 'Open Party'}
-            </button>
-            <button
-              onClick={MoveOnClick}
-              className="absolute bottom-0 left-60 mb-10 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
-            >
-              {moveOnButtonText}
-            </button>
-            {showMoveOnPopup && (
-              <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />
-            )}
+        ) : (
+          <div className="flex flex-col h-screen justify-between"> {/* Adjusted for spacing */}
+            <div>
+              <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
+              <div>
+                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} />
+              </div>
+            </div>
+            {/* Toggle Meeting Panel Button */}
+            <div className="flex">
+              <button
+                onClick={() => {
+                  // First, check if the panel is currently open
+                  // if (isPanelOpen) {
+                  //   // If the panel is open, it means we're about to close it,
+                  //   // so call the function to end the Jitsi meeting.
+                  //   disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
+                  // }
+                  // Next, toggle the panel's open state regardless of the current state.
+                  // If it was open, this will close it, and vice versa.
+                  setIsPanelOpen(prevState => !prevState);
+                }}
+                className="absolute bottom-0 left-20 mb-10 ml-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+              >
+                {isPanelOpen ? 'Hide Party' : 'Open Party'}
+              </button>
+              <button
+                onClick={MoveOnClick}
+                className="absolute bottom-0 left-60 mb-10 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+              >
+                {moveOnButtonText}
+              </button>
+              {showMoveOnPopup && (
+                <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />
+              )}
+            </div>
+            {/* Floating Jitsi Meeting Panel */}
+            <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'visible w-96 h-[30rem]' : 'invisible h-0 overflow-hidden'}`}>
+              <JitsiMeetComponent meetingRoom={meetingDetails?.roomName} onApiReady={handleApiReady} />
+            </div>
           </div>
-          {/* Floating Jitsi Meeting Panel */}
-          <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'visible w-96 h-[30rem]' : 'invisible h-0 overflow-hidden'}`}>
-            <JitsiMeetComponent meetingRoom={meetingDetails?.roomName} onApiReady={handleApiReady} />
-          </div>
-        </div>
+        )}
       </div>
       {/* Center Box (Original Content) */}
       <div className="flex-1 max-w-[700px] border border-white">
