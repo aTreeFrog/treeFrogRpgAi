@@ -16,7 +16,7 @@ const CustomSelect = ({ options, onChange, value }) => {
     const customStyles = {
         control: (provided, state) => ({
             ...provided,
-            backgroundColor: 'gray', // Control background
+            backgroundColor: 'rgba(107, 33, 168, 1)',
             color: 'white', // Text color
             borderColor: 'gray', // Border color
             width: '160px',

@@ -274,7 +274,7 @@ app.prepare().then(() => {
                     }
                     waitingForRolls = true;
 
-                    if (activePlayers > 1) {
+                    if (activePlayers > 0) {
 
                         players[user].timers.duration = 30000;
                         players[user].timers.enabled = true;

@@ -18,6 +18,7 @@ import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import MoveOnPopup from "../components/MoveOnPopup"
 import BattleMap from '../components/BattleMap';
 import { io } from "socket.io-client";
+import { CountdownCircleTimer } from 'react-countdown-circle-timer';
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -130,6 +131,8 @@ export default function Home() {
   const playersMsgActIds = useRef([]);
   const [awayMode, setAwayMode] = useState(false);
   const iAmBack = useRef(false)
+  const [isTimerVisible, setIsTimerVisible] = useState(false);
+  const [isTimerPlaying, setIsTimerPlaying] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1130,6 +1133,16 @@ export default function Home() {
     }
   }, [isRecording]);
 
+  useEffect(() => {
+
+    if (players && players[userName]?.timers.enabled) {
+      setIsTimerVisible(true);
+    } else {
+      setIsTimerVisible(false);
+    }
+
+  }, [players]);
+
   const MoveOnClick = () => {
     setShowMoveOnPopup(prevState => !prevState);
 
@@ -1170,6 +1183,11 @@ export default function Home() {
     handleSubmit({ preventDefault: () => { } });
   };
 
+  const onTimerComplete = () => {
+    setIsTimerVisible(false);
+    return [false, 0]; // Stops the timer
+  };
+
 
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
@@ -1178,10 +1196,10 @@ export default function Home() {
         {awayMode ? (
           <div className="flex items-center justify-center h-screen bg-purple-500 bg-opacity-30 backdrop-blur ">
             <div className="text-center">
-              <p className="text-white text-2xl font-semibold mb-4">You stepped away</p>
+              <p className="text-white text-2xl font-semibold mb-10">You stepped away</p>
               <button
                 onClick={handleImBack}
-                className="bg-white text-purple-500 font-semibold py-2 px-4 rounded"
+                className="bg-white text-purple-500 text-xl font-semibold py-2 px-4 rounded"
               >
                 I'm back
               </button>
@@ -1248,8 +1266,28 @@ export default function Home() {
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
-          <div className="mt-[-90px] ml-[-30px] text-white text-2xl font-semibold"> {/* This is an example value; adjust as needed */}
-            <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} />
+          <div className="absolute left-23 bottom-10">
+            {isTimerVisible && (
+              <div className="text-white text-xl font-semibold ml-[-302px] mb-[-50px]">
+                <CountdownCircleTimer
+                  isPlaying={isTimerVisible}
+                  duration={30}
+                  size={50}
+                  strokeWidth={4} // Adjust stroke width as needed
+                  colors={[
+                    ['#000000', 0.33],
+                    ['#F7B801', 0.33],
+                    ['#A30000', 0.33],
+                  ]}
+                  onComplete={onTimerComplete}
+                >
+                  {({ remainingTime }) => remainingTime}
+                </CountdownCircleTimer>
+              </div>
+            )}
+            <div className="text-white text-2xl font-semibold  ml-[-35px]">
+              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} />
+            </div>
           </div>
         </div>
       </div>
