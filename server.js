@@ -180,7 +180,7 @@ app.prepare().then(() => {
         console.log('a user connected:', socket.id);
 
         //Dice Roll Function Message Creator and sender
-        function sendDiceRollMessage(skillValue, advantageValue, users) {
+        async function sendDiceRollMessage(skillValue, advantageValue, users) {
 
             //find number of active players. If more then one, set timer to make game faster
             let activePlayers = 0;
@@ -222,18 +222,30 @@ app.prepare().then(() => {
                     waitingForRolls = true;
 
                     if (activePlayers > 1) {
-                        players[user].timer.duration = 30000;
-                        players[user].timer.enabled = true;
-                        setTimeout(forceResetCheck(players[user]), players[user].timer.duration);
+
+                        players[user].timers.duration = 30000;
+                        players[user].timers.enabled = true;
+                        await waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
                     }
                 }
 
+            }
+
+            function waitAndCall(duration, func) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        func();
+                        resolve();
+                    }, duration);
+                });
             }
 
             // if timer expired and player is still active, set them to away and not active and
             // send default dice roll message to AI to take them out of the game. 
             function forceResetCheck(player) {
                 if (player.active) {
+
+                    console.log("forceResetCheck");
 
                     let message = "I stepped away from the game."
                     const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
@@ -255,7 +267,7 @@ app.prepare().then(() => {
                 player.diceStates = defaultDiceStates;
                 player.skill = "";
                 player.activeSkill = false;
-                player.timer.enabled = false;
+                player.timers.enabled = false;
                 player.activityId = `user${player.name}-activity${activityCount}-${new Date().toISOString()}`;
                 activityCount++;
 
@@ -423,7 +435,7 @@ app.prepare().then(() => {
                     skillValue = argumentsJson.skill;
                     advantageValue = argumentsJson.advantage;
                     usersValue = argumentsJson.users
-                    sendDiceRollMessage(skillValue, advantageValue, usersValue);
+                    await sendDiceRollMessage(skillValue, advantageValue, usersValue);
 
                     // return; //dont check for any other function to get called
                 }

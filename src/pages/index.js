@@ -331,7 +331,11 @@ export default function Home() {
       //   cleanUpDiceStates();
       // }
 
-      if (data[userName]?.mode == "dice") {
+      if (!data[userName]?.active) {
+        cleanUpDiceStates();
+      }
+
+      if (data[userName]?.mode == "dice" && data[userName].active && !data[userName].away) {
 
         if (messageQueue.current.length > 0) {
           setPendingDiceUpdate(data[userName]); // Save the data for later
