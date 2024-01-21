@@ -1121,6 +1121,21 @@ export default function Home() {
   const MoveOnConfirm = () => {
     // Perform the action
     console.log('Confirmed!');
+
+    if (players[userName]?.mode == "dice") {
+      const rollCompleteData = {
+        User: userName,
+        Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
+        D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
+        Modifier: 2, /////put whatever the skill level is
+        Skill: latestDiceMsg.current.Skill,
+        Id: latestDiceMsg.current.activityId
+      };
+      //send data to the server (not sure yet how to use, prob for logs and others can see)
+      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
+
+    }
+
     cleanUpDiceStates();
     setShowMoveOnPopup(false);
   };
