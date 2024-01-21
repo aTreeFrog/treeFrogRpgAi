@@ -67,14 +67,14 @@ const defaultDiceStates = {
 };
 
 const shouldContinue = {};
-const activityCount = useRef(1);
+let activityCount = 1
 const chatMessages = [];
 let waitingForUser = false;
 const clients = {};
 const players = {};
 let responseSent = new Map();
-const waitingForRolls = false;
-const awayPlayerCount = useRef(1)
+let waitingForRolls = false;
+let awayPlayerCount = 1
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -190,8 +190,12 @@ app.prepare().then(() => {
                 }
             }
 
-            //ai sends the users as a string with , seperated. instead of an array. So need to filter
-            var namesArray = users.split(',');
+            if (typeof users === 'string') {
+                //ai sent the users as a string with , seperated. instead of an array. So need to filter
+                var namesArray = users.split(',');
+            } else {
+                var namesArray = users;
+            }
 
             for (var i = 0; i < namesArray.length; i++) {
                 let user = namesArray[i].trim();
@@ -204,7 +208,7 @@ app.prepare().then(() => {
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `user${user}-activity${activityCount.current}-${new Date().toISOString()}`;
+                    players[user].activityId = `user${user}-activity${activityCount}-${new Date().toISOString()}`;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -232,9 +236,9 @@ app.prepare().then(() => {
                 if (player.active) {
 
                     let message = "I stepped away from the game."
-                    const uniqueId = `user${player.name}-activity${awayPlayerCount.current}-${new Date().toISOString()}`;
+                    const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
                     let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
-                    awayPlayerCount.current++;
+                    awayPlayerCount++;
                     //send message to users and ai
                     chatMessages.push(serverData);
                     io.to(serverRoomName).emit('latest user message', serverData);
@@ -252,8 +256,8 @@ app.prepare().then(() => {
                 player.skill = "";
                 player.activeSkill = false;
                 player.timer.enabled = false;
-                player.activityId = `user${player.name}-activity${activityCount.current}-${new Date().toISOString()}`;
-                activityCount.current++;
+                player.activityId = `user${player.name}-activity${activityCount}-${new Date().toISOString()}`;
+                activityCount++;
 
                 //send updated entire players object to room
                 io.emit('players objects', players);
@@ -279,7 +283,7 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            activityCount.current++;
+            activityCount++;
         };
 
 
@@ -366,17 +370,21 @@ app.prepare().then(() => {
                 role: item.role,
                 content: item.content,
             }));
-            messagesFilteredForFunction.push({ "role": "user", "content": "based on your last message, should you do a sendDiceRollMessage function call? Only do call if the last message by the assistant or bot specifically said to roll a d20 dice with some type of modifier. Do not call if the assistant or bot was saying the results of a role. But if you are sure that the message is requesting the user to roll the D20 dice again. Example would be please roll your D20 with a perception modifier. Ensure the message is not talking about the past explaining the outcome of a roll." })
+            console.log("messagesFilteredForFunction", messagesFilteredForFunction);
+            //just see if you should call function based on last ai message
+            let latestAssistantMessage = [messagesFilteredForFunction.findLast(item => item.role === "assistant")];
+            latestAssistantMessage.push({ "role": "user", "content": "did you specifically say to roll a d20? If so, call the sendDiceRollMessage function. Only call the function if your last message specifically requested me to roll." })
+            console.log("latestAssistantMessage", latestAssistantMessage);
             const data = {
                 model: "gpt-4",
-                messages: messagesFilteredForFunction,
+                messages: latestAssistantMessage,
                 stream: false,
                 tools: [
                     {
                         type: "function",
                         function: {
                             name: "sendDiceRollMessage",
-                            description: "Request the user to roll a d20 dice and to add a modifier based on Dungeons and Dragons style rules. Want the user to roll to determine the outcome of a decision based on the game. You, the AI bot, is the dungeon master. You should only call this function if the last message from the assistant, bot, ai specifically said to roll a d20 dice.",
+                            description: "function to request the user talking with the game master to do a d20 dice roll",
                             parameters: {
                                 type: "object",
                                 properties: {
@@ -402,7 +410,7 @@ app.prepare().then(() => {
                 ]
             };
 
-            messagesFilteredForFunction.pop() //remove what i just added
+            latestAssistantMessage.pop() //remove what i just added
             const completion = await openai.chat.completions.create(data);
             console.log("checking function call completion: ", completion.choices[0].finish_reason);
 
@@ -625,6 +633,8 @@ app.prepare().then(() => {
             };
 
             players[userName] = newPlayer;
+            players[userName].activityId = `user${userName}-activity${activityCount}-${new Date().toISOString()}`
+            activityCount++;
 
             console.log("new players joined: ", players);
 
@@ -636,6 +646,22 @@ app.prepare().then(() => {
 
             io.emit('connected users', Object.keys(clients));
 
+            io.emit('players objects', players);
+
+        });
+
+
+        socket.on('D20 Dice Roll Complete', (diceData) => {
+
+            players[diceData.User].active = false;
+            players[diceData.User].away = false;
+            players[diceData.User].mode = "story";
+            players[diceData.User].diceStates = defaultDiceStates;
+            players[diceData.User].skill = "";
+            players[diceData.User].activeSkill = false;
+            players[diceData.User].timers.enabled = false;
+            players[diceData.User].activityId = `user${diceData.User}-activity${activityCount}-${new Date().toISOString()}`;
+            activityCount++;
             io.emit('players objects', players);
 
         });
@@ -664,21 +690,6 @@ app.prepare().then(() => {
         io.emit('players objects', players);
 
     };
-
-    socket.on('D20 Dice Roll Complete', (diceData) => {
-
-        players[diceData.User].active = false;
-        players[diceData.User].away = false;
-        players[diceData.User].mode = "story";
-        players[diceData.User].diceStates = defaultDiceStates;
-        players[diceData.User].skill = "";
-        players[diceData.User].activeSkill = false;
-        players[diceData.User].timer.enabled = false;
-        players[diceData.User].activityId = `user${diceData.User}-activity${activityCount.current}-${new Date().toISOString()}`;
-        activityCount.current++;
-        io.emit('players objects', players);
-
-    });
 
     setInterval(checkPlayersState, 1000);
 

@@ -17,6 +17,7 @@ import CustomSelect from '../components/CustomSelect'; // Import the above creat
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import MoveOnPopup from "../components/MoveOnPopup"
 import BattleMap from '../components/BattleMap';
+import { io } from "socket.io-client";
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -317,19 +318,20 @@ export default function Home() {
       //grab all players info
       setPlayers(data);
 
+
       //check if already processed this message
-      if (playersMsgActIds.current.includes(data[userName].activityId)) {
+      if (playersMsgActIds.current.includes(data[userName]?.activityId)) {
         return;
       }
 
       // add to list of received messages
-      playersMsgActIds.current.push(data[userName].activityId);
+      playersMsgActIds.current.push(data[userName]?.activityId);
 
-      if (!data[userName].active || data[userName].away) {
-        cleanUpDiceStates();
-      }
+      // if (!data[userName].active || data[userName].away) {
+      //   cleanUpDiceStates();
+      // }
 
-      if (data[userName].mode == "dice") {
+      if (data[userName]?.mode == "dice") {
 
         if (messageQueue.current.length > 0) {
           setPendingDiceUpdate(data[userName]); // Save the data for later
@@ -665,6 +667,17 @@ export default function Home() {
         setDiceRollsInputData('');
         setDiceSelectionOption(null);
       } else if (diceSelectionOption) {
+
+        const rollCompleteData = {
+          User: userName,
+          Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
+          D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
+          Modifier: 2, /////put whatever the skill level is
+          Skill: latestDiceMsg.current.Skill,
+          Id: latestDiceMsg.current.activityId
+        };
+        //send data to the server (not sure yet how to use, prob for logs and others can see)
+        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
         chatMsgData = "I rolled a " + diceSelectionOption.value;
         // clean up all dice states
         cleanUpDiceStates();
@@ -923,7 +936,7 @@ export default function Home() {
         ...prevState,
         d20: {
           ...prevState.d20,
-          inhibit: true,
+          inhibit: false,
           isGlowActive: false
         }
       }));
