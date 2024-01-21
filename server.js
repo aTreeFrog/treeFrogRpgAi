@@ -68,13 +68,14 @@ const defaultDiceStates = {
 
 const shouldContinue = {};
 let activityCount = 1
-const chatMessages = [];
+let chatMessages = [];
 let waitingForUser = false;
 const clients = {};
 const players = {};
 let responseSent = new Map();
 let waitingForRolls = false;
 let awayPlayerCount = 1
+let settingUpNewScene = false;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -119,11 +120,63 @@ app.prepare().then(() => {
 
     io.on('connection', (socket) => {
 
+        async function summarizeAndMoveOn() {
+
+            settingUpNewScene = true;
+
+            for (let userName in players) {
+                if (players.hasOwnProperty(userName)) {
+                    players[userName].active = false;
+                    players[userName].active = false;
+                    players[userName].currentHealth = players[userName].maxHealth;
+                    players[userName].diceStates = defaultDiceStates;
+                    players[userName].mode = "story"
+
+                }
+            }
+
+            let messagesFilteredForApi = chatMessages.map(item => ({
+                role: item.role,
+                content: item.content,
+            }));
+
+            messagesFilteredForApi.push({ "role": "user", "content": "The players decided to move on without wrapping up this scene. please summarize the story so far, including the details of the decisions each player made so far. Then, make a decision on what the next scene will entale. Even if you were waiting on players to do something, move onto the next scene. Tell us where the players are heading." })
+
+            const data = {
+                model: "gpt-4",
+                messages: messagesFilteredForApi,
+                stream: true,
+            };
+
+            let outputMsg = "";
+
+            const completion = await openai.chat.completions.create(data);
+
+            for await (const chunk of completion) {
+
+                outputStream = chunk.choices[0]?.delta?.content;
+                outputMsg += outputStream;
+                io.to(serverRoomName).emit('chat message', outputStream || "");
+            }
+            io.to(serverRoomName).emit('chat complete');
+
+            //start chatMessages over again. But dont forget to add instructions to this list.
+            chatMessages = [];
+            chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
+
+            settingUpNewScene = false;
+
+            //need to call function to determine which scene we need to setup next. 
+
+
+
+        }
+
         async function processMessages() {
 
             while (true) {
 
-                if (!waitingForUser && !waitingForRolls) {
+                if (!waitingForUser && !waitingForRolls && !settingUpNewScene) {
 
                     let unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
 
@@ -385,59 +438,65 @@ app.prepare().then(() => {
             console.log("messagesFilteredForFunction", messagesFilteredForFunction);
             //just see if you should call function based on last ai message
             let latestAssistantMessage = [messagesFilteredForFunction.findLast(item => item.role === "assistant")];
-            latestAssistantMessage.push({ "role": "user", "content": "did you specifically say to roll a d20? If so, call the sendDiceRollMessage function. Only call the function if your last message specifically requested me to roll." })
             console.log("latestAssistantMessage", latestAssistantMessage);
-            const data = {
-                model: "gpt-4",
-                messages: latestAssistantMessage,
-                stream: false,
-                tools: [
-                    {
-                        type: "function",
-                        function: {
-                            name: "sendDiceRollMessage",
-                            description: "function to request the user talking with the game master to do a d20 dice roll",
-                            parameters: {
-                                type: "object",
-                                properties: {
-                                    skill: {
-                                        type: "string",
-                                        enum: ['intelligence', 'investigation', 'nature', 'insight', 'stealth', 'deception'],
-                                        description: "Based on the latest conversation from the assistant or bot, what type of skill modifier should be added to the d20 dice roll."
+            //only check it to do the roll function if you sense d20 and roll in the ai statement
+            if (latestAssistantMessage[0].content.toLowerCase().includes("d20") && latestAssistantMessage[0].content.toLowerCase().includes("roll")) {
+
+                latestAssistantMessage.push({ "role": "user", "content": "did you specifically request a user to roll a d20 dice? If so, call the sendDiceRollMessage function." })
+                console.log("latestAssistantMessage", latestAssistantMessage);
+                const data = {
+                    model: "gpt-4",
+                    messages: latestAssistantMessage,
+                    stream: false,
+                    tools: [
+                        {
+                            type: "function",
+                            function: {
+                                name: "sendDiceRollMessage",
+                                description: "function that should be called anytime the AI assistant asks a user to roll a d20 dice.",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        skill: {
+                                            type: "string",
+                                            enum: ['intelligence', 'investigation', 'nature', 'insight', 'stealth', 'deception'],
+                                            description: "Based on the latest conversation from the assistant or bot, what type of skill modifier should be added to the d20 dice roll."
+                                        },
+                                        advantage: {
+                                            type: "boolean",
+                                            description: "Determine if the d20 dice roll should be rolled with advantage. The message from the bot or assistant would say the words advantage indicating to do so."
+                                        },
+                                        users: {
+                                            type: "array",
+                                            enum: Object.keys(clients),
+                                            description: "Based on the latest conversation history. the Assistant or bot says exactly which players should roll the d20. look for all the players that need to role and add them to this array."
+                                        },
                                     },
-                                    advantage: {
-                                        type: "boolean",
-                                        description: "Determine if the d20 dice roll should be rolled with advantage. The message from the bot or assistant would say the words advantage indicating to do so."
-                                    },
-                                    users: {
-                                        type: "array",
-                                        enum: Object.keys(clients),
-                                        description: "Based on the latest conversation history. the Assistant or bot says exactly which players should roll the d20. look for all the players that need to role and add them to this array."
-                                    },
-                                },
-                                required: ["skill", "advantage", "users"],
+                                    required: ["skill", "advantage", "users"],
+                                }
                             }
                         }
+                    ]
+                };
+
+                latestAssistantMessage.pop() //remove what i just added
+                const completion = await openai.chat.completions.create(data);
+                console.log("checking function call completion: ", completion.choices[0].finish_reason);
+
+                if (completion.choices[0].finish_reason == "tool_calls") {
+                    functionData = completion.choices[0].message.tool_calls[0].function;
+                    console.log("checking function call data : ", functionData);
+
+                    if (functionData.name == "sendDiceRollMessage") {
+                        argumentsJson = JSON.parse(functionData.arguments);
+                        skillValue = argumentsJson.skill;
+                        advantageValue = argumentsJson.advantage;
+                        usersValue = argumentsJson.users
+                        await sendDiceRollMessage(skillValue, advantageValue, usersValue);
+
+                        // return; //dont check for any other function to get called
                     }
-                ]
-            };
 
-            latestAssistantMessage.pop() //remove what i just added
-            const completion = await openai.chat.completions.create(data);
-            console.log("checking function call completion: ", completion.choices[0].finish_reason);
-
-            if (completion.choices[0].finish_reason == "tool_calls") {
-                functionData = completion.choices[0].message.tool_calls[0].function;
-                console.log("checking function call data : ", functionData);
-
-                if (functionData.name == "sendDiceRollMessage") {
-                    argumentsJson = JSON.parse(functionData.arguments);
-                    skillValue = argumentsJson.skill;
-                    advantageValue = argumentsJson.advantage;
-                    usersValue = argumentsJson.users
-                    await sendDiceRollMessage(skillValue, advantageValue, usersValue);
-
-                    // return; //dont check for any other function to get called
                 }
 
             }
@@ -481,7 +540,7 @@ app.prepare().then(() => {
                 if (functionData.name == "createDallEImage") {
                     argumentsJson = JSON.parse(functionData.arguments);
                     promptValue = argumentsJson.prompt;
-                    createDallEImage(promptValue);
+                    //createDallEImage(promptValue);  ////////////TURN BACK ON!!!////////////////
                 }
             }
 
@@ -678,9 +737,44 @@ app.prepare().then(() => {
 
         });
 
+        socket.on('playing again', (userName) => {
+
+            //check if any players not away is in battle mode. If so, put this returned player in battle mode
+            const battleModeActive = Object.values(players).some(value => !value.away && value.mode === "battle");
+
+            if (battleModeActive) {
+                players[userName].mode = "battle";
+            } else {
+                players[userName].mode = "story";
+            }
+
+            players[userName].active = true;
+            players[userName].away = false;
+            players[userName].diceStates = defaultDiceStates;
+            players[userName].activeSkill = false;
+            players[userName].activityId = `user${userName}-activity${activityCount}-${new Date().toISOString()}`;
+            activityCount++;
+
+            io.emit('players objects', players);
+
+        });
+
+        socket.on('story move on', () => {
+
+            let message = "Activated move to next scene sequence"
+            const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
+            let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
+            io.to(serverRoomName).emit('latest user message', serverData);
+
+            summarizeAndMoveOn();
+
+        });
+
         processMessages();
 
     });
+
+
 
     async function checkPlayersState() {
 
