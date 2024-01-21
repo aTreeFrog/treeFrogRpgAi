@@ -17,6 +17,7 @@ import CustomSelect from '../components/CustomSelect'; // Import the above creat
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import MoveOnPopup from "../components/MoveOnPopup"
 import BattleMap from '../components/BattleMap';
+import { io } from "socket.io-client";
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -311,20 +312,30 @@ export default function Home() {
     // });
 
     // dice roll initializer message (server only sends when starting dice mode)
-    chatSocket.on('dice roll', (data) => {
-      console.log("dice roll received");
-
-      //check if already processed this message
-      if (playersMsgActIds.current.includes(data[userName].activityId)) {
-        return;
-      }
-      // add to list of received messages
-      playersMsgActIds.current.push(data[userName].activityId);
+    chatSocket.on('players objects', (data) => {
+      console.log("players objects received");
 
       //grab all players info
       setPlayers(data);
 
-      if (data[userName].mode == "dice") {
+
+      //check if already processed this message
+      if (playersMsgActIds.current.includes(data[userName]?.activityId)) {
+        return;
+      }
+
+      // add to list of received messages
+      playersMsgActIds.current.push(data[userName]?.activityId);
+
+      // if (!data[userName].active || data[userName].away) {
+      //   cleanUpDiceStates();
+      // }
+
+      if (!data[userName]?.active) {
+        cleanUpDiceStates();
+      }
+
+      if (data[userName]?.mode == "dice" && data[userName].active && !data[userName].away) {
 
         if (messageQueue.current.length > 0) {
           setPendingDiceUpdate(data[userName]); // Save the data for later
@@ -334,7 +345,7 @@ export default function Home() {
           updateDiceStates(data[userName]); // Update immediately if messageQueue is empty
         }
 
-      }
+      } // other mode cases cover here
 
     });
 
@@ -386,6 +397,7 @@ export default function Home() {
       chatSocket.off('dice roll');
       chatSocket.off('speech to text data');
       chatSocket.off('background music');
+      chatSocket.off('players objects');
 
     };
 
@@ -659,6 +671,17 @@ export default function Home() {
         setDiceRollsInputData('');
         setDiceSelectionOption(null);
       } else if (diceSelectionOption) {
+
+        const rollCompleteData = {
+          User: userName,
+          Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
+          D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
+          Modifier: 2, /////put whatever the skill level is
+          Skill: latestDiceMsg.current.Skill,
+          Id: latestDiceMsg.current.activityId
+        };
+        //send data to the server (not sure yet how to use, prob for logs and others can see)
+        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
         chatMsgData = "I rolled a " + diceSelectionOption.value;
         // clean up all dice states
         cleanUpDiceStates();
@@ -917,7 +940,7 @@ export default function Home() {
         ...prevState,
         d20: {
           ...prevState.d20,
-          inhibit: true,
+          inhibit: false,
           isGlowActive: false
         }
       }));
@@ -1102,6 +1125,21 @@ export default function Home() {
   const MoveOnConfirm = () => {
     // Perform the action
     console.log('Confirmed!');
+
+    if (players[userName]?.mode == "dice") {
+      const rollCompleteData = {
+        User: userName,
+        Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
+        D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
+        Modifier: 2, /////put whatever the skill level is
+        Skill: latestDiceMsg.current.Skill,
+        Id: latestDiceMsg.current.activityId
+      };
+      //send data to the server (not sure yet how to use, prob for logs and others can see)
+      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
+
+    }
+
     cleanUpDiceStates();
     setShowMoveOnPopup(false);
   };
