@@ -103,7 +103,7 @@ export default function Home() {
   const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
   const latestDiceMsg = useRef(null);
-  const [chatBallEnable, setWiazardHatEnable] = useState(false)
+  const [wizardHatEnable, setWizardHatEnable] = useState(false)
   const messageRefs = useRef([]);
   const [activeSkill, setActiveSkill] = useState("")
   const activityCount = useRef(0);
@@ -268,7 +268,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            //textToSpeechCall(sentence); ////////////////TURN BACK ON!!!!///////////////////////////////////////////
+            textToSpeechCall(sentence); ////////////////TURN BACK ON!!!!///////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
@@ -418,7 +418,7 @@ export default function Home() {
   const processQueue = () => {
     if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
 
-      const msg = messageQueue.current.shift(); // Get the oldest message
+      let msg = messageQueue.current.shift(); // Get the oldest message
       console.log("processQueue: ", msg);
       setChatLog((prevChatLog) => {
         let updatedChatLog = [...prevChatLog];
@@ -429,6 +429,7 @@ export default function Home() {
           let lastEntry = updatedChatLog[updatedChatLog.length - 1];
           // its repeating somewhere so i needed to add this
           if (!lastEntry.message.endsWith(msg)) {
+            msg = msg.replace(/undefined/g, ''); //get rid of any word of "undefined"
             lastEntry.message += msg; // Append new chunk to last message content
             console.log("lastEntry again: ", lastEntry.message);
           }
@@ -437,9 +438,9 @@ export default function Home() {
         lastMessage = updatedChatLog;
         return updatedChatLog;
       });
-      setWiazardHatEnable(true);
+      setWizardHatEnable(true);
     } else {
-      setWiazardHatEnable(false);
+      setWizardHatEnable(false);
     }
     setMessageQueueTrigger(prev => !prev);
   };
@@ -668,70 +669,72 @@ export default function Home() {
     }
 
     //if there is a pending dice roll about to go down, don't allow ai cancellation
-    if (cancelButton !== 0 && !pendingDiceUpdate) {
-      stopAi();
-      setCancelButton(0);
-    } else {
+    // if (cancelButton !== 0 && !pendingDiceUpdate) {
+    //   stopAi();
+    //   setCancelButton(0);
+    // } else {
 
-      //see if data is coming from dice roll completion, audio message or normal text, or none at all.
-      let chatMsgData = "";
-      if (iAmBack.current) {
-        iAmBack.current = false
-        chatMsgData = "I am back in the game."
-      } else if (diceRollsInputData.length > 0) {
-        chatMsgData = diceRollsInputData;
-        setDiceRollsInputData('');
-        setDiceSelectionOption(null);
-      } else if (diceSelectionOption) {
+    // Call the async function
 
-        const rollCompleteData = {
-          User: userName,
-          Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
-          D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
-          Modifier: 2, /////put whatever the skill level is
-          Skill: latestDiceMsg.current.Skill,
-          Id: latestDiceMsg.current.activityId
-        };
-        //send data to the server (not sure yet how to use, prob for logs and others can see)
-        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
-        chatMsgData = "I rolled a " + diceSelectionOption.value;
-        // clean up all dice states
-        cleanUpDiceStates();
-      } else if (audioInputData.length > 0) {
-        chatMsgData = audioInputData;
-      } else if (customCellValue.length > 0) {
-        chatMsgData = customCellValue;
-      } else if (inputValue.length > 0) {
-        chatMsgData = inputValue;
-      }
+    //see if data is coming from dice roll completion, audio message or normal text, or none at all.
+    let chatMsgData = "";
+    if (iAmBack.current) {
+      iAmBack.current = false
+      chatMsgData = "Game master, I am back in the game. Please continue to include me in the story again."
+    } else if (diceRollsInputData.length > 0) {
+      chatMsgData = diceRollsInputData;
+      setDiceRollsInputData('');
+      setDiceSelectionOption(null);
+    } else if (diceSelectionOption) {
 
-      if (chatMsgData.length > 0) {
-
-        //since you sent a message, auto say playing again
-        if (players[userName].away) {
-          chatSocket.emit('playing again', userName);
-        }
-
-        setAwayMode(false);
-        iAmBack.current = false;
-
-        readyChatAndAudio(chatMsgData);
-
-        //sendImageMessage(chatMsgData);
-
-        sendMessage(chatMsgData);
-
-        setInputValue('');
-
-        resetUserTextForm();
-
-        setAudioInputData('');
-
-        setCustomCellValue("");
-
-
-      }
+      const rollCompleteData = {
+        User: userName,
+        Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
+        D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
+        Modifier: 2, /////put whatever the skill level is
+        Skill: latestDiceMsg.current.Skill,
+        Id: latestDiceMsg.current.activityId
+      };
+      //send data to the server (not sure yet how to use, prob for logs and others can see)
+      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
+      chatMsgData = "I rolled a " + diceSelectionOption.value;
+      // clean up all dice states
+      cleanUpDiceStates();
+    } else if (audioInputData.length > 0) {
+      chatMsgData = audioInputData;
+    } else if (customCellValue.length > 0) {
+      chatMsgData = customCellValue;
+    } else if (inputValue.length > 0) {
+      chatMsgData = inputValue;
     }
+
+    if (chatMsgData.length > 0) {
+
+      //since you sent a message, auto say playing again
+      if (players[userName].away) {
+        chatSocket.emit('playing again', userName);
+      }
+
+      setAwayMode(false);
+      iAmBack.current = false;
+
+      readyChatAndAudio(chatMsgData);
+
+      //sendImageMessage(chatMsgData);
+
+      sendMessage(chatMsgData);
+
+      setInputValue('');
+
+      resetUserTextForm();
+
+      setAudioInputData('');
+
+      setCustomCellValue("");
+
+
+    }
+
 
   }
 
@@ -1260,15 +1263,15 @@ export default function Home() {
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-12"
             />
           )}
-          <BattleMap
+          {/* <BattleMap
             src="/images/battlemap_green_terrain.png" gridSpacing={45}
-            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
+            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" /> */}
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
           <div className="absolute left-23 bottom-10">
             {isTimerVisible && (
-              <div className="text-white text-xl font-semibold ml-[-302px] mb-[-50px]">
+              <div className={`${pendingDiceUpdate ? 'timer-hidden' : ''} absolute bottom text-white text-xl font-semibold ml-[-302px] mb-[-50px]`}>
                 <CountdownCircleTimer
                   isPlaying={isTimerVisible}
                   duration={30}
@@ -1303,12 +1306,12 @@ export default function Home() {
                 {/* Conditional rendering of the user's name */}
                 {message.type === 'user' && (usersInServer.length > 1) && (
                   <div className="text-sm mb-1 mr-1 text-white">
-                    aTreeFrog
+                    {userName}
                   </div>
                 )}
                 <div className={`${message.type === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.type === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
-                  {chatBallEnable && message.type === 'bot' && index === lastBotMessageIndex &&
+                  {wizardHatEnable && message.type === 'bot' && index === lastBotMessageIndex &&
                     <span className="wizard-hat inline-block ml-1">
                       <FontAwesomeIcon icon={faHatWizard} />
                     </span>
@@ -1416,9 +1419,12 @@ export default function Home() {
               }
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) ? 'bg-purple-600 hover:bg-purple-700' : 'bg-grey-700 hover:bg-grey-700'} rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
-              {cancelButton !== 0 ? '▮▮' : 'Send'}
+              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) && (messageQueue.current.length < 1)
+                ? 'bg-purple-600 hover:bg-purple-700'
+                : 'bg-grey-700 hover:bg-grey-700'
+                } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
+              disabled={diceStates.d20.isGlowActive && !diceSelectionOption || messageQueue.current.length > 0}>
+              {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
             </button>
           </div>
           <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
@@ -1471,7 +1477,7 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} cancelButton={cancelButton} />
             </div>
           )
         }

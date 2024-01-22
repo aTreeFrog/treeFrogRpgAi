@@ -76,6 +76,7 @@ let responseSent = new Map();
 let waitingForRolls = false;
 let awayPlayerCount = 1
 let settingUpNewScene = false;
+let msgActivityCount = 1;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -197,6 +198,8 @@ app.prepare().then(() => {
                             stream: true,
                         };
 
+                        serverMessageId = `user-Assistant-activity-${msgActivityCount}-${new Date().toISOString()}`;
+
                         const completion = await openai.chat.completions.create(data);
 
                         console.log("completion: ", completion);
@@ -300,7 +303,7 @@ app.prepare().then(() => {
 
                     console.log("forceResetCheck");
 
-                    let message = "I stepped away from the game."
+                    let message = "Game master, I stepped away from the game. Please do not include me in your story until I return."
                     const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
                     let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
                     awayPlayerCount++;
@@ -540,7 +543,7 @@ app.prepare().then(() => {
                 if (functionData.name == "createDallEImage") {
                     argumentsJson = JSON.parse(functionData.arguments);
                     promptValue = argumentsJson.prompt;
-                    //createDallEImage(promptValue);  ////////////TURN BACK ON!!!////////////////
+                    createDallEImage(promptValue);  ////////////TURN BACK ON!!!////////////////
                 }
             }
 
