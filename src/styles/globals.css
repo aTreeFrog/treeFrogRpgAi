@@ -817,3 +817,7 @@ textarea {
             transparent 20px);
     z-index: -1;
 }
+
+.timer-hidden {
+    visibility: hidden;
+}
