@@ -1361,7 +1361,7 @@ export default function Home() {
                           <div key={index} className="flex items-center gap-1">
                             {/* Cell with text */}
                             <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                              disabled={cancelButton !== 0 || diceStates.d20.isGlowActive}
+                              disabled={diceStates.d20.isGlowActive}
                               onClick={() => handleCellClick(content)}
                             >
                               {content}
@@ -1441,11 +1441,11 @@ export default function Home() {
               }
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) && (messageQueue.current.length < 1)
+              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption))
                 ? 'bg-purple-600 hover:bg-purple-700'
                 : 'bg-grey-700 hover:bg-grey-700'
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={diceStates.d20.isGlowActive && !diceSelectionOption || messageQueue.current.length > 0}>
+              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
               {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
             </button>
           </div>
@@ -1472,7 +1472,7 @@ export default function Home() {
                     <div key={index} className="flex items-center gap-1">
                       {/* Cell with text */}
                       <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                        disabled={cancelButton !== 0 || diceStates.d20.isGlowActive}
+                        disabled={diceStates.d20.isGlowActive}
                         onClick={() => handleCellClick(content)}
                       >
                         {content}
@@ -1499,7 +1499,7 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} cancelButton={cancelButton} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} />
             </div>
           )
         }
