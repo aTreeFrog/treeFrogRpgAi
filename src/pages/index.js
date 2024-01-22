@@ -630,7 +630,6 @@ export default function Home() {
       }
     }
 
-    console.log("chatlog", chatLog);
   }, [chatLog]);
 
   useEffect(() => {
@@ -741,7 +740,7 @@ export default function Home() {
       setAwayMode(false);
       iAmBack.current = false;
 
-      readyChatAndAudio();
+      //readyChatAndAudio();
 
       //sendImageMessage(chatMsgData);
 

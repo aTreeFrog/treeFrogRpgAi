@@ -249,11 +249,13 @@ app.prepare().then(() => {
 
                         // if all messages are processed, check for function call now
                         if ((aiInOrderChatMessage.filter(message => !message.processed)).length == 0) {
-                            await checkForFunctionCall();
+                            checkForFunctionCall(); // don't put await, otherwise it will block people from continuing until timeout occurs or they roll. So others wouldnt be able to type or cancel a roll.
                         }
                     };
 
                     processingMessage = false;
+
+
 
                 }
 
@@ -310,7 +312,8 @@ app.prepare().then(() => {
 
                         players[user].timers.duration = 30000;
                         players[user].timers.enabled = true;
-                        await waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
+                        //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
                     }
                 }
 
@@ -765,6 +768,8 @@ app.prepare().then(() => {
             players[diceData.User].timers.enabled = false;
             players[diceData.User].activityId = `user${diceData.User}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
+
+            console.log("d20 completed");
             io.emit('players objects', players);
 
         });
@@ -814,6 +819,7 @@ app.prepare().then(() => {
         Object.entries(players).forEach(([userName, playerData]) => {
 
             if (playerData.mode == "dice" && playerData.active && !playerData.away) {
+                console.log("player roll true: ", playerData)
                 anyPlayerRoll = true;
             }
 
