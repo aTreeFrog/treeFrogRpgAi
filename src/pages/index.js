@@ -173,6 +173,7 @@ export default function Home() {
       //Tone.start();
       newAudio.current = new Tone.Player(audioSrc, () => {
         console.log("Audio is ready to play");
+        volume: -10
         // Start the audio manually after it's loaded and connected to effects
         newAudio.current.start();
       }).toDestination();
@@ -1146,15 +1147,17 @@ export default function Home() {
   // if speech to text panel opened or closed, close or resume background audio. 
   // But only resume audio if this panel was the thing that paused it
   useEffect(() => {
+    let currentVolumeDb = 0;
     console.log("made it to speech recording");
     if (isRecording && backgroundTone?.current?.state === "started") {
       console.log("speech recording hi");
-      backgroundTone?.current?.stop();
+      currentVolumeDb = backgroundTone.current.volume.value;
+      backgroundTone.current.volume.value = -40;
       speechTurnedOffMusic.current = true;
 
     } else if (!isRecording && speechTurnedOffMusic.current) {
       speechTurnedOffMusic.current = false;
-      backgroundTone?.current?.start();
+      backgroundTone.current.volume.value = currentVolumeDb;
     }
   }, [isRecording]);
 
