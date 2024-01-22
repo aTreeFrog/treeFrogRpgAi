@@ -69,6 +69,7 @@ const defaultDiceStates = {
 const shouldContinue = {};
 let activityCount = 1
 let chatMessages = [];
+let aiInOrderChatMessage = [];
 let waitingForUser = false;
 const clients = {};
 const players = {};
@@ -77,6 +78,7 @@ let waitingForRolls = false;
 let awayPlayerCount = 1
 let settingUpNewScene = false;
 let msgActivityCount = 1;
+let processingMessage = false;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -177,20 +179,35 @@ app.prepare().then(() => {
 
             while (true) {
 
-                if (!waitingForUser && !waitingForRolls && !settingUpNewScene) {
+                if (!waitingForUser && !waitingForRolls && !settingUpNewScene && !processingMessage) {
+
+                    processingMessage = true;
 
                     let unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
 
                     if (unprocessedUserMessages.length > 0) {
+
+                        unprocessedUserMessages.forEach(message => {
+                            aiInOrderChatMessage.push(message);
+                        });
+
                         let outputMsg = "";
                         chatMessages.forEach(message => {
                             message.processed = true;
                         });
+
+
+                        aiInOrderChatMessage.forEach(message => {
+                            message.processed = true;
+                        });
+
                         console.log("checking chat messages");
-                        let messagesFilteredForApi = chatMessages.map(item => ({
+                        let messagesFilteredForApi = aiInOrderChatMessage.map(item => ({
                             role: item.role,
                             content: item.content,
                         }));
+
+                        console.log("messagesFilteredForApi", messagesFilteredForApi);
 
                         const data = {
                             model: "gpt-4",
@@ -212,10 +229,13 @@ app.prepare().then(() => {
                             // }
 
                             let outputStream = {
-                                message: chunk.choices[0]?.delta?.content,
-                                messageId: serverMessageId
+                                message: chunk.choices[0]?.delta?.content || "",
+                                messageId: serverMessageId,
+                                role: "assistant",
                             };
                             outputMsg += outputStream.message;
+
+
                             io.to(serverRoomName).emit('chat message', outputStream || "");
                         }
 
@@ -223,13 +243,17 @@ app.prepare().then(() => {
 
                         console.log('made it to chat complete');
                         io.to(serverRoomName).emit('chat complete');
-                        chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
+                        let completeOutput = { "role": "assistant", "content": outputMsg, "processed": true }
+                        aiInOrderChatMessage.push(completeOutput)
+                        chatMessages.push(completeOutput);
 
                         // if all messages are processed, check for function call now
-                        if ((chatMessages.filter(message => !message.processed)).length == 0) {
+                        if ((aiInOrderChatMessage.filter(message => !message.processed)).length == 0) {
                             await checkForFunctionCall();
                         }
                     };
+
+                    processingMessage = false;
 
                 }
 
@@ -439,7 +463,7 @@ app.prepare().then(() => {
 
         async function checkForFunctionCall() {
 
-            let messagesFilteredForFunction = chatMessages.map(item => ({
+            let messagesFilteredForFunction = aiInOrderChatMessage.map(item => ({
                 role: item.role,
                 content: item.content,
             }));

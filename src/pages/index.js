@@ -133,11 +133,12 @@ export default function Home() {
   const iAmBack = useRef(false)
   const [isTimerVisible, setIsTimerVisible] = useState(false);
   const [isTimerPlaying, setIsTimerPlaying] = useState(false);
+  const [updatingChatLog, setUpdatingChatLog] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
     chatLogRef.current = chatLog;
-    if (chatLogRef.current.length && chatLogRef.current[chatLogRef.current.length - 1].type === 'user') {
+    if (chatLogRef.current.length && chatLogRef.current[chatLogRef.current.length - 1].role === 'user') {
       scrollToBottom();
     }
   }, [chatLog]);
@@ -249,8 +250,9 @@ export default function Home() {
     chatSocket.on('latest user message', (data) => {
       console.log('latest user message', data);
       chatSocket.emit("received user message", data);
-      setChatLog((prevChatLog) => [...prevChatLog, { "type": 'user', "message": data.content, "mode": data.mode }])
-
+      setUpdatingChatLog(true);
+      setChatLog((prevChatLog) => [...prevChatLog, { "role": 'user', "message": data.content, "mode": data.mode }])
+      setUpdatingChatLog(false);
     });
 
     const handleChatMessage = (msg) => {
@@ -395,6 +397,8 @@ export default function Home() {
 
     });
 
+    readyChatAndAudio();
+
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
@@ -416,13 +420,15 @@ export default function Home() {
   let lastMessage = [];
   // Function to process a single oldest message from the queue
   const processQueue = () => {
-    if (messageQueue.current.length > 0) {
+    if (messageQueue.current.length > 0 && !updatingChatLog) {
       let msg = messageQueue.current.shift(); // Get the oldest message
       console.log("processQueue: ", msg);
 
       if (!msg.message) {
         return;
       }
+
+      msg.message = msg.message?.replace(/undefined/g, '');
 
       setChatLog((prevChatLog) => {
         let updatedChatLog = [...prevChatLog];
@@ -435,15 +441,13 @@ export default function Home() {
           let existingEntry = updatedChatLog[existingEntryIndex];
 
           // Check for duplicates and append message if it's not a duplicate
-          msg.message = msg.message?.replace(/undefined/g, ''); // Remove "undefined" if present
           if (!existingEntry.message.endsWith(msg.message)) {
             existingEntry.message += msg.message; // Append new content to existing message
           }
         } else if (msg.message) {
-          msg.message = msg.message?.replace(/undefined/g, '');
           // No existing entry, add a new one
           updatedChatLog.push({
-            type: 'bot',
+            role: msg.role,
             message: msg.message,
             messageId: msg.messageId // Assuming msg has a messageId property
           });
@@ -625,6 +629,8 @@ export default function Home() {
         setIsAtBottom(true);
       }
     }
+
+    console.log("chatlog", chatLog);
   }, [chatLog]);
 
   useEffect(() => {
@@ -735,7 +741,7 @@ export default function Home() {
       setAwayMode(false);
       iAmBack.current = false;
 
-      readyChatAndAudio(chatMsgData);
+      readyChatAndAudio();
 
       //sendImageMessage(chatMsgData);
 
@@ -764,11 +770,11 @@ export default function Home() {
     setActiveSkill("");
   }
 
-  const readyChatAndAudio = (inputMessage) => {
+  const readyChatAndAudio = () => {
     chatSocket.emit('resume processing');
     audio.current = false;
 
-    messageQueue.current = [];
+    //messageQueue.current = [];
     chatSocket.emit('reset audio sequence');
     expectedSequence.current = 0;
     audioQueue.current = new Map();
@@ -1104,7 +1110,7 @@ export default function Home() {
   };
 
   //for the ICON that follows the text. only add it to last bot message
-  const lastBotMessageIndex = chatLog.map(e => e.type).lastIndexOf('bot');
+  const lastBotMessageIndex = chatLog.map(e => e.role).lastIndexOf('assistant');
 
   const handleDropdownChange = (option) => {
 
@@ -1319,16 +1325,16 @@ export default function Home() {
         <div ref={scrollableDivRef} className="overflow-y-auto scrollable-container flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
-              <div key={index} className={`flex flex-col ${message.type === 'user' ? 'items-end' : 'items-start'}`}>
+              <div key={`${message.messageId}-${index}`} className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
                 {/* Conditional rendering of the user's name */}
-                {message.type === 'user' && (usersInServer.length > 1) && (
+                {message.role === 'user' && (usersInServer.length > 1) && (
                   <div className="text-sm mb-1 mr-1 text-white">
                     {userName}
                   </div>
                 )}
-                <div className={`${message.type === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.type === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
+                <div className={`${message.role === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.role === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
-                  {wizardHatEnable && message.type === 'bot' && index === lastBotMessageIndex &&
+                  {wizardHatEnable && message.role === 'assistant' && index === lastBotMessageIndex &&
                     <span className="wizard-hat inline-block ml-1">
                       <FontAwesomeIcon icon={faHatWizard} />
                     </span>
