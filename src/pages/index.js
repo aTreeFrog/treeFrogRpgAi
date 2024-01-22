@@ -258,7 +258,7 @@ export default function Home() {
       setCancelButton(1);
       setIsLoading(false);
       messageQueue.current.push(msg);
-      tempBuffer.current += msg; // Modify tempBuffer ref
+      tempBuffer.current += msg.message; // Modify tempBuffer ref
 
       // Process the buffer to extract complete sentences
       let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
@@ -416,34 +416,51 @@ export default function Home() {
   let lastMessage = [];
   // Function to process a single oldest message from the queue
   const processQueue = () => {
-    if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
-
+    if (messageQueue.current.length > 0) {
       let msg = messageQueue.current.shift(); // Get the oldest message
       console.log("processQueue: ", msg);
+
+      if (!msg.message) {
+        return;
+      }
+
       setChatLog((prevChatLog) => {
         let updatedChatLog = [...prevChatLog];
-        if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
-          updatedChatLog.push({ type: 'bot', message: msg });
-        } else {
-          // Append new content to the last message if it's also from the bot
-          let lastEntry = updatedChatLog[updatedChatLog.length - 1];
-          // its repeating somewhere so i needed to add this
-          if (!lastEntry.message.endsWith(msg)) {
-            msg = msg.replace(/undefined/g, ''); //get rid of any word of "undefined"
-            lastEntry.message += msg; // Append new chunk to last message content
-            console.log("lastEntry again: ", lastEntry.message);
+
+        // Check if there's an existing entry with the same messageId
+        let existingEntryIndex = updatedChatLog.findIndex(entry => entry.messageId === msg.messageId);
+
+        if (existingEntryIndex !== -1) {
+          // An existing entry is found
+          let existingEntry = updatedChatLog[existingEntryIndex];
+
+          // Check for duplicates and append message if it's not a duplicate
+          msg.message = msg.message?.replace(/undefined/g, ''); // Remove "undefined" if present
+          if (!existingEntry.message.endsWith(msg.message)) {
+            existingEntry.message += msg.message; // Append new content to existing message
           }
+        } else if (msg.message) {
+          msg.message = msg.message?.replace(/undefined/g, '');
+          // No existing entry, add a new one
+          updatedChatLog.push({
+            type: 'bot',
+            message: msg.message,
+            messageId: msg.messageId // Assuming msg has a messageId property
+          });
         }
 
         lastMessage = updatedChatLog;
         return updatedChatLog;
       });
+
       setWizardHatEnable(true);
     } else {
       setWizardHatEnable(false);
     }
     setMessageQueueTrigger(prev => !prev);
   };
+
+
 
   const textToSpeechCall = async (text) => {
     const data = {

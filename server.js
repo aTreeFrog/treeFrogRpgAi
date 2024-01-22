@@ -211,10 +211,15 @@ app.prepare().then(() => {
                             //     break; // Exit the loop if instructed to stop
                             // }
 
-                            outputStream = chunk.choices[0]?.delta?.content;
-                            outputMsg += outputStream;
+                            let outputStream = {
+                                message: chunk.choices[0]?.delta?.content,
+                                messageId: serverMessageId
+                            };
+                            outputMsg += outputStream.message;
                             io.to(serverRoomName).emit('chat message', outputStream || "");
                         }
+
+                        msgActivityCount++;
 
                         console.log('made it to chat complete');
                         io.to(serverRoomName).emit('chat complete');
