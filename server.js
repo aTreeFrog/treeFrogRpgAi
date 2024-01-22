@@ -597,7 +597,7 @@ app.prepare().then(() => {
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
                 responseSent.set(msg.id, true);
-                //playBackgroundAudio();////////////////////////for testing//////////
+                playBackgroundAudio();////////////////////////for testing//////////
                 //createDallEImage("two wizards walking through the forest. Both male. Looking like there could be trouble nearby. lush green forest. nature in an mystical world.");
             }
         });
