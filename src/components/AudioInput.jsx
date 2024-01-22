@@ -25,7 +25,7 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
             setRecordText("Click to Start recording");
 
         } else if (mediaRecorder && mediaRecorder.state != "recording") {
-            setShouldStopAi(true); //stops ai from talking and typing since user interrupted
+            //setShouldStopAi(true); //stops ai from talking and typing since user interrupted
             cancelled.current = false;
             audioChunks.current = [];
             mediaRecorder.start();
