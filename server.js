@@ -69,6 +69,7 @@ const defaultDiceStates = {
 const shouldContinue = {};
 let activityCount = 1
 let chatMessages = [];
+let aiInOrderChatMessage = [];
 let waitingForUser = false;
 const clients = {};
 const players = {};
@@ -77,6 +78,7 @@ let waitingForRolls = false;
 let awayPlayerCount = 1
 let settingUpNewScene = false;
 let msgActivityCount = 1;
+let processingMessage = false;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -177,20 +179,35 @@ app.prepare().then(() => {
 
             while (true) {
 
-                if (!waitingForUser && !waitingForRolls && !settingUpNewScene) {
+                if (!waitingForUser && !waitingForRolls && !settingUpNewScene && !processingMessage) {
+
+                    processingMessage = true;
 
                     let unprocessedUserMessages = chatMessages.filter(message => message.role === 'user' && !message.processed);
 
                     if (unprocessedUserMessages.length > 0) {
+
+                        unprocessedUserMessages.forEach(message => {
+                            aiInOrderChatMessage.push(message);
+                        });
+
                         let outputMsg = "";
                         chatMessages.forEach(message => {
                             message.processed = true;
                         });
+
+
+                        aiInOrderChatMessage.forEach(message => {
+                            message.processed = true;
+                        });
+
                         console.log("checking chat messages");
-                        let messagesFilteredForApi = chatMessages.map(item => ({
+                        let messagesFilteredForApi = aiInOrderChatMessage.map(item => ({
                             role: item.role,
                             content: item.content,
                         }));
+
+                        console.log("messagesFilteredForApi", messagesFilteredForApi);
 
                         const data = {
                             model: "gpt-4",
@@ -211,20 +228,34 @@ app.prepare().then(() => {
                             //     break; // Exit the loop if instructed to stop
                             // }
 
-                            outputStream = chunk.choices[0]?.delta?.content;
-                            outputMsg += outputStream;
+                            let outputStream = {
+                                message: chunk.choices[0]?.delta?.content || "",
+                                messageId: serverMessageId,
+                                role: "assistant",
+                            };
+                            outputMsg += outputStream.message;
+
+
                             io.to(serverRoomName).emit('chat message', outputStream || "");
                         }
 
+                        msgActivityCount++;
+
                         console.log('made it to chat complete');
                         io.to(serverRoomName).emit('chat complete');
-                        chatMessages.push({ "role": "assistant", "content": outputMsg, "processed": true });
+                        let completeOutput = { "role": "assistant", "content": outputMsg, "processed": true }
+                        aiInOrderChatMessage.push(completeOutput)
+                        chatMessages.push(completeOutput);
 
                         // if all messages are processed, check for function call now
-                        if ((chatMessages.filter(message => !message.processed)).length == 0) {
-                            await checkForFunctionCall();
+                        if ((aiInOrderChatMessage.filter(message => !message.processed)).length == 0) {
+                            checkForFunctionCall(); // don't put await, otherwise it will block people from continuing until timeout occurs or they roll. So others wouldnt be able to type or cancel a roll.
                         }
                     };
+
+                    processingMessage = false;
+
+
 
                 }
 
@@ -281,7 +312,8 @@ app.prepare().then(() => {
 
                         players[user].timers.duration = 30000;
                         players[user].timers.enabled = true;
-                        await waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
+                        //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
                     }
                 }
 
@@ -434,7 +466,7 @@ app.prepare().then(() => {
 
         async function checkForFunctionCall() {
 
-            let messagesFilteredForFunction = chatMessages.map(item => ({
+            let messagesFilteredForFunction = aiInOrderChatMessage.map(item => ({
                 role: item.role,
                 content: item.content,
             }));
@@ -736,6 +768,8 @@ app.prepare().then(() => {
             players[diceData.User].timers.enabled = false;
             players[diceData.User].activityId = `user${diceData.User}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
+
+            console.log("d20 completed");
             io.emit('players objects', players);
 
         });
@@ -785,6 +819,7 @@ app.prepare().then(() => {
         Object.entries(players).forEach(([userName, playerData]) => {
 
             if (playerData.mode == "dice" && playerData.active && !playerData.away) {
+                console.log("player roll true: ", playerData)
                 anyPlayerRoll = true;
             }
 

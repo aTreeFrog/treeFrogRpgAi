@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { stopAi } from '../pages/index'
 
 
-export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, setLastAudioInputSequence, setShouldStopAi, isRecording, setIsRecording, diceRollsActive, cancelButton }) {
+export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, setLastAudioInputSequence, setShouldStopAi, isRecording, setIsRecording, diceRollsActive }) {
     // Define constraints for the audio
     const constraints = { audio: true };
     const [recordText, setRecordText] = useState("Click to Start recording")
@@ -25,7 +25,7 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
             setRecordText("Click to Start recording");
 
         } else if (mediaRecorder && mediaRecorder.state != "recording") {
-            setShouldStopAi(true); //stops ai from talking and typing since user interrupted
+            //setShouldStopAi(true); //stops ai from talking and typing since user interrupted
             cancelled.current = false;
             audioChunks.current = [];
             mediaRecorder.start();
@@ -105,7 +105,7 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
         < div class={`flex flex-col justify-center items-center -mt-3 ${isRecording ? 'bg-purple-900' : 'bg-gray-900'}  p-6 rounded-lg border border-gray-500 space-y-4`} >
 
             <button id="audioCircle" className={`audio-circle flex justify-center items-center text-white font-semibold relative px-4 bg-gray-500 inline-block overflow-visible whitespace-nowrap ${isRecording ? 'animate-grow-shrink' : ''}`}
-                disabled={diceRollsActive || cancelButton != 0}
+                disabled={diceRollsActive}
                 onClick={() => handleButton()}>
                 {recordText}
             </button>

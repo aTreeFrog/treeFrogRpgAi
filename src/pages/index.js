@@ -133,11 +133,12 @@ export default function Home() {
   const iAmBack = useRef(false)
   const [isTimerVisible, setIsTimerVisible] = useState(false);
   const [isTimerPlaying, setIsTimerPlaying] = useState(false);
+  const [updatingChatLog, setUpdatingChatLog] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
     chatLogRef.current = chatLog;
-    if (chatLogRef.current.length && chatLogRef.current[chatLogRef.current.length - 1].type === 'user') {
+    if (chatLogRef.current.length && chatLogRef.current[chatLogRef.current.length - 1].role === 'user') {
       scrollToBottom();
     }
   }, [chatLog]);
@@ -249,8 +250,9 @@ export default function Home() {
     chatSocket.on('latest user message', (data) => {
       console.log('latest user message', data);
       chatSocket.emit("received user message", data);
-      setChatLog((prevChatLog) => [...prevChatLog, { "type": 'user', "message": data.content, "mode": data.mode }])
-
+      setUpdatingChatLog(true);
+      setChatLog((prevChatLog) => [...prevChatLog, { "role": 'user', "message": data.content, "mode": data.mode }])
+      setUpdatingChatLog(false);
     });
 
     const handleChatMessage = (msg) => {
@@ -258,7 +260,7 @@ export default function Home() {
       setCancelButton(1);
       setIsLoading(false);
       messageQueue.current.push(msg);
-      tempBuffer.current += msg; // Modify tempBuffer ref
+      tempBuffer.current += msg.message; // Modify tempBuffer ref
 
       // Process the buffer to extract complete sentences
       let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
@@ -395,6 +397,8 @@ export default function Home() {
 
     });
 
+    readyChatAndAudio();
+
     // Cleanup listener when component unmounts
     return () => {
       chatSocket.off('meeting-created');
@@ -416,34 +420,51 @@ export default function Home() {
   let lastMessage = [];
   // Function to process a single oldest message from the queue
   const processQueue = () => {
-    if (messageQueue.current.length > 0) { //gives max amount so cancel button goes away quicker
-
+    if (messageQueue.current.length > 0 && !updatingChatLog) {
       let msg = messageQueue.current.shift(); // Get the oldest message
       console.log("processQueue: ", msg);
+
+      if (!msg.message) {
+        return;
+      }
+
+      msg.message = msg.message?.replace(/undefined/g, '');
+
       setChatLog((prevChatLog) => {
         let updatedChatLog = [...prevChatLog];
-        if (prevChatLog.length === 0 || prevChatLog[prevChatLog.length - 1].type !== 'bot') {
-          updatedChatLog.push({ type: 'bot', message: msg });
-        } else {
-          // Append new content to the last message if it's also from the bot
-          let lastEntry = updatedChatLog[updatedChatLog.length - 1];
-          // its repeating somewhere so i needed to add this
-          if (!lastEntry.message.endsWith(msg)) {
-            msg = msg.replace(/undefined/g, ''); //get rid of any word of "undefined"
-            lastEntry.message += msg; // Append new chunk to last message content
-            console.log("lastEntry again: ", lastEntry.message);
+
+        // Check if there's an existing entry with the same messageId
+        let existingEntryIndex = updatedChatLog.findIndex(entry => entry.messageId === msg.messageId);
+
+        if (existingEntryIndex !== -1) {
+          // An existing entry is found
+          let existingEntry = updatedChatLog[existingEntryIndex];
+
+          // Check for duplicates and append message if it's not a duplicate
+          if (!existingEntry.message.endsWith(msg.message)) {
+            existingEntry.message += msg.message; // Append new content to existing message
           }
+        } else if (msg.message) {
+          // No existing entry, add a new one
+          updatedChatLog.push({
+            role: msg.role,
+            message: msg.message,
+            messageId: msg.messageId // Assuming msg has a messageId property
+          });
         }
 
         lastMessage = updatedChatLog;
         return updatedChatLog;
       });
+
       setWizardHatEnable(true);
     } else {
       setWizardHatEnable(false);
     }
     setMessageQueueTrigger(prev => !prev);
   };
+
+
 
   const textToSpeechCall = async (text) => {
     const data = {
@@ -608,6 +629,7 @@ export default function Home() {
         setIsAtBottom(true);
       }
     }
+
   }, [chatLog]);
 
   useEffect(() => {
@@ -718,7 +740,7 @@ export default function Home() {
       setAwayMode(false);
       iAmBack.current = false;
 
-      readyChatAndAudio(chatMsgData);
+      //readyChatAndAudio();
 
       //sendImageMessage(chatMsgData);
 
@@ -747,11 +769,11 @@ export default function Home() {
     setActiveSkill("");
   }
 
-  const readyChatAndAudio = (inputMessage) => {
+  const readyChatAndAudio = () => {
     chatSocket.emit('resume processing');
     audio.current = false;
 
-    messageQueue.current = [];
+    //messageQueue.current = [];
     chatSocket.emit('reset audio sequence');
     expectedSequence.current = 0;
     audioQueue.current = new Map();
@@ -1087,7 +1109,7 @@ export default function Home() {
   };
 
   //for the ICON that follows the text. only add it to last bot message
-  const lastBotMessageIndex = chatLog.map(e => e.type).lastIndexOf('bot');
+  const lastBotMessageIndex = chatLog.map(e => e.role).lastIndexOf('assistant');
 
   const handleDropdownChange = (option) => {
 
@@ -1302,16 +1324,16 @@ export default function Home() {
         <div ref={scrollableDivRef} className="overflow-y-auto scrollable-container flex-grow" id="scrollableDiv">
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
-              <div key={index} className={`flex flex-col ${message.type === 'user' ? 'items-end' : 'items-start'}`}>
+              <div key={`${message.messageId}-${index}`} className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
                 {/* Conditional rendering of the user's name */}
-                {message.type === 'user' && (usersInServer.length > 1) && (
+                {message.role === 'user' && (usersInServer.length > 1) && (
                   <div className="text-sm mb-1 mr-1 text-white">
                     {userName}
                   </div>
                 )}
-                <div className={`${message.type === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.type === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
+                <div className={`${message.role === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.role === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
                   {message.message}
-                  {wizardHatEnable && message.type === 'bot' && index === lastBotMessageIndex &&
+                  {wizardHatEnable && message.role === 'assistant' && index === lastBotMessageIndex &&
                     <span className="wizard-hat inline-block ml-1">
                       <FontAwesomeIcon icon={faHatWizard} />
                     </span>
@@ -1339,7 +1361,7 @@ export default function Home() {
                           <div key={index} className="flex items-center gap-1">
                             {/* Cell with text */}
                             <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                              disabled={cancelButton !== 0 || diceStates.d20.isGlowActive}
+                              disabled={diceStates.d20.isGlowActive}
                               onClick={() => handleCellClick(content)}
                             >
                               {content}
@@ -1419,11 +1441,11 @@ export default function Home() {
               }
             </div>
             <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)) && (messageQueue.current.length < 1)
+              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption))
                 ? 'bg-purple-600 hover:bg-purple-700'
                 : 'bg-grey-700 hover:bg-grey-700'
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={diceStates.d20.isGlowActive && !diceSelectionOption || messageQueue.current.length > 0}>
+              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
               {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
             </button>
           </div>
@@ -1450,7 +1472,7 @@ export default function Home() {
                     <div key={index} className="flex items-center gap-1">
                       {/* Cell with text */}
                       <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                        disabled={cancelButton !== 0 || diceStates.d20.isGlowActive}
+                        disabled={diceStates.d20.isGlowActive}
                         onClick={() => handleCellClick(content)}
                       >
                         {content}
@@ -1477,7 +1499,7 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} cancelButton={cancelButton} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} />
             </div>
           )
         }
