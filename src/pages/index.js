@@ -30,7 +30,7 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [dalleImageUrl, setDalleImageUrl] = useState('');
+  const [dalleImageUrl, setDalleImageUrl] = useState();
   const messageQueue = useRef([]); // Holds incoming messages
   const audioQueue = useRef(new Map()); // Holds incoming messages
   const [cancelButton, setCancelButton] = useState(0);
@@ -134,6 +134,8 @@ export default function Home() {
   const [isTimerVisible, setIsTimerVisible] = useState(false);
   const [isTimerPlaying, setIsTimerPlaying] = useState(false);
   const [updatingChatLog, setUpdatingChatLog] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [shadowDomColor, setShadowDomColor] = useState();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -392,9 +394,10 @@ export default function Home() {
 
     });
 
-    chatSocket.on('dall e image', (url) => {
-      console.log("dall e image made, ", url);
-      setDalleImageUrl(url);
+    chatSocket.on('dall e image', (dallEObject) => {
+      console.log("dall e image made, ", dallEObject.imageUrl);
+      setDalleImageUrl(dallEObject.imageUrl);
+      setShadowDomColor(dallEObject.shadowColor);
 
     });
 
@@ -812,6 +815,16 @@ export default function Home() {
     }
   }, [shouldStopAi]);
 
+  //preload dalle image
+  useEffect(() => {
+    if (dalleImageUrl) {
+      const img = new window.Image();
+      img.src = dalleImageUrl;
+      img.onload = () => setIsImageLoaded(true);
+    }
+  }, [dalleImageUrl])
+
+
 
   const resetUserTextForm = () => {
     // Reset the textarea after form submission
@@ -1216,6 +1229,25 @@ export default function Home() {
     return [false, 0]; // Stops the timer
   };
 
+  // Define dynamic box shadow style
+  const boxShadowStyle = {
+    animation: `boxShadowGlowAnimation 6s ease-in-out infinite`,
+    boxShadow: `0 0 40px ${shadowDomColor}`, // Initial shadow
+    // Other styles...
+  };
+
+  // Define keyframes as a style tag
+  const keyframesStyle = `
+        @keyframes boxShadowGlowAnimation {
+            0%, 100% {
+                box-shadow: 0 0 40px ${shadowDomColor};
+            }
+            50% {
+                box-shadow: 0 0 60px ${shadowDomColor};
+            }
+        }
+    `;
+
 
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
@@ -1281,16 +1313,17 @@ export default function Home() {
         <div className="flex flex-col h-screen justify-start">
           <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Story</h1>
           {/* Conditional DALL·E Image */}
-          {dalleImageUrl && (
+          {/* {isImageLoaded && (
             <img
               src={dalleImageUrl}
               alt="DALL·E Generated"
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-12"
+              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+              style={boxShadowStyle}
             />
-          )}
-          {/* <BattleMap
+          )} */}
+          <BattleMap
             src="/images/battlemap_green_terrain.png" gridSpacing={45}
-            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" /> */}
+            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}

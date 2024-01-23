@@ -17,6 +17,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const speechFile = path.resolve("./speech.mp3");
+const ColorThief = require('colorthief');
 
 const defaultDiceStates = {
     d20: {
@@ -122,6 +123,18 @@ app.prepare().then(() => {
 
 
     io.on('connection', (socket) => {
+
+        async function getDominantColor(imagePath) {
+            try {
+                const dominantColor = await ColorThief.getColor(imagePath);
+                // Convert RGB to RGBA (assuming 0.8 opacity)
+                return `rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`;
+            } catch (error) {
+                console.error('Error in getting dominant color:', error);
+                return null;
+            }
+        }
+
 
         async function summarizeAndMoveOn() {
 
@@ -403,7 +416,16 @@ app.prepare().then(() => {
 
             let image = await openai.images.generate(data);
 
-            io.to(serverRoomName).emit('dall e image', image.data[0].url);
+            let shadowColor = await getDominantColor(image.data[0].url);
+
+            console.log("shadowColor", shadowColor);
+
+            let dallEObject = {
+                imageUrl: image.data[0].url,
+                shadowColor: shadowColor
+            }
+
+            io.to(serverRoomName).emit('dall e image', dallEObject);
 
             console.log("image: ", image.data);
 
