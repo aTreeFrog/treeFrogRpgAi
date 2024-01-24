@@ -817,7 +817,8 @@ app.prepare().then(() => {
                 timers: {
                     duration: 30000, //milliseconds
                     enabled: false
-                }
+                },
+                figureIcon: "/icons/wizard.svg",
             };
 
             players[userName] = newPlayer;
