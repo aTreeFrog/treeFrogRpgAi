@@ -135,6 +135,7 @@ export default function Home() {
   const [isTimerPlaying, setIsTimerPlaying] = useState(false);
   const [updatingChatLog, setUpdatingChatLog] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isInitiativeImageLoaded, setIsInitiativeImageLoaded] = useState(false);
   const [shadowDomColor, setShadowDomColor] = useState();
   const [gameObject, setGameObject] = useState();
   const prevPlayerData = useRef();
@@ -325,7 +326,7 @@ export default function Home() {
 
     // dice roll initializer message (server only sends when starting dice mode)
     chatSocket.on('players objects', (data) => {
-      console.log("players objects received");
+      console.log("players objects received ", data);
 
       //grab all players info
       setPlayers(data);
@@ -435,6 +436,12 @@ export default function Home() {
       } else {
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
+      }
+
+      if (players[userName]?.battleMode?.initiativeImageUrl) {
+        const img = new window.Image();
+        img.src = players[userName].battleMode.initiativeImageUrl;
+        img.onload = () => setIsInitiativeImageLoaded(true);
       }
 
     }
@@ -1336,9 +1343,17 @@ export default function Home() {
         <div className="flex flex-col h-screen justify-start">
           <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Story</h1>
           {/* Conditional DALL·E Image */}
-          {isImageLoaded && (
+          {isImageLoaded && players[userName]?.mode == "story" && (
             <img
               src={dalleImageUrl}
+              alt="DALL·E Generated"
+              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+              style={boxShadowStyle}
+            />
+          )}
+          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && (
+            <img
+              src={players[userName].battleMode.initiativeImageUrl}
               alt="DALL·E Generated"
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
               style={boxShadowStyle}
@@ -1355,7 +1370,7 @@ export default function Home() {
               <div className={`${pendingDiceUpdate ? 'timer-hidden' : ''} absolute bottom text-white text-xl font-semibold ml-[-302px] mb-[-50px]`}>
                 <CountdownCircleTimer
                   isPlaying={isTimerVisible}
-                  duration={30}
+                  duration={players[userName].timers.duration}
                   size={50}
                   strokeWidth={4} // Adjust stroke width as needed
                   colors={[

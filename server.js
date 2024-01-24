@@ -95,6 +95,8 @@ app.prepare().then(() => {
     console.log("__dirname: ", __dirname);
     // to handle sending audio urls to front end
     httpServer.use('/audio', express.static('public/audio'));
+    httpServer.use('/battlemaps', express.static('public/battleMaps'));
+    httpServer.use('/images', express.static('public/images'));
 
     httpServer.all('*', (req, res) => {
         return handle(req, res);
@@ -137,18 +139,18 @@ app.prepare().then(() => {
         }
 
         async function enterBattleMode(mapName) {
-            const mapFile = `/public/battleMaps/${mapName}.png`;
-            const jsonFile = `/public/gridFiles/${mapName}.json`;
-            const initGridLocFile = `/public/InitGridLocations.json`;
-            const gridData = await JSON.parse(fs.readFile(jsonFile, 'utf8'));
-            const initGridLData = await JSON.parse(fs.readFile(initGridLocFile, 'utf8'));
+            const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
+            const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
+            const initGridLocFile = path.join(__dirname, '/public/battleMaps/InitGridLocations.json');
+            const initGridLData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
+            const initiativeUrl = 'http://localhost:3000/images/wizardsandgoblins.png';
 
             const dateStamp = new Date().toISOString();
             //setup battle mode for the battle object
             game.mode = "battle";
-            game.battleGrid = gridData;
-            game.image = mapFile;
-            game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`
+            game.battleGrid = gridDataUrl;
+            game.image = mapUrl;
+            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp} `
 
             // figure out how many active players
             let activePlayers = 0;
@@ -181,11 +183,9 @@ app.prepare().then(() => {
                     i++;
 
                     players[user].diceStates = defaultDiceStates;
-                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+                    players[user].activityId = `user${user} -game${serverRoomName} -activity${activityCount} -${dateStamp} `;
                     players[user].activeSkill = false;
                     players[user].skill = "";
-                    players[user].timers.duration = 120;
-                    players[user].timers.enabled = true;
 
                     players[user].battleMode.yourTurn = false;
                     players[user].battleMode.distanceMoved = null;
@@ -193,8 +193,9 @@ app.prepare().then(() => {
                     players[user].battleMode.damageDelt = null;
                     players[user].battleMode.enemiesDamaged = [];
                     players[user].battleMode.turnCompleted = false;
-                    players[user].battleMode.mapUrl = mapFile;
-                    players[user].battleMode.gridData = gridData;
+                    players[user].battleMode.mapUrl = mapUrl;
+                    players[user].battleMode.gridDataUrl = gridDataUrl;
+                    players[user].battleMode.initiativeImageUrl = initiativeUrl;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -211,7 +212,7 @@ app.prepare().then(() => {
                     // set this to > 1 prob but for testing keeping it at 0
                     if (activePlayers > 0) {
 
-                        players[user].timers.duration = 30000;
+                        players[user].timers.duration = 120; //seconds
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
                         waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
@@ -319,7 +320,7 @@ app.prepare().then(() => {
                             stream: true,
                         };
 
-                        serverMessageId = `user-Assistant-activity-${msgActivityCount}-${new Date().toISOString()}`;
+                        serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
 
                         const completion = await openai.chat.completions.create(data);
 
@@ -399,7 +400,7 @@ app.prepare().then(() => {
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+                    players[user].activityId = `user${user} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -414,7 +415,7 @@ app.prepare().then(() => {
 
                     if (activePlayers > 0) {
 
-                        players[user].timers.duration = 30000;
+                        players[user].timers.duration = 30;
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
                         waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
@@ -423,52 +424,7 @@ app.prepare().then(() => {
 
             }
 
-            function waitAndCall(duration, func) {
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        func();
-                        resolve();
-                    }, duration);
-                });
-            }
-
-            // if timer expired and player is still active, set them to away and not active and
-            // send default dice roll message to AI to take them out of the game. 
-            function forceResetCheck(player) {
-                if (player.active) {
-
-                    console.log("forceResetCheck");
-
-                    let message = "Game master, I stepped away from the game. Please do not include me in your story until I return."
-                    const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
-                    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
-                    awayPlayerCount++;
-                    //send message to users and ai
-                    chatMessages.push(serverData);
-                    io.to(serverRoomName).emit('latest user message', serverData);
-                    responseSent.set(serverData.id, true);
-                    makePlayerInactive(player)
-
-                }
-            }
-
-            function makePlayerInactive(player) {
-                player.active = false;
-                player.away = true;
-                player.mode = "story";
-                player.diceStates = defaultDiceStates;
-                player.skill = "";
-                player.activeSkill = false;
-                player.timers.enabled = false;
-                player.activityId = `user${player.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
-                activityCount++;
-
-                //send updated entire players object to room
-                io.to(serverRoomName).emit('players objects', players);
-
-            }
-
-            // const activityId = `activity${activityCount}-${new Date().toISOString()}`;
+            // const activityId = `activity${ activityCount } -${ new Date().toISOString() } `;
             // const diceRollMessage = {
             //     Action: "DiceRoll",
             //     D20: true,
@@ -489,6 +445,51 @@ app.prepare().then(() => {
 
             activityCount++;
         };
+
+        function waitAndCall(duration, func) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    func();
+                    resolve();
+                }, duration * 1000);
+            });
+        }
+
+        // if timer expired and player is still active, set them to away and not active and
+        // send default dice roll message to AI to take them out of the game. 
+        function forceResetCheck(player) {
+            if (player.active) {
+
+                console.log("forceResetCheck");
+
+                let message = "Game master, I stepped away from the game. Please do not include me in your story until I return."
+                const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
+                let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
+                awayPlayerCount++;
+                //send message to users and ai
+                chatMessages.push(serverData);
+                io.to(serverRoomName).emit('latest user message', serverData);
+                responseSent.set(serverData.id, true);
+                makePlayerInactive(player)
+
+            }
+        }
+
+        function makePlayerInactive(player) {
+            player.active = false;
+            player.away = true;
+            player.mode = "story";
+            player.diceStates = defaultDiceStates;
+            player.skill = "";
+            player.activeSkill = false;
+            player.timers.enabled = false;
+            player.activityId = `user${player.name} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+            activityCount++;
+
+            //send updated entire players object to room
+            io.to(serverRoomName).emit('players objects', players);
+
+        }
 
 
 
@@ -719,6 +720,7 @@ app.prepare().then(() => {
         socket.on('received user message', (msg) => {
             console.log("all done waiting");
             waitingForUser = false;
+
         });
 
 
@@ -846,10 +848,10 @@ app.prepare().then(() => {
                 diceStates: defaultDiceStates,
                 mode: "story",
                 timers: {
-                    duration: 30000, //milliseconds
+                    duration: 30, //seconds
                     enabled: false
                 },
-                figureIcon: "/icons/wizard.svg",
+                figureIcon: "public/icons/wizard.svg",
             };
 
             players[userName] = newPlayer;
@@ -859,6 +861,8 @@ app.prepare().then(() => {
             console.log("new players joined: ", players);
 
             io.to(serverRoomName).emit('players objects', players);
+
+            enterBattleMode('ForestRiver');////////////FOR TESTING!!!!//////////////////////
 
         });
 
