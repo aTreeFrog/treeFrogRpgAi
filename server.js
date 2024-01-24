@@ -11,12 +11,14 @@ const FormData = require('form-data');
 // Dynamically import 'node-fetch'
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const { player } = require('./lib/objects/player');
+const { game } = require('./lib/objects/game');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const speechFile = path.resolve("./speech.mp3");
+const ColorThief = require('colorthief');
 
 const defaultDiceStates = {
     d20: {
@@ -93,6 +95,8 @@ app.prepare().then(() => {
     console.log("__dirname: ", __dirname);
     // to handle sending audio urls to front end
     httpServer.use('/audio', express.static('public/audio'));
+    httpServer.use('/battlemaps', express.static('public/battleMaps'));
+    httpServer.use('/images', express.static('public/images'));
 
     httpServer.all('*', (req, res) => {
         return handle(req, res);
@@ -122,6 +126,110 @@ app.prepare().then(() => {
 
 
     io.on('connection', (socket) => {
+
+        async function getDominantColor(imagePath) {
+            try {
+                const dominantColor = await ColorThief.getColor(imagePath);
+                // Convert RGB to RGBA (assuming 0.8 opacity)
+                return `rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`;
+            } catch (error) {
+                console.error('Error in getting dominant color:', error);
+                return null;
+            }
+        }
+
+        async function enterBattleMode(mapName) {
+            const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
+            const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
+            const initGridLocFile = path.join(__dirname, '/public/battleMaps/InitGridLocations.json');
+            const initGridLData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
+            const initiativeUrl = 'http://localhost:3000/images/wizardclosegoblins.png';
+
+            let shadowColor = await getDominantColor(initiativeUrl);
+
+            const dateStamp = new Date().toISOString();
+            //setup battle mode for the battle object
+            game.mode = "battle";
+            game.battleGrid = gridDataUrl;
+            game.image = mapUrl;
+            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp} `
+
+            // figure out how many active players
+            let activePlayers = 0;
+            for (let key in players) {
+                if (players.hasOwnProperty(key) && !players[key].away) {
+                    activePlayers++;
+                }
+            }
+
+            //update players state for init battle mode
+            let i = 0;
+            for (let user in players) {
+                if (players.hasOwnProperty(user)) {
+
+
+                    if (players[user].away) {
+                        players[user].battleMode.initiativeRoll = 1;
+                        players[user].mode = "battle" //avoid asking user to roll initiative
+                        players[user].active = false;
+                    } else {
+
+                        //ToDo: figure out how to do the call for away thing for entering this mode
+                        players[user].battleMode.initiativeRoll = 0;
+                        players[user].mode = "initiative";
+                        players[user].active = true;
+                    }
+
+                    players[user].xPosition = initGridLData[mapName].Players[i][0];
+                    players[user].yPosition = initGridLData[mapName].Players[i][1];
+                    i++;
+
+                    players[user].diceStates = defaultDiceStates;
+                    players[user].activityId = `user${user} -game${serverRoomName} -activity${activityCount} -${dateStamp} `;
+                    players[user].activeSkill = false;
+                    players[user].skill = "";
+
+                    players[user].battleMode.yourTurn = false;
+                    players[user].battleMode.distanceMoved = null;
+                    players[user].battleMode.actionAttempted = false;
+                    players[user].battleMode.damageDelt = null;
+                    players[user].battleMode.enemiesDamaged = [];
+                    players[user].battleMode.turnCompleted = false;
+                    players[user].battleMode.mapUrl = mapUrl;
+                    players[user].battleMode.gridDataUrl = gridDataUrl;
+                    players[user].battleMode.initiativeImageUrl = initiativeUrl;
+                    players[user].battleMode.initiatveImageShadow = shadowColor;
+
+                    players[user].diceStates.D20 = {
+                        value: [],
+                        isActive: true,
+                        isGlowActive: true,
+                        rolls: 0,
+                        displayedValue: null,
+                        inhibit: false,
+                        advantage: false,
+                    }
+
+                    waitingForRolls = true;
+
+                    // set this to > 1 prob but for testing keeping it at 0
+                    if (activePlayers > 1) {
+
+                        players[user].timers.duration = 120; //seconds
+                        players[user].timers.enabled = true;
+                        //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
+                    }
+
+                }
+
+            }
+            activityCount++;
+
+            io.to(serverRoomName).emit('enter battle mode', game); //not sure i need game object at all yet
+            io.to(serverRoomName).emit('players objects', players);
+
+        }
 
         async function summarizeAndMoveOn() {
 
@@ -215,7 +323,7 @@ app.prepare().then(() => {
                             stream: true,
                         };
 
-                        serverMessageId = `user-Assistant-activity-${msgActivityCount}-${new Date().toISOString()}`;
+                        serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
 
                         const completion = await openai.chat.completions.create(data);
 
@@ -295,7 +403,7 @@ app.prepare().then(() => {
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `user${user}-activity${activityCount}-${new Date().toISOString()}`;
+                    players[user].activityId = `user${user} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -310,7 +418,7 @@ app.prepare().then(() => {
 
                     if (activePlayers > 0) {
 
-                        players[user].timers.duration = 30000;
+                        players[user].timers.duration = 30;
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
                         waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
@@ -319,52 +427,7 @@ app.prepare().then(() => {
 
             }
 
-            function waitAndCall(duration, func) {
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        func();
-                        resolve();
-                    }, duration);
-                });
-            }
-
-            // if timer expired and player is still active, set them to away and not active and
-            // send default dice roll message to AI to take them out of the game. 
-            function forceResetCheck(player) {
-                if (player.active) {
-
-                    console.log("forceResetCheck");
-
-                    let message = "Game master, I stepped away from the game. Please do not include me in your story until I return."
-                    const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
-                    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
-                    awayPlayerCount++;
-                    //send message to users and ai
-                    chatMessages.push(serverData);
-                    io.to(serverRoomName).emit('latest user message', serverData);
-                    responseSent.set(serverData.id, true);
-                    makePlayerInactive(player)
-
-                }
-            }
-
-            function makePlayerInactive(player) {
-                player.active = false;
-                player.away = true;
-                player.mode = "story";
-                player.diceStates = defaultDiceStates;
-                player.skill = "";
-                player.activeSkill = false;
-                player.timers.enabled = false;
-                player.activityId = `user${player.name}-activity${activityCount}-${new Date().toISOString()}`;
-                activityCount++;
-
-                //send updated entire players object to room
-                io.emit('players objects', players);
-
-            }
-
-            // const activityId = `activity${activityCount}-${new Date().toISOString()}`;
+            // const activityId = `activity${ activityCount } -${ new Date().toISOString() } `;
             // const diceRollMessage = {
             //     Action: "DiceRoll",
             //     D20: true,
@@ -386,6 +449,51 @@ app.prepare().then(() => {
             activityCount++;
         };
 
+        function waitAndCall(duration, func) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    func();
+                    resolve();
+                }, duration * 1000);
+            });
+        }
+
+        // if timer expired and player is still active, set them to away and not active and
+        // send default dice roll message to AI to take them out of the game. 
+        function forceResetCheck(player) {
+            if (player?.active) {
+
+                console.log("forceResetCheck");
+
+                let message = "Game master, I stepped away from the game. Please do not include me in your story until I return."
+                const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
+                let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": "All" };
+                awayPlayerCount++;
+                //send message to users and ai
+                chatMessages.push(serverData);
+                io.to(serverRoomName).emit('latest user message', serverData);
+                responseSent.set(serverData.id, true);
+                makePlayerInactive(player)
+
+            }
+        }
+
+        function makePlayerInactive(player) {
+            player.active = false;
+            player.away = true;
+            player.mode = "story";
+            player.diceStates = defaultDiceStates;
+            player.skill = "";
+            player.activeSkill = false;
+            player.timers.enabled = false;
+            player.activityId = `user${player.name} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+            activityCount++;
+
+            //send updated entire players object to room
+            io.to(serverRoomName).emit('players objects', players);
+
+        }
+
 
 
 
@@ -403,7 +511,16 @@ app.prepare().then(() => {
 
             let image = await openai.images.generate(data);
 
-            io.to(serverRoomName).emit('dall e image', image.data[0].url);
+            let shadowColor = await getDominantColor(image.data[0].url);
+
+            console.log("shadowColor", shadowColor);
+
+            let dallEObject = {
+                imageUrl: image.data[0].url,
+                shadowColor: shadowColor
+            }
+
+            io.to(serverRoomName).emit('dall e image', dallEObject);
 
             console.log("image: ", image.data);
 
@@ -606,6 +723,7 @@ app.prepare().then(() => {
         socket.on('received user message', (msg) => {
             console.log("all done waiting");
             waitingForUser = false;
+
         });
 
 
@@ -710,7 +828,7 @@ app.prepare().then(() => {
 
             //mock obtaining player info from mongodb
             let newPlayer = {
-                ...players, // This copies all keys from players object
+                ...player, // This copies all keys from players object
                 name: userName,
                 active: false,
                 away: false,
@@ -733,18 +851,21 @@ app.prepare().then(() => {
                 diceStates: defaultDiceStates,
                 mode: "story",
                 timers: {
-                    duration: 30000, //milliseconds
+                    duration: 30, //seconds
                     enabled: false
-                }
+                },
+                figureIcon: "public/icons/wizard.svg",
             };
 
             players[userName] = newPlayer;
-            players[userName].activityId = `user${userName}-activity${activityCount}-${new Date().toISOString()}`
+            players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`
             activityCount++;
 
             console.log("new players joined: ", players);
 
             io.to(serverRoomName).emit('players objects', players);
+
+            enterBattleMode('ForestRiver');////////////FOR TESTING!!!!//////////////////////
 
         });
 
@@ -766,7 +887,7 @@ app.prepare().then(() => {
             players[diceData.User].skill = "";
             players[diceData.User].activeSkill = false;
             players[diceData.User].timers.enabled = false;
-            players[diceData.User].activityId = `user${diceData.User}-activity${activityCount}-${new Date().toISOString()}`;
+            players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
             console.log("d20 completed");
@@ -789,7 +910,7 @@ app.prepare().then(() => {
             players[userName].away = false;
             players[userName].diceStates = defaultDiceStates;
             players[userName].activeSkill = false;
-            players[userName].activityId = `user${userName}-activity${activityCount}-${new Date().toISOString()}`;
+            players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
             io.emit('players objects', players);

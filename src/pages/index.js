@@ -19,6 +19,7 @@ import MoveOnPopup from "../components/MoveOnPopup"
 import BattleMap from '../components/BattleMap';
 import { io } from "socket.io-client";
 import { CountdownCircleTimer } from 'react-countdown-circle-timer';
+import KnifeCutText from '../components/KnifeCutText'
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -30,7 +31,7 @@ export default function Home() {
   const [inputValue, setInputValue] = useState('');
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [dalleImageUrl, setDalleImageUrl] = useState('');
+  const [dalleImageUrl, setDalleImageUrl] = useState();
   const messageQueue = useRef([]); // Holds incoming messages
   const audioQueue = useRef(new Map()); // Holds incoming messages
   const [cancelButton, setCancelButton] = useState(0);
@@ -134,6 +135,11 @@ export default function Home() {
   const [isTimerVisible, setIsTimerVisible] = useState(false);
   const [isTimerPlaying, setIsTimerPlaying] = useState(false);
   const [updatingChatLog, setUpdatingChatLog] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isInitiativeImageLoaded, setIsInitiativeImageLoaded] = useState(false);
+  const [shadowDomColor, setShadowDomColor] = useState();
+  const [gameObject, setGameObject] = useState();
+  const prevPlayerData = useRef();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -321,43 +327,10 @@ export default function Home() {
 
     // dice roll initializer message (server only sends when starting dice mode)
     chatSocket.on('players objects', (data) => {
-      console.log("players objects received");
+      console.log("players objects received ", data);
 
       //grab all players info
       setPlayers(data);
-
-
-      //check if already processed this message
-      if (playersMsgActIds.current.includes(data[userName]?.activityId)) {
-        return;
-      }
-
-      // add to list of received messages
-      playersMsgActIds.current.push(data[userName]?.activityId);
-
-      // if (!data[userName].active || data[userName].away) {
-      //   cleanUpDiceStates();
-      // }
-
-      if (!data[userName]?.active) {
-        cleanUpDiceStates();
-      }
-
-      if (data[userName]?.away) {
-        setAwayMode(true);
-      }
-
-      if (data[userName]?.mode == "dice" && data[userName]?.active && !data[userName]?.away) {
-
-        if (messageQueue.current.length > 0) {
-          setPendingDiceUpdate(data[userName]); // Save the data for later
-          setDiceSelectionOption(null);
-        } else {
-          latestDiceMsg.current = data[userName];
-          updateDiceStates(data[userName]); // Update immediately if messageQueue is empty
-        }
-
-      } // other mode cases cover here
 
     });
 
@@ -392,9 +365,16 @@ export default function Home() {
 
     });
 
-    chatSocket.on('dall e image', (url) => {
-      console.log("dall e image made, ", url);
-      setDalleImageUrl(url);
+    chatSocket.on('dall e image', (dallEObject) => {
+      console.log("dall e image made, ", dallEObject.imageUrl);
+      setDalleImageUrl(dallEObject.imageUrl);
+      setShadowDomColor(dallEObject.shadowColor);
+
+    });
+
+    chatSocket.on('enter battle mode', (data) => {
+      setGameObject(data);
+
 
     });
 
@@ -416,6 +396,61 @@ export default function Home() {
     };
 
   }, [chatSocket]);
+
+  useEffect(() => {
+
+
+    if (!players) {
+      return;
+    }
+    //check if already processed this message
+    if (playersMsgActIds.current.includes(players[userName]?.activityId)) {
+      return;
+    }
+
+    // add to list of received messages
+    playersMsgActIds.current.push(players[userName]?.activityId);
+
+    if (!players[userName]?.active) {
+      cleanUpDiceStates();
+    }
+
+    if (players[userName]?.away) {
+      setAwayMode(true);
+    }
+
+    if (players[userName]?.mode == "dice" && players[userName]?.active && !players[userName]?.away) {
+
+      if (messageQueue.current.length > 0) {
+        setPendingDiceUpdate(players[userName]); // Save the data for later
+        setDiceSelectionOption(null);
+      } else {
+        latestDiceMsg.current = players[userName];
+        updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
+      }
+
+    } else if (players[userName]?.mode == "initiative" && (players[userName]?.battleMode.initiativeRoll < 1) && players[userName]?.active && !players[userName]?.away) {
+
+      if (messageQueue.current.length > 0) {
+        setPendingDiceUpdate(players[userName]); // Save the data for later
+        setDiceSelectionOption(null);
+      } else {
+        latestDiceMsg.current = players[userName];
+        updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
+      }
+
+      if (players[userName]?.battleMode?.initiativeImageUrl) {
+        setShadowDomColor(players[userName]?.battleMode?.initiativeImageShadow);
+        const img = new window.Image();
+        img.src = players[userName].battleMode.initiativeImageUrl;
+        img.onload = () => setIsInitiativeImageLoaded(true);
+      }
+
+    }
+
+    prevPlayerData.current = players[userName]; //not using this, and not sure i need it
+
+  }, [players]);
 
 
   let lastMessage = [];
@@ -811,6 +846,16 @@ export default function Home() {
       setShouldStopAi(false); // Reset the state
     }
   }, [shouldStopAi]);
+
+  //preload dalle image
+  useEffect(() => {
+    if (dalleImageUrl) {
+      const img = new window.Image();
+      img.src = dalleImageUrl;
+      img.onload = () => setIsImageLoaded(true);
+    }
+  }, [dalleImageUrl])
+
 
 
   const resetUserTextForm = () => {
@@ -1216,6 +1261,25 @@ export default function Home() {
     return [false, 0]; // Stops the timer
   };
 
+  // Define dynamic box shadow style
+  const boxShadowStyle = {
+    animation: `boxShadowGlowAnimation 6s ease-in-out infinite`,
+    boxShadow: `0 0 40px ${shadowDomColor}`, // Initial shadow
+    // Other styles...
+  };
+
+  // Define keyframes as a style tag
+  const keyframesStyle = `
+        @keyframes boxShadowGlowAnimation {
+            0%, 100% {
+                box-shadow: 0 0 40px ${shadowDomColor};
+            }
+            50% {
+                box-shadow: 0 0 60px ${shadowDomColor};
+            }
+        }
+    `;
+
 
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
@@ -1281,16 +1345,27 @@ export default function Home() {
         <div className="flex flex-col h-screen justify-start">
           <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Story</h1>
           {/* Conditional DALL·E Image */}
-          {dalleImageUrl && (
+          {isImageLoaded && players[userName]?.mode == "story" && (
             <img
               src={dalleImageUrl}
               alt="DALL·E Generated"
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-12"
+              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+              style={boxShadowStyle}
             />
           )}
-          {/* <BattleMap
+          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && (
+            <div className="relative w-4/5 md:w-3/4 mx-auto rounded-lg shadow-lg md:mt-12">
+              <img
+                src={players[userName].battleMode.initiativeImageUrl}
+                alt="DALL·E Generated"
+                className="h-auto mx-auto rounded-lg"
+                style={boxShadowStyle}
+              />
+            </div>
+          )}
+          <BattleMap
             src="/images/battlemap_green_terrain.png" gridSpacing={45}
-            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" /> */}
+            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
@@ -1299,7 +1374,7 @@ export default function Home() {
               <div className={`${pendingDiceUpdate ? 'timer-hidden' : ''} absolute bottom text-white text-xl font-semibold ml-[-302px] mb-[-50px]`}>
                 <CountdownCircleTimer
                   isPlaying={isTimerVisible}
-                  duration={30}
+                  duration={players[userName].timers.duration}
                   size={50}
                   strokeWidth={4} // Adjust stroke width as needed
                   colors={[

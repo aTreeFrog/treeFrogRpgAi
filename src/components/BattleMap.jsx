@@ -5,7 +5,8 @@ import useImage from 'use-image';
 const BattleMap = ({ src, gridSpacing, className }) => {
     const [image] = useImage(src);
     const [scale, setScale] = useState(1); // Default scale is 1
-    const [wizardIcImage] = useImage('/icons/wizard.svg');
+    const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
+
 
     // put this in an object that comes into the function
     const gridX = 2; // Column

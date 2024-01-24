@@ -821,3 +821,78 @@ textarea {
 .timer-hidden {
     visibility: hidden;
 }
+
+/* CSS: Drifting Animation Keyframes */
+@keyframes drift {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(5px, 5px);
+    }
+}
+
+/* CSS: Applying Animation to the Image */
+.drifting-image {
+    animation: drift 5s ease-in-out 2;
+}
+
+/* Container with Dynamic Background */
+.dynamic-background {
+    background: linear-gradient(to right, #ff9966, #ff5e62);
+    animation: backgroundShift 10s infinite alternate;
+}
+
+/* Keyframes for Background Gradient Animation */
+@keyframes backgroundShift {
+    0% {
+        background: linear-gradient(to right, #ff9966, #ff5e62);
+    }
+
+    100% {
+        background: linear-gradient(to right, #77A1D3, #79CBCA, #E684AE);
+    }
+}
+
+.image-glowing-effect {
+    animation: imageGlowAnimation 10s ease-in-out 2;
+    box-shadow: 0 0 40px rgba(24, 37, 37, 0.8)
+        /* Initial shadow, replace with preferred color */
+}
+
+@keyframes imageGlowAnimation {
+
+    0%,
+    100% {
+        box-shadow: 0 0 40px rgba(86, 10, 84, 0.3);
+        /* Replace with your color */
+    }
+
+    50% {
+        box-shadow: 0 0 80px rgba(86, 10, 84, 0.6);
+        /* Replace with a lighter shade of your color */
+    }
+}
+
+.cut-text-letter {
+    /* Removed position, top, left, width, height, display, align-items, justify-content */
+    opacity: 0;
+    /* Initially hide the letter */
+    /* Keep the z-index if needed */
+}
+
+.cut-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    /* Higher than the image */
+}
