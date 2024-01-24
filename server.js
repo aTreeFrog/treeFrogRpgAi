@@ -11,6 +11,7 @@ const FormData = require('form-data');
 // Dynamically import 'node-fetch'
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const { player } = require('./lib/objects/player');
+const { game } = require('./lib/objects/game');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -135,6 +136,65 @@ app.prepare().then(() => {
             }
         }
 
+        async function enterBattleMode(mapName) {
+            const mapFile = `/public/battleMaps/${mapName}.png`;
+            const jsonFile = `/public/gridFiles/${mapName}.json`;
+            const initGridLocFile = `/public/InitGridLocations.json`;
+            const gridData = await JSON.parse(fs.readFile(jsonFile, 'utf8'));
+            const initGridLData = await JSON.parse(fs.readFile(initGridLocFile, 'utf8'));
+
+            const dateStamp = new Date().toISOString();
+            //setup battle mode for the battle object
+            game.mode = "battle";
+            game.battleGrid = gridData;
+            game.image = mapFile;
+            game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`
+
+
+            //update players state for init battle mode
+            let i = 0;
+            for (let userName in players) {
+                if (players.hasOwnProperty(userName)) {
+
+                    if (players[userName].away) {
+                        players[userName].battleMode.initiativeRoll = 1;
+                        players[userName].mode = "battle" //avoid asking user to roll initiative
+                    } else {
+
+                        //ToDo: figure out how to do the call for away thing for entering this mode
+                        players[userName].battleMode.initiativeRoll = 0;
+                        players[userName].mode = "initiative";
+                    }
+
+                    players[userName].xPosition = initGridLData[mapName].Players[i][0];
+                    players[userName].yPosition = initGridLData[mapName].Players[i][1];
+                    i++;
+
+                    players[userName].diceStates = defaultDiceStates;
+                    players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+                    players[userName].activeSkill = false;
+                    players[userName].skill = "";
+                    players[userName].timers.duration = 120;
+                    players[userName].timers.enabled = true;
+
+                    players[userName].battleMode.yourTurn = false;
+                    players[userName].battleMode.distanceMoved = null;
+                    players[userName].battleMode.actionAttempted = false;
+                    players[userName].battleMode.damageDelt = null;
+                    players[userName].battleMode.enemiesDamaged = [];
+                    players[userName].battleMode.turnCompleted = false;
+                    players[userName].battleMode.mapUrl = mapFile;
+                    players[userName].battleMode.gridData = gridData;
+
+                }
+
+            }
+            activityCount++;
+
+            io.to(serverRoomName).emit('enter battle mode', game); //not sure i need game object at all yet
+            io.to(serverRoomName).emit('players objects', players);
+
+        }
 
         async function summarizeAndMoveOn() {
 
@@ -308,7 +368,7 @@ app.prepare().then(() => {
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `user${user}-activity${activityCount}-${new Date().toISOString()}`;
+                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -369,11 +429,11 @@ app.prepare().then(() => {
                 player.skill = "";
                 player.activeSkill = false;
                 player.timers.enabled = false;
-                player.activityId = `user${player.name}-activity${activityCount}-${new Date().toISOString()}`;
+                player.activityId = `user${player.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
                 activityCount++;
 
                 //send updated entire players object to room
-                io.emit('players objects', players);
+                io.to(serverRoomName).emit('players objects', players);
 
             }
 
@@ -732,7 +792,7 @@ app.prepare().then(() => {
 
             //mock obtaining player info from mongodb
             let newPlayer = {
-                ...players, // This copies all keys from players object
+                ...player, // This copies all keys from players object
                 name: userName,
                 active: false,
                 away: false,
@@ -761,7 +821,7 @@ app.prepare().then(() => {
             };
 
             players[userName] = newPlayer;
-            players[userName].activityId = `user${userName}-activity${activityCount}-${new Date().toISOString()}`
+            players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`
             activityCount++;
 
             console.log("new players joined: ", players);
@@ -788,7 +848,7 @@ app.prepare().then(() => {
             players[diceData.User].skill = "";
             players[diceData.User].activeSkill = false;
             players[diceData.User].timers.enabled = false;
-            players[diceData.User].activityId = `user${diceData.User}-activity${activityCount}-${new Date().toISOString()}`;
+            players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
             console.log("d20 completed");
@@ -811,7 +871,7 @@ app.prepare().then(() => {
             players[userName].away = false;
             players[userName].diceStates = defaultDiceStates;
             players[userName].activeSkill = false;
-            players[userName].activityId = `user${userName}-activity${activityCount}-${new Date().toISOString()}`;
+            players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
             io.emit('players objects', players);
