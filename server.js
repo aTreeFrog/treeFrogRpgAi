@@ -143,7 +143,9 @@ app.prepare().then(() => {
             const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
             const initGridLocFile = path.join(__dirname, '/public/battleMaps/InitGridLocations.json');
             const initGridLData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
-            const initiativeUrl = 'http://localhost:3000/images/wizardsandgoblins.png';
+            const initiativeUrl = 'http://localhost:3000/images/wizardclosegoblins.png';
+
+            let shadowColor = await getDominantColor(initiativeUrl);
 
             const dateStamp = new Date().toISOString();
             //setup battle mode for the battle object
@@ -196,6 +198,7 @@ app.prepare().then(() => {
                     players[user].battleMode.mapUrl = mapUrl;
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
+                    players[user].battleMode.initiatveImageShadow = shadowColor;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -210,7 +213,7 @@ app.prepare().then(() => {
                     waitingForRolls = true;
 
                     // set this to > 1 prob but for testing keeping it at 0
-                    if (activePlayers > 0) {
+                    if (activePlayers > 1) {
 
                         players[user].timers.duration = 120; //seconds
                         players[user].timers.enabled = true;
@@ -458,7 +461,7 @@ app.prepare().then(() => {
         // if timer expired and player is still active, set them to away and not active and
         // send default dice roll message to AI to take them out of the game. 
         function forceResetCheck(player) {
-            if (player.active) {
+            if (player?.active) {
 
                 console.log("forceResetCheck");
 

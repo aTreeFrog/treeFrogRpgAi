@@ -19,6 +19,7 @@ import MoveOnPopup from "../components/MoveOnPopup"
 import BattleMap from '../components/BattleMap';
 import { io } from "socket.io-client";
 import { CountdownCircleTimer } from 'react-countdown-circle-timer';
+import KnifeCutText from '../components/KnifeCutText'
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -439,6 +440,7 @@ export default function Home() {
       }
 
       if (players[userName]?.battleMode?.initiativeImageUrl) {
+        setShadowDomColor(players[userName]?.battleMode?.initiativeImageShadow);
         const img = new window.Image();
         img.src = players[userName].battleMode.initiativeImageUrl;
         img.onload = () => setIsInitiativeImageLoaded(true);
@@ -1352,12 +1354,14 @@ export default function Home() {
             />
           )}
           {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && (
-            <img
-              src={players[userName].battleMode.initiativeImageUrl}
-              alt="DALL·E Generated"
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
-              style={boxShadowStyle}
-            />
+            <div className="relative w-4/5 md:w-3/4 mx-auto rounded-lg shadow-lg md:mt-12">
+              <img
+                src={players[userName].battleMode.initiativeImageUrl}
+                alt="DALL·E Generated"
+                className="h-auto mx-auto rounded-lg"
+                style={boxShadowStyle}
+              />
+            </div>
           )}
           <BattleMap
             src="/images/battlemap_green_terrain.png" gridSpacing={45}
