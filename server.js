@@ -150,41 +150,72 @@ app.prepare().then(() => {
             game.image = mapFile;
             game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`
 
+            // figure out how many active players
+            let activePlayers = 0;
+            for (let key in players) {
+                if (players.hasOwnProperty(key) && !players[key].away) {
+                    activePlayers++;
+                }
+            }
 
             //update players state for init battle mode
             let i = 0;
-            for (let userName in players) {
-                if (players.hasOwnProperty(userName)) {
+            for (let user in players) {
+                if (players.hasOwnProperty(user)) {
 
-                    if (players[userName].away) {
-                        players[userName].battleMode.initiativeRoll = 1;
-                        players[userName].mode = "battle" //avoid asking user to roll initiative
+
+                    if (players[user].away) {
+                        players[user].battleMode.initiativeRoll = 1;
+                        players[user].mode = "battle" //avoid asking user to roll initiative
+                        players[user].active = false;
                     } else {
 
                         //ToDo: figure out how to do the call for away thing for entering this mode
-                        players[userName].battleMode.initiativeRoll = 0;
-                        players[userName].mode = "initiative";
+                        players[user].battleMode.initiativeRoll = 0;
+                        players[user].mode = "initiative";
+                        players[user].active = true;
                     }
 
-                    players[userName].xPosition = initGridLData[mapName].Players[i][0];
-                    players[userName].yPosition = initGridLData[mapName].Players[i][1];
+                    players[user].xPosition = initGridLData[mapName].Players[i][0];
+                    players[user].yPosition = initGridLData[mapName].Players[i][1];
                     i++;
 
-                    players[userName].diceStates = defaultDiceStates;
-                    players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
-                    players[userName].activeSkill = false;
-                    players[userName].skill = "";
-                    players[userName].timers.duration = 120;
-                    players[userName].timers.enabled = true;
+                    players[user].diceStates = defaultDiceStates;
+                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+                    players[user].activeSkill = false;
+                    players[user].skill = "";
+                    players[user].timers.duration = 120;
+                    players[user].timers.enabled = true;
 
-                    players[userName].battleMode.yourTurn = false;
-                    players[userName].battleMode.distanceMoved = null;
-                    players[userName].battleMode.actionAttempted = false;
-                    players[userName].battleMode.damageDelt = null;
-                    players[userName].battleMode.enemiesDamaged = [];
-                    players[userName].battleMode.turnCompleted = false;
-                    players[userName].battleMode.mapUrl = mapFile;
-                    players[userName].battleMode.gridData = gridData;
+                    players[user].battleMode.yourTurn = false;
+                    players[user].battleMode.distanceMoved = null;
+                    players[user].battleMode.actionAttempted = false;
+                    players[user].battleMode.damageDelt = null;
+                    players[user].battleMode.enemiesDamaged = [];
+                    players[user].battleMode.turnCompleted = false;
+                    players[user].battleMode.mapUrl = mapFile;
+                    players[user].battleMode.gridData = gridData;
+
+                    players[user].diceStates.D20 = {
+                        value: [],
+                        isActive: true,
+                        isGlowActive: true,
+                        rolls: 0,
+                        displayedValue: null,
+                        inhibit: false,
+                        advantage: false,
+                    }
+
+                    waitingForRolls = true;
+
+                    // set this to > 1 prob but for testing keeping it at 0
+                    if (activePlayers > 0) {
+
+                        players[user].timers.duration = 30000;
+                        players[user].timers.enabled = true;
+                        //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
+                    }
 
                 }
 

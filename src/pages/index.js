@@ -137,6 +137,7 @@ export default function Home() {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [shadowDomColor, setShadowDomColor] = useState();
   const [gameObject, setGameObject] = useState();
+  const prevPlayerData = useRef();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -329,39 +330,6 @@ export default function Home() {
       //grab all players info
       setPlayers(data);
 
-
-      //check if already processed this message
-      if (playersMsgActIds.current.includes(data[userName]?.activityId)) {
-        return;
-      }
-
-      // add to list of received messages
-      playersMsgActIds.current.push(data[userName]?.activityId);
-
-      // if (!data[userName].active || data[userName].away) {
-      //   cleanUpDiceStates();
-      // }
-
-      if (!data[userName]?.active) {
-        cleanUpDiceStates();
-      }
-
-      if (data[userName]?.away) {
-        setAwayMode(true);
-      }
-
-      if (data[userName]?.mode == "dice" && data[userName]?.active && !data[userName]?.away) {
-
-        if (messageQueue.current.length > 0) {
-          setPendingDiceUpdate(data[userName]); // Save the data for later
-          setDiceSelectionOption(null);
-        } else {
-          latestDiceMsg.current = data[userName];
-          updateDiceStates(data[userName]); // Update immediately if messageQueue is empty
-        }
-
-      } // other mode cases cover here
-
     });
 
     //detect all users in the server
@@ -426,6 +394,54 @@ export default function Home() {
     };
 
   }, [chatSocket]);
+
+  useEffect(() => {
+
+
+    if (!players) {
+      return;
+    }
+    //check if already processed this message
+    if (playersMsgActIds.current.includes(players[userName]?.activityId)) {
+      return;
+    }
+
+    // add to list of received messages
+    playersMsgActIds.current.push(players[userName]?.activityId);
+
+    if (!players[userName]?.active) {
+      cleanUpDiceStates();
+    }
+
+    if (players[userName]?.away) {
+      setAwayMode(true);
+    }
+
+    if (players[userName]?.mode == "dice" && players[userName]?.active && !players[userName]?.away) {
+
+      if (messageQueue.current.length > 0) {
+        setPendingDiceUpdate(players[userName]); // Save the data for later
+        setDiceSelectionOption(null);
+      } else {
+        latestDiceMsg.current = players[userName];
+        updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
+      }
+
+    } else if (players[userName]?.mode == "initiative" && (players[userName]?.battleMode.initiativeRoll < 1) && players[userName]?.active && !players[userName]?.away) {
+
+      if (messageQueue.current.length > 0) {
+        setPendingDiceUpdate(players[userName]); // Save the data for later
+        setDiceSelectionOption(null);
+      } else {
+        latestDiceMsg.current = players[userName];
+        updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
+      }
+
+    }
+
+    prevPlayerData.current = players[userName]; //not using this, and not sure i need it
+
+  }, [players]);
 
 
   let lastMessage = [];
