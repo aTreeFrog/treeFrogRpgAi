@@ -2,28 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 
-const BattleMap = ({ src, gridSpacing, className }) => {
-    const [image, status] = useImage(src);
+const BattleMap = ({ gridSpacing, className, players, userName }) => {
+    const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
     const [scale, setScale] = useState(1); // Default scale is 1
     const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [playerIcons, setPlayerIcons] = useState([]);
 
 
     // put this in an object that comes into the function
-    const gridX = 2; // Column
-    const gridY = 2; // Row
+    // const gridX = 2; // Column
+    // const gridY = 2; // Row
     const [travelZonePosition, setTravelZonePosition] = useState({ x: 150, y: 200 }); // Default position
 
     const travelZoneRadius = 200;
 
-    const [wizardScale, setWizardScale] = useState(1);
-    const wizardSize = wizardIcImage?.width * wizardScale;
-    // Translate to pixel coordinates
-    const pixelX = gridX * gridSpacing + gridSpacing / 2;
-    const pixelY = gridY * gridSpacing + gridSpacing / 2;
+    // const [wizardScale, setWizardScale] = useState(1);
+    // const wizardSize = wizardIcImage?.width * wizardScale;
+    // // Translate to pixel coordinates
+    // const pixelX = gridX * gridSpacing + gridSpacing / 2;
+    // const pixelY = gridY * gridSpacing + gridSpacing / 2;
 
-    // Initial circle position state
-    const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
+    // // Initial circle position state
+    // const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
 
     useEffect(() => {
         if (status === 'loaded') {
@@ -33,17 +34,40 @@ const BattleMap = ({ src, gridSpacing, className }) => {
 
 
     // Calculate wizard scale after image is loaded
+    // useEffect(() => {
+    //     if (wizardIcImage) {
+    //         const desiredWizardSize = gridSpacing * 0.8; // Adjust as needed
+    //         const newScale = desiredWizardSize / wizardIcImage.width;
+    //         setWizardScale(newScale);
+    //         const wizardSize = wizardIcImage.width * newScale;
+    //         const initialX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
+    //         const initialY = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
+    //         setWizardPosition({ x: initialX, y: initialY });
+    //     }
+    // }, [wizardIcImage, gridSpacing]);
+
     useEffect(() => {
-        if (wizardIcImage) {
-            const desiredWizardSize = gridSpacing * 0.8; // Adjust as needed
-            const newScale = desiredWizardSize / wizardIcImage.width;
-            setWizardScale(newScale);
-            const wizardSize = wizardIcImage.width * newScale;
-            const initialX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-            const initialY = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-            setWizardPosition({ x: initialX, y: initialY });
+        if (players) {
+            const newPlayers = Object.entries(players).map(([playerName, playerData]) => {
+                const wizardScale = gridSpacing * 0.8 / playerData.figureIcon.width; // Adjust wizard scale
+                const wizardSize = playerData.figureIcon.width * wizardScale;
+
+                const gridX = playerData.xPosition;
+                const gridY = playerData.yPosition;
+
+                const pixelX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
+                const pixelY = gridY * gridSpacing + gridSpacing / 2 - wizardSize / 2;
+
+                return {
+                    x: pixelX,
+                    y: pixelY,
+                    scale: wizardScale,
+                    icon: playerData.figureIcon
+                };
+            });
+            setPlayerIcons(newPlayers);
         }
-    }, [wizardIcImage, gridSpacing]);
+    }, [players, gridSpacing]);
 
 
     useEffect(() => {
@@ -91,35 +115,40 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         }
     };
 
-    const handleDragEnd = (e) => {
+    const handleDragEnd = (e, index) => {
         // Get the position of the dragged icon
         const wizardX = e.target.x();
         const wizardY = e.target.y();
 
-        // Calculate distance from the wizard's center to the center of the travel zone
-        const distance = Math.sqrt(
-            Math.pow(wizardX - travelZonePosition.x, 2) +
-            Math.pow(wizardY - travelZonePosition.y, 2)
-        );
+        // Your existing logic to calculate distance, etc., remains the same
 
         if (distance <= travelZoneRadius) {
-            // Calculate the center of the nearest grid cell
-            // We use Math.round here to snap to the nearest grid cell based on the icon's current position
             const centerGridX = Math.round(wizardX / gridSpacing) * gridSpacing;
             const centerGridY = Math.round(wizardY / gridSpacing) * gridSpacing;
 
-            // Adjust the wizard's position to the center of the cell
-            // Subtract half the wizard's size to align the center of the wizard with the center of the cell
-            setWizardPosition({ x: centerGridX + gridSpacing / 2 - wizardSize / 2, y: centerGridY + gridSpacing / 2 - wizardSize / 2 });
+            // Create a new wizards array with the position of the dragged wizard updated
+            const newWizards = playerIcons.map((player, idx) => {
+                if (idx === index) {
+                    return {
+                        ...player,
+                        x: centerGridX + gridSpacing / 2 - (playerData.figureIcon.width * player.scale) / 2,
+                        y: centerGridY + gridSpacing / 2 - (playerData.figureIcon.height * player.scale) / 2
+                    };
+                }
+                return player;
+            });
+
+            setPlayerIcons(newWizards);
         } else {
-            // Revert to original position if the wizard is dragged outside the travel zone
+            // Revert to the original position if dragged outside the travel zone
             e.target.to({
-                x: wizardPosition.x,
-                y: wizardPosition.y,
+                x: wizards[index].x,
+                y: wizards[index].y,
                 duration: 0.2 // Transition duration in seconds
             });
         }
     };
+
 
     const animationClass = imageLoaded ? 'bubble-in' : '';
 
@@ -142,18 +171,18 @@ const BattleMap = ({ src, gridSpacing, className }) => {
                             fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
                             className={animationClass}
                         />
-                        <Image
-                            image={wizardIcImage}
-                            x={wizardPosition.x}
-                            y={wizardPosition.y}
-                            radius={gridSpacing / 3}
-                            // fill="green"
-                            draggable
-                            onDragEnd={handleDragEnd}
-                            scaleX={wizardScale}
-                            scaleY={wizardScale}
-                            className={animationClass}
-                        />
+                        {playerIcons.map((player, index) => (
+                            <Image
+                                key={index}
+                                image={player.icon}
+                                x={player.x}
+                                y={player.y}
+                                draggable
+                                onDragEnd={(e) => handleDragEnd(e, index)}
+                                scaleX={player.scale}
+                                scaleY={player.scale}
+                            />
+                        ))}
                     </Layer>
                 </Stage>
             )}

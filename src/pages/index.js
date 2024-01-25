@@ -1378,7 +1378,7 @@ export default function Home() {
           )}
           {players[userName]?.mode == "battle" && (
             <BattleMap
-              src={players[userName]?.battleMode.mapUrl} gridSpacing={45}
+              gridSpacing={45} players={players} userName={userName}
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
           )}
         </div>
