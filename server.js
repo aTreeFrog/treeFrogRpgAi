@@ -138,12 +138,13 @@ app.prepare().then(() => {
             }
         }
 
-        async function enterBattleMode(mapName) {
+        async function enterBattleMode(mapName, backgroundMusic) {
             const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
             const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
             const initGridLocFile = path.join(__dirname, '/public/battleMaps/InitGridLocations.json');
             const initGridLData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
             const initiativeUrl = 'http://localhost:3000/images/wizardclosegoblins.png';
+            const backgroundSong = `http://localhost:3000/audio/${backgroundMusic}.mp3`;
 
             let shadowColor = await getDominantColor(initiativeUrl);
 
@@ -152,7 +153,7 @@ app.prepare().then(() => {
             game.mode = "battle";
             game.battleGrid = gridDataUrl;
             game.image = mapUrl;
-            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp} `
+            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp}`
 
             // figure out how many active players
             let activePlayers = 0;
@@ -199,6 +200,7 @@ app.prepare().then(() => {
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
                     players[user].battleMode.initiatveImageShadow = shadowColor;
+                    players[user].backgroundAudio = backgroundSong;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -318,7 +320,7 @@ app.prepare().then(() => {
                         console.log("messagesFilteredForApi", messagesFilteredForApi);
 
                         const data = {
-                            model: "gpt-4",
+                            model: "gpt-3.5-turbo",
                             messages: messagesFilteredForApi,
                             stream: true,
                         };
@@ -698,8 +700,8 @@ app.prepare().then(() => {
 
         }
 
-        async function playBackgroundAudio() {
-            io.to(serverRoomName).emit('background music', { url: 'http://localhost:3000/audio/lord_of_the_land.mp3' });
+        async function playBackgroundAudio(song) {
+            io.to(serverRoomName).emit('background music', { url: `http://localhost:3000/audio/${song}.mp3` });
         }
 
         socket.on('my user message', (msg) => {
@@ -714,7 +716,7 @@ app.prepare().then(() => {
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
                 responseSent.set(msg.id, true);
-                playBackgroundAudio();////////////////////////for testing//////////
+                //playBackgroundAudio("lord_of_the_land");////////////////////////for testing//////////
                 //createDallEImage("two wizards walking through the forest. Both male. Looking like there could be trouble nearby. lush green forest. nature in an mystical world.");
             }
         });
@@ -865,7 +867,7 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            enterBattleMode('ForestRiver');////////////FOR TESTING!!!!//////////////////////
+            enterBattleMode('ForestRiver', 'Black_Vortex');////////////FOR TESTING!!!!//////////////////////
 
         });
 
@@ -880,9 +882,14 @@ app.prepare().then(() => {
 
         socket.on('D20 Dice Roll Complete', (diceData) => {
 
+            if (players[diceData.User].mode == "initiative") {
+                players[diceData.User].mode = "battle"
+            } else if (players[diceData.User].mode == "dice") {
+                players[diceData.User].mode = "story";
+            }
+
             players[diceData.User].active = false;
             players[diceData.User].away = false;
-            players[diceData.User].mode = "story";
             players[diceData.User].diceStates = defaultDiceStates;
             players[diceData.User].skill = "";
             players[diceData.User].activeSkill = false;

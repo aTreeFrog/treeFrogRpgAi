@@ -3,9 +3,10 @@ import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 
 const BattleMap = ({ src, gridSpacing, className }) => {
-    const [image] = useImage(src);
+    const [image, status] = useImage(src);
     const [scale, setScale] = useState(1); // Default scale is 1
     const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
+    const [imageLoaded, setImageLoaded] = useState(false);
 
 
     // put this in an object that comes into the function
@@ -23,6 +24,12 @@ const BattleMap = ({ src, gridSpacing, className }) => {
 
     // Initial circle position state
     const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
+
+    useEffect(() => {
+        if (status === 'loaded') {
+            setImageLoaded(true);
+        }
+    }, [status]);
 
 
     // Calculate wizard scale after image is loaded
@@ -114,34 +121,44 @@ const BattleMap = ({ src, gridSpacing, className }) => {
         }
     };
 
+    const animationClass = imageLoaded ? 'bubble-in' : '';
+
     return (
+
         <div className={className}>
-            <Stage
-                onClick={handleClick} width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
-            >
-                <Layer>
-                    <Image image={image} scaleX={scale} scaleY={scale} />
-                    {drawGrid()}
-                    <Circle
-                        x={travelZonePosition.x}
-                        y={travelZonePosition.y}
-                        radius={travelZoneRadius} // Larger radius for the travel zone
-                        fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
-                    />
-                    <Image
-                        image={wizardIcImage}
-                        x={wizardPosition.x}
-                        y={wizardPosition.y}
-                        radius={gridSpacing / 3}
-                        // fill="green"
-                        draggable
-                        onDragEnd={handleDragEnd}
-                        scaleX={wizardScale}
-                        scaleY={wizardScale}
-                    />
-                </Layer>
-            </Stage>
+            {imageLoaded && (
+                <Stage
+                    onClick={handleClick} width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
+                    className={animationClass}
+                >
+                    <Layer>
+                        <Image image={image} scaleX={scale} scaleY={scale}
+                            className={animationClass} />
+                        {drawGrid()}
+                        <Circle
+                            x={travelZonePosition.x}
+                            y={travelZonePosition.y}
+                            radius={travelZoneRadius} // Larger radius for the travel zone
+                            fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
+                            className={animationClass}
+                        />
+                        <Image
+                            image={wizardIcImage}
+                            x={wizardPosition.x}
+                            y={wizardPosition.y}
+                            radius={gridSpacing / 3}
+                            // fill="green"
+                            draggable
+                            onDragEnd={handleDragEnd}
+                            scaleX={wizardScale}
+                            scaleY={wizardScale}
+                            className={animationClass}
+                        />
+                    </Layer>
+                </Stage>
+            )}
         </div>
+
     );
 };
 
