@@ -856,7 +856,7 @@ app.prepare().then(() => {
                     duration: 30, //seconds
                     enabled: false
                 },
-                figureIcon: "public/icons/wizard.svg",
+                figureIcon: "/icons/wizard.svg",
             };
 
             players[userName] = newPlayer;
@@ -956,37 +956,38 @@ app.prepare().then(() => {
     async function checkPlayersState() {
 
         let anyPlayerRoll = false
-        let anyPlayerIniativeRoll = false
-        let inIniativeMode = false;
+        let anyPlayerInitiativeRoll = false
+        let inInitiativeMode = false;
         Object.entries(players).forEach(([userName, playerData]) => {
 
             // check if any player is in iniative mode, means game is in iniative mode
-            if (playerData.mode == "iniative") {
-                inIniativeMode = true;
+            if (playerData?.mode == "initiative") {
+                inInitiativeMode = true;
             }
 
-            if (playerData.mode == "dice" && playerData.active && !playerData.away) {
+            if (playerData?.mode == "dice" && playerData?.active && !playerData?.away) {
                 console.log("player roll true: ", playerData)
                 anyPlayerRoll = true;
             }
 
-            if (playerData.mode == "initiative" && !playerData.away && playerData.BattleMode.initiativeRoll < 1) {
-                anyPlayerIniativeRoll = true;
+            if (playerData?.mode == "initiative" && !playerData?.away && playerData?.battleMode?.initiativeRoll < 1) {
+                anyPlayerInitiativeRoll = true;
             }
 
         });
 
-        if (anyPlayerRoll || anyPlayerIniativeRoll) {
+        if (anyPlayerRoll || anyPlayerInitiativeRoll) {
             waitingForRolls = true;
         } else {
             waitingForRolls = false;
         }
 
         //if everyone has done there initiative roll, put everyone in battle mode, and setup battle
-        if (inIniativeMode && !waitingForRolls) {
+        if (inInitiativeMode && !waitingForRolls) {
+            console.log("going to battle mode");
             const activityDate = new Date().toISOString();
             Object.entries(players).forEach(([userName, playerData]) => {
-                playerData.mode == "battle";
+                playerData.mode = "battle";
                 //set a bunch of default states for the player
                 defaultPlayersBattleInitMode(userName);
                 playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${activityDate}`;
@@ -994,15 +995,13 @@ app.prepare().then(() => {
             });
             activityCount++;
 
-
-
         }
 
         io.emit('players objects', players);
 
     };
 
-    setInterval(checkPlayersState, 1000);
+    setInterval(checkPlayersState, 5000);
 
     setInterval(() => {
         responseSent.clear();

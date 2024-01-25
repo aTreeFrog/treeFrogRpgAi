@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
+import PlayerIcon from '../components/PlayerIcon';
 
 const BattleMap = ({ gridSpacing, className, players, userName }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
     const [scale, setScale] = useState(1); // Default scale is 1
-    const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
+    //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
     const [imageLoaded, setImageLoaded] = useState(false);
-    const [playerIcons, setPlayerIcons] = useState([]);
+    const [internalPlayerIcons, setInternalPlayerIcons] = useState(players);
+
+    // useEffect(() => {
+    //     setInternalPlayerIcons(players)
+    // }, [players]);
 
 
     // put this in an object that comes into the function
@@ -29,7 +34,9 @@ const BattleMap = ({ gridSpacing, className, players, userName }) => {
     useEffect(() => {
         if (status === 'loaded') {
             setImageLoaded(true);
+            console.log("image battlemap: ", image);
         }
+
     }, [status]);
 
 
@@ -45,29 +52,6 @@ const BattleMap = ({ gridSpacing, className, players, userName }) => {
     //         setWizardPosition({ x: initialX, y: initialY });
     //     }
     // }, [wizardIcImage, gridSpacing]);
-
-    useEffect(() => {
-        if (players) {
-            const newPlayers = Object.entries(players).map(([playerName, playerData]) => {
-                const wizardScale = gridSpacing * 0.8 / playerData.figureIcon.width; // Adjust wizard scale
-                const wizardSize = playerData.figureIcon.width * wizardScale;
-
-                const gridX = playerData.xPosition;
-                const gridY = playerData.yPosition;
-
-                const pixelX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-                const pixelY = gridY * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-
-                return {
-                    x: pixelX,
-                    y: pixelY,
-                    scale: wizardScale,
-                    icon: playerData.figureIcon
-                };
-            });
-            setPlayerIcons(newPlayers);
-        }
-    }, [players, gridSpacing]);
 
 
     useEffect(() => {
@@ -127,7 +111,7 @@ const BattleMap = ({ gridSpacing, className, players, userName }) => {
             const centerGridY = Math.round(wizardY / gridSpacing) * gridSpacing;
 
             // Create a new wizards array with the position of the dragged wizard updated
-            const newWizards = playerIcons.map((player, idx) => {
+            const newPlayers = internalPlayerIcons.map((player, idx) => {
                 if (idx === index) {
                     return {
                         ...player,
@@ -138,7 +122,7 @@ const BattleMap = ({ gridSpacing, className, players, userName }) => {
                 return player;
             });
 
-            setPlayerIcons(newWizards);
+            setInternalPlayerIcons(newPlayers);
         } else {
             // Revert to the original position if dragged outside the travel zone
             e.target.to({
@@ -171,17 +155,8 @@ const BattleMap = ({ gridSpacing, className, players, userName }) => {
                             fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
                             className={animationClass}
                         />
-                        {playerIcons.map((player, index) => (
-                            <Image
-                                key={index}
-                                image={player.icon}
-                                x={player.x}
-                                y={player.y}
-                                draggable
-                                onDragEnd={(e) => handleDragEnd(e, index)}
-                                scaleX={player.scale}
-                                scaleY={player.scale}
-                            />
+                        {Object.entries(internalPlayerIcons).map(([playerName, playerData]) => (
+                            <PlayerIcon key={playerName} playerData={playerData} gridSpacing={gridSpacing} />
                         ))}
                     </Layer>
                 </Stage>
