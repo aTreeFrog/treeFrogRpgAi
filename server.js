@@ -138,12 +138,13 @@ app.prepare().then(() => {
             }
         }
 
-        async function enterBattleMode(mapName) {
+        async function enterBattleMode(mapName, backgroundMusic) {
             const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
             const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
             const initGridLocFile = path.join(__dirname, '/public/battleMaps/InitGridLocations.json');
             const initGridLData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
             const initiativeUrl = 'http://localhost:3000/images/wizardclosegoblins.png';
+            const backgroundSong = `http://localhost:3000/audio/${backgroundMusic}.mp3`;
 
             let shadowColor = await getDominantColor(initiativeUrl);
 
@@ -152,7 +153,7 @@ app.prepare().then(() => {
             game.mode = "battle";
             game.battleGrid = gridDataUrl;
             game.image = mapUrl;
-            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp} `
+            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp}`
 
             // figure out how many active players
             let activePlayers = 0;
@@ -199,6 +200,7 @@ app.prepare().then(() => {
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
                     players[user].battleMode.initiatveImageShadow = shadowColor;
+                    players[user].backgroundAudio = backgroundSong;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -318,7 +320,7 @@ app.prepare().then(() => {
                         console.log("messagesFilteredForApi", messagesFilteredForApi);
 
                         const data = {
-                            model: "gpt-4",
+                            model: "gpt-3.5-turbo",
                             messages: messagesFilteredForApi,
                             stream: true,
                         };
@@ -698,8 +700,8 @@ app.prepare().then(() => {
 
         }
 
-        async function playBackgroundAudio() {
-            io.to(serverRoomName).emit('background music', { url: 'http://localhost:3000/audio/lord_of_the_land.mp3' });
+        async function playBackgroundAudio(song) {
+            io.to(serverRoomName).emit('background music', { url: `http://localhost:3000/audio/${song}.mp3` });
         }
 
         socket.on('my user message', (msg) => {
@@ -714,7 +716,7 @@ app.prepare().then(() => {
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
                 responseSent.set(msg.id, true);
-                playBackgroundAudio();////////////////////////for testing//////////
+                //playBackgroundAudio("lord_of_the_land");////////////////////////for testing//////////
                 //createDallEImage("two wizards walking through the forest. Both male. Looking like there could be trouble nearby. lush green forest. nature in an mystical world.");
             }
         });
@@ -854,7 +856,7 @@ app.prepare().then(() => {
                     duration: 30, //seconds
                     enabled: false
                 },
-                figureIcon: "public/icons/wizard.svg",
+                figureIcon: "/icons/wizard.svg",
             };
 
             players[userName] = newPlayer;
@@ -865,7 +867,7 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            enterBattleMode('ForestRiver');////////////FOR TESTING!!!!//////////////////////
+            enterBattleMode('ForestRiver', 'Black_Vortex');////////////FOR TESTING!!!!//////////////////////
 
         });
 
@@ -880,13 +882,16 @@ app.prepare().then(() => {
 
         socket.on('D20 Dice Roll Complete', (diceData) => {
 
-            players[diceData.User].active = false;
-            players[diceData.User].away = false;
-            players[diceData.User].mode = "story";
-            players[diceData.User].diceStates = defaultDiceStates;
-            players[diceData.User].skill = "";
-            players[diceData.User].activeSkill = false;
-            players[diceData.User].timers.enabled = false;
+            if (players[diceData.User].mode == "initiative") {
+                players[diceData.User].battleMode.initiativeRoll = diceData.Total;
+
+            } else if (players[diceData.User].mode == "dice") {
+                players[diceData.User].mode = "story";
+            }
+
+            //set a bunch of default states for the player
+            defaultPlayersBattleInitMode(diceData.User);
+
             players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
@@ -928,35 +933,87 @@ app.prepare().then(() => {
 
         });
 
+        socket.on('player moved', (data) => {
+
+            if (players.hasOwnProperty(data.name)) {
+                players[data.name].xPosition = data.xPosition;
+                players[data.name].yPosition = data.yPosition;
+                players[data.name].activityId = `user${data.name} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+                activityCount++;
+                io.to(serverRoomName).emit('players objects', players);
+            };
+
+        });
+
         processMessages();
 
     });
 
+    function defaultPlayersBattleInitMode(userName) {
+        players[userName].active = false;
+        players[userName].away = false;
+        players[userName].diceStates = defaultDiceStates;
+        players[userName].battleMode.yourTurn = false;
+        players[userName].battleMode.distanceMoved = null;
+        players[userName].battleMode.actionAttempted = false;
+        players[userName].battleMode.damageDelt = null;
+        players[userName].battleMode.enemiesDamaged = [];
+        players[userName].battleMode.turnCompleted = false;
+        players[userName].skill = "";
+        players[userName].activeSkill = false;
+        players[userName].timers.enabled = false;
+    }
 
 
     async function checkPlayersState() {
 
         let anyPlayerRoll = false
+        let anyPlayerInitiativeRoll = false
+        let inInitiativeMode = false;
         Object.entries(players).forEach(([userName, playerData]) => {
 
-            if (playerData.mode == "dice" && playerData.active && !playerData.away) {
+            // check if any player is in iniative mode, means game is in iniative mode
+            if (playerData?.mode == "initiative") {
+                inInitiativeMode = true;
+            }
+
+            if (playerData?.mode == "dice" && playerData?.active && !playerData?.away) {
                 console.log("player roll true: ", playerData)
                 anyPlayerRoll = true;
             }
 
+            if (playerData?.mode == "initiative" && !playerData?.away && playerData?.battleMode?.initiativeRoll < 1) {
+                anyPlayerInitiativeRoll = true;
+            }
+
         });
 
-        if (anyPlayerRoll) {
+        if (anyPlayerRoll || anyPlayerInitiativeRoll) {
             waitingForRolls = true;
         } else {
             waitingForRolls = false;
+        }
+
+        //if everyone has done there initiative roll, put everyone in battle mode, and setup battle
+        if (inInitiativeMode && !waitingForRolls) {
+            console.log("going to battle mode");
+            const activityDate = new Date().toISOString();
+            Object.entries(players).forEach(([userName, playerData]) => {
+                playerData.mode = "battle";
+                //set a bunch of default states for the player
+                defaultPlayersBattleInitMode(userName);
+                playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${activityDate}`;
+
+            });
+            activityCount++;
+
         }
 
         io.emit('players objects', players);
 
     };
 
-    setInterval(checkPlayersState, 1000);
+    setInterval(checkPlayersState, 5000);
 
     setInterval(() => {
         responseSent.clear();

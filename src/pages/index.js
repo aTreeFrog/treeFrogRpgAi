@@ -20,6 +20,7 @@ import BattleMap from '../components/BattleMap';
 import { io } from "socket.io-client";
 import { CountdownCircleTimer } from 'react-countdown-circle-timer';
 import KnifeCutText from '../components/KnifeCutText'
+import player from '../../lib/objects/player'
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -128,7 +129,7 @@ export default function Home() {
   const [popupText, setPopupText] = useState(storyModePopupWarning);
   const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
   const [usersInServer, setUsersInServer] = useState([]);
-  const [players, setPlayers] = useState();
+  const [players, setPlayers] = useState({ userName: player }); // init player dict
   const playersMsgActIds = useRef([]);
   const [awayMode, setAwayMode] = useState(false);
   const iAmBack = useRef(false)
@@ -329,10 +330,25 @@ export default function Home() {
     chatSocket.on('players objects', (data) => {
       console.log("players objects received ", data);
 
-      //grab all players info
-      setPlayers(data);
+      setPlayers(prevPlayers => {
+        const updatedPlayers = { ...prevPlayers };
 
+        Object.entries(data).forEach(([playerName, playerData]) => {
+          // For other players, always update
+          if (playerName !== userName) {
+            updatedPlayers[playerName] = playerData;
+          }
+          // For the current user, update only if the activityId is new
+          else if (!playersMsgActIds.current.includes(playerData?.activityId)) {
+            console.log("updated myself");
+            updatedPlayers[playerName] = playerData;
+          }
+        });
+
+        return updatedPlayers;
+      });
     });
+
 
     //detect all users in the server
     chatSocket.on('connected users', (clients) => {
@@ -361,7 +377,7 @@ export default function Home() {
 
     chatSocket.on('background music', (data) => {
       resumeAudioContext();
-      PlayBackgroundAudio(data); /////////////////turned off////////////////////////
+      PlayBackgroundAudio(data);
 
     });
 
@@ -403,6 +419,7 @@ export default function Home() {
     if (!players) {
       return;
     }
+    console.log("my players ", players);
     //check if already processed this message
     if (playersMsgActIds.current.includes(players[userName]?.activityId)) {
       return;
@@ -429,7 +446,7 @@ export default function Home() {
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
 
-    } else if (players[userName]?.mode == "initiative" && (players[userName]?.battleMode.initiativeRoll < 1) && players[userName]?.active && !players[userName]?.away) {
+    } else if (players[userName]?.mode == "initiative") {
 
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(players[userName]); // Save the data for later
@@ -451,6 +468,28 @@ export default function Home() {
     prevPlayerData.current = players[userName]; //not using this, and not sure i need it
 
   }, [players]);
+
+  useEffect(() => {
+
+    if (players[userName]?.xPosition && players[userName]?.yPosition) {
+
+      chatSocket.emit('player moved', players[userName]);
+
+    }
+
+
+  }, [players[userName]?.xPosition, players[userName]?.yPosition]);
+
+
+
+  useEffect(() => {
+    // Code to run when players[userName]?.backgroundAudio changes
+    if (players[userName]?.backgroundAudio) {
+      console.log("Background audio changed to:", players[userName].backgroundAudio);
+      resumeAudioContext();
+      PlayBackgroundAudio(players[userName].backgroundAudio);
+    }
+  }, [players[userName]?.backgroundAudio]);
 
 
   let lastMessage = [];
@@ -517,7 +556,7 @@ export default function Home() {
   // play background music and handle multiple calls in tight sequence
   const PlayBackgroundAudio = async (data) => {
     if (musicThreadControlActive.current) {
-      console.log("Music already getting prepped or playing");
+      console.log("Music already getting prepped");
       return;
     }
 
@@ -537,7 +576,7 @@ export default function Home() {
         await Tone.loaded(); // Ensure Tone.js is ready
 
         backgroundTone.current = new Tone.Player({
-          url: data.url,
+          url: data,
           loop: true
         }).toDestination();
 
@@ -1354,18 +1393,23 @@ export default function Home() {
             />
           )}
           {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && (
-            <div className="relative w-4/5 md:w-3/4 mx-auto rounded-lg shadow-lg md:mt-12">
+            <div>
               <img
                 src={players[userName].battleMode.initiativeImageUrl}
                 alt="DALL·E Generated"
-                className="h-auto mx-auto rounded-lg"
+                className="h-auto mx-auto rounded-lg relative w-4/5 md:w-3/4 mx-auto shadow-lg md:mt-12"
                 style={boxShadowStyle}
               />
+              <div className="text-center mt-6">
+                <span className="whitespace-nowrap backdrop-blur-sm rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">Roll for Initiative</span>
+              </div>
             </div>
           )}
-          <BattleMap
-            src="/images/battlemap_green_terrain.png" gridSpacing={45}
-            className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
+          {players[userName]?.mode == "battle" && (
+            <BattleMap
+              gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
+              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
+          )}
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
