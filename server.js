@@ -883,17 +883,15 @@ app.prepare().then(() => {
         socket.on('D20 Dice Roll Complete', (diceData) => {
 
             if (players[diceData.User].mode == "initiative") {
-                players[diceData.User].mode = "battle"
+                players[diceData.User].battleMode.initiativeRoll = diceData.Total;
+
             } else if (players[diceData.User].mode == "dice") {
                 players[diceData.User].mode = "story";
             }
 
-            players[diceData.User].active = false;
-            players[diceData.User].away = false;
-            players[diceData.User].diceStates = defaultDiceStates;
-            players[diceData.User].skill = "";
-            players[diceData.User].activeSkill = false;
-            players[diceData.User].timers.enabled = false;
+            //set a bunch of default states for the player
+            defaultPlayersBattleInitMode(diceData.User);
+
             players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
@@ -939,24 +937,65 @@ app.prepare().then(() => {
 
     });
 
+    function defaultPlayersBattleInitMode(userName) {
+        players[userName].active = false;
+        players[userName].away = false;
+        players[userName].diceStates = defaultDiceStates;
+        players[userName].battleMode.yourTurn = false;
+        players[userName].battleMode.distanceMoved = null;
+        players[userName].battleMode.actionAttempted = false;
+        players[userName].battleMode.damageDelt = null;
+        players[userName].battleMode.enemiesDamaged = [];
+        players[userName].battleMode.turnCompleted = false;
+        players[userName].skill = "";
+        players[userName].activeSkill = false;
+        players[userName].timers.enabled = false;
+    }
 
 
     async function checkPlayersState() {
 
         let anyPlayerRoll = false
+        let anyPlayerIniativeRoll = false
+        let inIniativeMode = false;
         Object.entries(players).forEach(([userName, playerData]) => {
+
+            // check if any player is in iniative mode, means game is in iniative mode
+            if (playerData.mode == "iniative") {
+                inIniativeMode = true;
+            }
 
             if (playerData.mode == "dice" && playerData.active && !playerData.away) {
                 console.log("player roll true: ", playerData)
                 anyPlayerRoll = true;
             }
 
+            if (playerData.mode == "initiative" && !playerData.away && playerData.BattleMode.initiativeRoll < 1) {
+                anyPlayerIniativeRoll = true;
+            }
+
         });
 
-        if (anyPlayerRoll) {
+        if (anyPlayerRoll || anyPlayerIniativeRoll) {
             waitingForRolls = true;
         } else {
             waitingForRolls = false;
+        }
+
+        //if everyone has done there initiative roll, put everyone in battle mode, and setup battle
+        if (inIniativeMode && !waitingForRolls) {
+            const activityDate = new Date().toISOString();
+            Object.entries(players).forEach(([userName, playerData]) => {
+                playerData.mode == "battle";
+                //set a bunch of default states for the player
+                defaultPlayersBattleInitMode(userName);
+                playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${activityDate}`;
+
+            });
+            activityCount++;
+
+
+
         }
 
         io.emit('players objects', players);

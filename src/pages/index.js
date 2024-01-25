@@ -430,7 +430,7 @@ export default function Home() {
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
 
-    } else if (players[userName]?.mode == "initiative" && (players[userName]?.battleMode.initiativeRoll < 1) && players[userName]?.active && !players[userName]?.away) {
+    } else if (players[userName]?.mode == "initiative") {
 
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(players[userName]); // Save the data for later
@@ -455,7 +455,7 @@ export default function Home() {
 
   useEffect(() => {
     // Code to run when players[userName]?.backgroundAudio changes
-    if (players[userName] && players[userName]?.backgroundAudio) {
+    if (players[userName]?.backgroundAudio) {
       console.log("Background audio changed to:", players[userName].backgroundAudio);
       resumeAudioContext();
       PlayBackgroundAudio(players[userName].backgroundAudio);
