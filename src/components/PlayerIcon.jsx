@@ -18,6 +18,37 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const travelZoneRadius = 200;
 
+    // const handleClick = (e) => {
+    //     // Get the relative position of the click
+    //     const clickX = e.evt.offsetX;
+    //     const clickY = e.evt.offsetY;
+
+    //     console.log("click event");
+
+    //     const distance = Math.sqrt(
+    //         Math.pow(clickX - pixelX, 2),
+    //         Math.pow(clickY - pixelY, 2)
+    //     );
+
+    //     if (distance <= travelZoneRadius && playerName == userName) {
+
+    //         // Optionally, adjust positions based on the scale and size of the image
+    //         const adjustedX = clickX / playerScale + pixelX;
+    //         const adjustedY = clickY / playerScale + pixelY;
+
+    //         // Calculate the grid position
+    //         const gridX = Math.round(adjustedX / gridSpacing);
+    //         const gridY = Math.round(adjustedY / gridSpacing);
+
+    //         console.log("Grid position:", gridX, gridY);
+
+    //         // Update player data with the new grid position
+    //         updatePlayerData(gridX, gridY);
+
+    //     }
+    // };
+
+
     const handleDragEnd = (e) => {
         // Get the position of the dragged icon
         const playerX = e.target.x();
@@ -25,7 +56,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
         // Calculate distance from the wizard's center to the center of the travel zone
         const distance = Math.sqrt(
-            Math.pow(playerX - pixelX, 2),
+            Math.pow(playerX - pixelX, 2) +
             Math.pow(playerY - pixelY, 2)
         );
 
