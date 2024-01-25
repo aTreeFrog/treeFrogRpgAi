@@ -1,6 +1,7 @@
 // hooks/usePlayerIcons.jsx
 import { useState, useEffect } from 'react';
 import useImage from 'use-image';
+import { Circle } from 'react-konva';
 
 const usePlayerIcons = (players, gridSpacing) => {
     const [playerIcons, setPlayerIcons] = useState([]);

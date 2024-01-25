@@ -933,6 +933,18 @@ app.prepare().then(() => {
 
         });
 
+        socket.on('player moved', (data) => {
+
+            if (players.hasOwnProperty(data.name)) {
+                players[data.name].xPosition = data.xPosition;
+                players[data.name].yPosition = data.yPosition;
+                players[data.name].activityId = `user${data.name} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+                activityCount++;
+                io.to(serverRoomName).emit('players objects', players);
+            };
+
+        });
+
         processMessages();
 
     });

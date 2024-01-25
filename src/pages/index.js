@@ -330,10 +330,25 @@ export default function Home() {
     chatSocket.on('players objects', (data) => {
       console.log("players objects received ", data);
 
-      //grab all players info
-      setPlayers(data);
+      setPlayers(prevPlayers => {
+        const updatedPlayers = { ...prevPlayers };
 
+        Object.entries(data).forEach(([playerName, playerData]) => {
+          // For other players, always update
+          if (playerName !== userName) {
+            updatedPlayers[playerName] = playerData;
+          }
+          // For the current user, update only if the activityId is new
+          else if (!playersMsgActIds.current.includes(playerData?.activityId)) {
+            console.log("updated myself");
+            updatedPlayers[playerName] = playerData;
+          }
+        });
+
+        return updatedPlayers;
+      });
     });
+
 
     //detect all users in the server
     chatSocket.on('connected users', (clients) => {
@@ -404,6 +419,7 @@ export default function Home() {
     if (!players) {
       return;
     }
+    console.log("my players ", players);
     //check if already processed this message
     if (playersMsgActIds.current.includes(players[userName]?.activityId)) {
       return;
@@ -452,6 +468,19 @@ export default function Home() {
     prevPlayerData.current = players[userName]; //not using this, and not sure i need it
 
   }, [players]);
+
+  useEffect(() => {
+
+    if (players[userName]?.xPosition && players[userName]?.yPosition) {
+
+      chatSocket.emit('player moved', players[userName]);
+
+    }
+
+
+  }, [players[userName]?.xPosition, players[userName]?.yPosition]);
+
+
 
   useEffect(() => {
     // Code to run when players[userName]?.backgroundAudio changes
@@ -1378,7 +1407,7 @@ export default function Home() {
           )}
           {players[userName]?.mode == "battle" && (
             <BattleMap
-              gridSpacing={45} players={players} userName={userName}
+              gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
           )}
         </div>
