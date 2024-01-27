@@ -438,7 +438,7 @@ app.prepare().then(() => {
 
                     if (activePlayers > 0) {
 
-                        players[user].timers.duration = 30;
+                        players[user].timers.duration = 60;
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
                         waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
@@ -600,6 +600,8 @@ app.prepare().then(() => {
 
         async function checkForFunctionCall() {
 
+            let diceRollCalled = false;
+
             let messagesFilteredForFunction = aiInOrderChatMessage.map(item => ({
                 role: item.role,
                 content: item.content,
@@ -609,7 +611,7 @@ app.prepare().then(() => {
             let latestAssistantMessage = [messagesFilteredForFunction.findLast(item => item.role === "assistant")];
             console.log("latestAssistantMessage", latestAssistantMessage);
             //only check it to do the roll function if you sense d20 and roll in the ai statement
-            if (latestAssistantMessage[0].content.toLowerCase().includes("d20") && latestAssistantMessage[0].content.toLowerCase().includes("roll")) {
+            if (latestAssistantMessage[0].content.toLowerCase().includes("d20") && latestAssistantMessage[0].content.toLowerCase().includes("roll") && !latestAssistantMessage[0].content.toLowerCase().includes("initiative")) {
 
                 latestAssistantMessage.push({ "role": "user", "content": "did you specifically request a user to roll a d20 dice? If so, call the sendDiceRollMessage function." })
                 console.log("latestAssistantMessage", latestAssistantMessage);
@@ -657,6 +659,7 @@ app.prepare().then(() => {
                     console.log("checking function call data : ", functionData);
 
                     if (functionData.name == "sendDiceRollMessage") {
+                        diceRollCalled = true;
                         argumentsJson = JSON.parse(functionData.arguments);
                         skillValue = argumentsJson.skill;
                         advantageValue = argumentsJson.advantage;
@@ -713,6 +716,81 @@ app.prepare().then(() => {
                 }
             }
 
+            await askAiIfInitiative(messagesFilteredForFunction, diceRollCalled);
+
+        }
+
+        async function askAiIfInitiative(messagesFilteredForFunction, diceRollCalled) {
+
+            let latestAssistantMessage = [messagesFilteredForFunction.findLast(item => item.role === "assistant")];
+
+            if (!diceRollCalled && latestAssistantMessage[0].content.toLowerCase().includes("initiative") && latestAssistantMessage[0].content.toLowerCase().includes("roll")) {
+
+                messagesFilteredForFunction.push({ "role": "user", "content": "seems like a battle is about to start and your asking to roll for initiative to get the battle turn order? If so call the function enterBattleMode." })
+                console.log("enterBattleMode latestAssistantMessage", latestAssistantMessage);
+                const data = {
+                    model: "gpt-4",
+                    messages: messagesFilteredForFunction,
+                    stream: false,
+                    tools: [    ///////////mapName, backgroundMusic, enemyType, enemyCount
+                        {
+                            type: "function",
+                            function: {
+                                name: "enterBattleMode",
+                                description: "function that should be called anytime the AI assistant is about to start a game battle between the players and some enemy.",
+                                parameters: {
+                                    type: "object",
+                                    properties: {
+                                        mapName: {
+                                            type: "string",
+                                            enum: ['ForestRiver'],
+                                            description: "map that should be used for the battle. ForestRiver is a forest map."
+                                        },
+                                        backgroundMusic: {
+                                            type: "string",
+                                            enum: ['Black_Vortex'],
+                                            description: "Background music that should be played for battle. Black_Vortex has an engaging feel."
+                                        },
+                                        enemyType: {
+                                            type: "string",
+                                            enum: ['goblin'],
+                                            description: "the enemy race the players are about to battle."
+                                        },
+                                        enemyCount: {
+                                            type: "integer",
+                                            minimum: 1,
+                                            maximum: 5,
+                                            description: "the number of enemies the players are going to battle."
+                                        },
+                                    },
+                                    required: ["mapName", "backgroundMusic", "enemyType", "enemyCount"],
+                                }
+                            }
+                        }
+                    ]
+                };
+
+                messagesFilteredForFunction.pop() //remove what i just added
+                const completion = await openai.chat.completions.create(data);
+                console.log("checking function call completion: ", completion.choices[0].finish_reason);
+
+                if (completion.choices[0].finish_reason == "tool_calls") {
+                    functionData = completion.choices[0].message.tool_calls[0].function;
+                    console.log("checking function call data : ", functionData);
+
+                    if (functionData.name == "enterBattleMode") {
+                        argumentsJson = JSON.parse(functionData.arguments);
+                        mapNameValue = argumentsJson.mapName;
+                        backgroundMusicValue = argumentsJson.backgroundMusic;
+                        enemyTypeValue = argumentsJson.enemyType;
+                        enemyCountValue = argumentsJson.enemyCount;
+                        enterBattleMode(mapNameValue, backgroundMusicValue, enemyTypeValue, enemyCountValue); // no await because theres the active counter going on dont want to block
+
+                    }
+
+                }
+
+            }
         }
 
         async function playBackgroundAudio(song) {
@@ -883,7 +961,7 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
+            //enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
 
         });
 
