@@ -20,36 +20,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     console.log("playerName", playerName);
     console.log("gridy", gridY);
 
-    // const handleClick = (e) => {
-    //     // Get the relative position of the click
-    //     const clickX = e.evt.offsetX;
-    //     const clickY = e.evt.offsetY;
-
-    //     console.log("click event");
-
-    //     const distance = Math.sqrt(
-    //         Math.pow(clickX - pixelX, 2),
-    //         Math.pow(clickY - pixelY, 2)
-    //     );
-
-    //     if (distance <= travelZoneRadius && playerName == userName) {
-
-    //         // Optionally, adjust positions based on the scale and size of the image
-    //         const adjustedX = clickX / playerScale + pixelX;
-    //         const adjustedY = clickY / playerScale + pixelY;
-
-    //         // Calculate the grid position
-    //         const gridX = Math.round(adjustedX / gridSpacing);
-    //         const gridY = Math.round(adjustedY / gridSpacing);
-
-    //         console.log("Grid position:", gridX, gridY);
-
-    //         // Update player data with the new grid position
-    //         updatePlayerData(gridX, gridY);
-
-    //     }
-    // };
-
 
     const handleDragEnd = (e) => {
         // Get the position of the dragged icon
