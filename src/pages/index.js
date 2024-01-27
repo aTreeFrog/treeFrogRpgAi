@@ -808,7 +808,7 @@ export default function Home() {
     if (chatMsgData.length > 0) {
 
       //since you sent a message, auto say playing again
-      if (players[userName].away) {
+      if (players[userName]?.away) {
         chatSocket.emit('playing again', userName);
       }
 
@@ -1384,7 +1384,7 @@ export default function Home() {
         <div className="flex flex-col h-screen justify-start">
           <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Story</h1>
           {/* Conditional DALL·E Image */}
-          {isImageLoaded && players[userName]?.mode == "story" && (
+          {isImageLoaded && (players[userName]?.mode == "story" || players[userName]?.mode == "dice") && (
             <img
               src={dalleImageUrl}
               alt="DALL·E Generated"
