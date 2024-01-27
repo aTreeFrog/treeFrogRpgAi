@@ -8,27 +8,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
     const [scale, setScale] = useState(1); // Default scale is 1
     //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
     const [imageLoaded, setImageLoaded] = useState(false);
-
-    // useEffect(() => {
-    //     setInternalPlayerIcons(players)
-    // }, [players]);
-
-
-    // put this in an object that comes into the function
-    // const gridX = 2; // Column
-    // const gridY = 2; // Row
-    // const [travelZonePosition, setTravelZonePosition] = useState({ x: 150, y: 200 }); // Default position
-
-    // const travelZoneRadius = 200;
-
-    // const [wizardScale, setWizardScale] = useState(1);
-    // const wizardSize = wizardIcImage?.width * wizardScale;
-    // // Translate to pixel coordinates
-    // const pixelX = gridX * gridSpacing + gridSpacing / 2;
-    // const pixelY = gridY * gridSpacing + gridSpacing / 2;
-
-    // // Initial circle position state
-    // const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
+    const travelZoneRadius = 200;
+    const [imageFigureUrl, setImageFigureUrl] = useState(null);
+    let [userNameFigureImage] = useImage(imageFigureUrl);
+    const [playerSize, setPlayerSize] = useState();
+    const [pixelX, setPixelX] = useState();
+    const [pixelY, setPixelY] = useState();
 
     useEffect(() => {
         if (status === 'loaded') {
@@ -37,21 +22,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
         }
 
     }, [status]);
-
-
-    // Calculate wizard scale after image is loaded
-    // useEffect(() => {
-    //     if (wizardIcImage) {
-    //         const desiredWizardSize = gridSpacing * 0.8; // Adjust as needed
-    //         const newScale = desiredWizardSize / wizardIcImage.width;
-    //         setWizardScale(newScale);
-    //         const wizardSize = wizardIcImage.width * newScale;
-    //         const initialX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-    //         const initialY = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-    //         setWizardPosition({ x: initialX, y: initialY });
-    //     }
-    // }, [wizardIcImage, gridSpacing]);
-
 
     useEffect(() => {
         if (image) {
@@ -78,59 +48,36 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
         return lines;
     };
 
-    // const handleClick = (e) => {
-    //     const stage = e.target.getStage();
-    //     const pointerPosition = stage.getPointerPosition();
+    const handleMapClick = (e) => {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
 
-    //     // Calculate distance from the click position to the center of the travel zone
-    //     const distance = Math.sqrt(
-    //         Math.pow(pointerPosition.x - travelZonePosition.x, 2) +
-    //         Math.pow(pointerPosition.y - travelZonePosition.y, 2)
-    //     );
+        const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
+        const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
-    //     if (distance <= travelZoneRadius) {
-    //         // Calculate the top-left of the nearest grid cell
-    //         const gridX = Math.floor(pointerPosition.x / gridSpacing) * gridSpacing;
-    //         const gridY = Math.floor(pointerPosition.y / gridSpacing) * gridSpacing;
+        // Calculate the pixel position of the center of the clicked grid cell
+        const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
+        const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
 
-    //         // Center the wizard in the grid cell
-    //         setWizardPosition({ x: gridX + gridSpacing / 2 - wizardSize / 2, y: gridY + gridSpacing / 2 - wizardSize / 2 });
-    //     }
-    // };
+        console.log("Click event");
 
-    // const handleDragEnd = (e, index) => {
-    //     // Get the position of the dragged icon
-    //     const wizardX = e.target.x();
-    //     const wizardY = e.target.y();
+        const distance = Math.sqrt(
+            Math.pow(clickedPixelX - pixelX, 2) +
+            Math.pow(clickedPixelY - pixelY, 2)
+        );
 
-    //     // Your existing logic to calculate distance, etc., remains the same
+        console.log("pixelX", pixelX);
 
-    //     if (distance <= travelZoneRadius) {
-    //         const centerGridX = Math.round(wizardX / gridSpacing) * gridSpacing;
-    //         const centerGridY = Math.round(wizardY / gridSpacing) * gridSpacing;
+        console.log("distance", distance);
 
-    //         // Create a new wizards array with the position of the dragged wizard updated
-    //         const newPlayers = internalPlayerIcons.map((player, idx) => {
-    //             if (idx === index) {
-    //                 return {
-    //                     ...player,
-    //                     x: centerGridX + gridSpacing / 2 - (playerData.figureIcon.width * player.scale) / 2,
-    //                     y: centerGridY + gridSpacing / 2 - (playerData.figureIcon.height * player.scale) / 2
-    //                 };
-    //             }
-    //             return player;
-    //         });
+        if (distance <= travelZoneRadius) {
+            console.log("Clicked Grid Position:", clickedGridX, clickedGridY);
+            console.log("Clicked Pixel Position:", clickedPixelX, clickedPixelY);
 
-    //         setInternalPlayerIcons(newPlayers);
-    //     } else {
-    //         // Revert to the original position if dragged outside the travel zone
-    //         e.target.to({
-    //             x: wizards[index].x,
-    //             y: wizards[index].y,
-    //             duration: 0.2 // Transition duration in seconds
-    //         });
-    //     }
-    // };
+            // Update player data with the new grid position
+            updatePlayerData(userName, clickedGridX, clickedGridY);
+        }
+    };
 
 
     const animationClass = imageLoaded ? 'bubble-in' : '';
@@ -149,8 +96,19 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
 
 
     useEffect(() => {
-        console.log("players username: ", players[userName]);
-    }, [players[userName]]);
+        setImageFigureUrl(players[userName].figureIcon);
+        if (userNameFigureImage) {
+            console.log("hi userNameFigureImage");
+            const playerScale = gridSpacing * 0.8 / userNameFigureImage.width;
+            setPlayerSize(userNameFigureImage.width * playerScale);
+            const gridX = players[userName].xPosition;
+            const gridY = players[userName].yPosition;
+            setPixelX(gridX * gridSpacing + gridSpacing / 2 - playerSize / 2);
+            setPixelY(gridY * gridSpacing + gridSpacing / 2 - playerSize / 2);
+            console.log("battlemap pixelX", pixelX);
+        }
+    }, [imageFigureUrl, players[userName]]);
+
 
     return (
 
@@ -159,6 +117,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                 <Stage
                     width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
                     className={animationClass}
+                    onClick={handleMapClick}
+                    onTap={handleMapClick}
                 >
                     <Layer>
                         <Image image={image} scaleX={scale} scaleY={scale}
@@ -171,7 +131,9 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                                 gridSpacing={gridSpacing}
                                 userName={userName}
                                 imageLoaded={imageLoaded}
-                                updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)} />
+                                updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
+                                travelZoneRadius={travelZoneRadius}
+                            />
                         ))}
                     </Layer>
                 </Stage>

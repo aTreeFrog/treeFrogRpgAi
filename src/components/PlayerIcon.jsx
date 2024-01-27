@@ -2,7 +2,7 @@
 import React from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius }) => {
     const [image] = useImage(playerData.figureIcon);
 
     if (!image) {
@@ -16,40 +16,9 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const gridY = playerData.yPosition;
     const pixelX = gridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
-    const travelZoneRadius = 200;
 
     console.log("playerName", playerName);
     console.log("gridy", gridY);
-
-    // const handleClick = (e) => {
-    //     // Get the relative position of the click
-    //     const clickX = e.evt.offsetX;
-    //     const clickY = e.evt.offsetY;
-
-    //     console.log("click event");
-
-    //     const distance = Math.sqrt(
-    //         Math.pow(clickX - pixelX, 2),
-    //         Math.pow(clickY - pixelY, 2)
-    //     );
-
-    //     if (distance <= travelZoneRadius && playerName == userName) {
-
-    //         // Optionally, adjust positions based on the scale and size of the image
-    //         const adjustedX = clickX / playerScale + pixelX;
-    //         const adjustedY = clickY / playerScale + pixelY;
-
-    //         // Calculate the grid position
-    //         const gridX = Math.round(adjustedX / gridSpacing);
-    //         const gridY = Math.round(adjustedY / gridSpacing);
-
-    //         console.log("Grid position:", gridX, gridY);
-
-    //         // Update player data with the new grid position
-    //         updatePlayerData(gridX, gridY);
-
-    //     }
-    // };
 
 
     const handleDragEnd = (e) => {
@@ -94,13 +63,15 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            <Circle
-                x={pixelX}
-                y={pixelY}
-                radius={travelZoneRadius} // Larger radius for the travel zone
-                fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
-                className={animationClass}
-            />
+            {playerData.type !== 'enemy' && (
+                <Circle
+                    x={pixelX}
+                    y={pixelY}
+                    radius={travelZoneRadius} // Larger radius for the travel zone
+                    fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
+                    className={animationClass}
+                />
+            )}
             <Image
                 image={image}
                 x={pixelX}
