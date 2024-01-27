@@ -15,29 +15,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
     const [pixelX, setPixelX] = useState();
     const [pixelY, setPixelY] = useState();
 
-
-
-    // useEffect(() => {
-    //     setInternalPlayerIcons(players)
-    // }, [players]);
-
-
-    // put this in an object that comes into the function
-    // const gridX = 2; // Column
-    // const gridY = 2; // Row
-    // const [travelZonePosition, setTravelZonePosition] = useState({ x: 150, y: 200 }); // Default position
-
-    // const travelZoneRadius = 200;
-
-    // const [wizardScale, setWizardScale] = useState(1);
-    // const wizardSize = wizardIcImage?.width * wizardScale;
-    // // Translate to pixel coordinates
-    // const pixelX = gridX * gridSpacing + gridSpacing / 2;
-    // const pixelY = gridY * gridSpacing + gridSpacing / 2;
-
-    // // Initial circle position state
-    // const [wizardPosition, setWizardPosition] = useState({ x: pixelX, y: pixelY });
-
     useEffect(() => {
         if (status === 'loaded') {
             setImageLoaded(true);
@@ -45,21 +22,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
         }
 
     }, [status]);
-
-
-    // Calculate wizard scale after image is loaded
-    // useEffect(() => {
-    //     if (wizardIcImage) {
-    //         const desiredWizardSize = gridSpacing * 0.8; // Adjust as needed
-    //         const newScale = desiredWizardSize / wizardIcImage.width;
-    //         setWizardScale(newScale);
-    //         const wizardSize = wizardIcImage.width * newScale;
-    //         const initialX = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-    //         const initialY = gridX * gridSpacing + gridSpacing / 2 - wizardSize / 2;
-    //         setWizardPosition({ x: initialX, y: initialY });
-    //     }
-    // }, [wizardIcImage, gridSpacing]);
-
 
     useEffect(() => {
         if (image) {
@@ -134,12 +96,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
 
 
     useEffect(() => {
-        console.log("players username: ", players[userName]);
         setImageFigureUrl(players[userName].figureIcon);
-
-    }, [players[userName]]);
-
-    useEffect(() => {
         if (userNameFigureImage) {
             console.log("hi userNameFigureImage");
             const playerScale = gridSpacing * 0.8 / userNameFigureImage.width;
