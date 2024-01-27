@@ -12,13 +12,16 @@ const FormData = require('form-data');
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const { player } = require('./lib/objects/player');
 const { game } = require('./lib/objects/game');
-
+const enemies = require('./lib/enemies');
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const speechFile = path.resolve("./speech.mp3");
 const ColorThief = require('colorthief');
+
+
+
 
 const defaultDiceStates = {
     d20: {
@@ -68,13 +71,13 @@ const defaultDiceStates = {
     }
 };
 
-const shouldContinue = {};
+let shouldContinue = {};
 let activityCount = 1
 let chatMessages = [];
 let aiInOrderChatMessage = [];
 let waitingForUser = false;
-const clients = {};
-const players = {};
+let clients = {};
+let players = {};
 let responseSent = new Map();
 let waitingForRolls = false;
 let awayPlayerCount = 1
@@ -138,11 +141,11 @@ app.prepare().then(() => {
             }
         }
 
-        async function enterBattleMode(mapName, backgroundMusic) {
+        async function enterBattleMode(mapName, backgroundMusic, enemyType, enemyCount) {
             const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
             const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
             const initGridLocFile = path.join(__dirname, '/public/battleMaps/InitGridLocations.json');
-            const initGridLData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
+            const initGridData = JSON.parse(fs.readFileSync(initGridLocFile, 'utf8'));
             const initiativeUrl = 'http://localhost:3000/images/wizardclosegoblins.png';
             const backgroundSong = `http://localhost:3000/audio/${backgroundMusic}.mp3`;
 
@@ -155,38 +158,53 @@ app.prepare().then(() => {
             game.image = mapUrl;
             game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp}`
 
-            // figure out how many active players
-            let activePlayers = 0;
-            for (let key in players) {
-                if (players.hasOwnProperty(key) && !players[key].away) {
-                    activePlayers++;
-                }
+            // place enemy fighters into the players object since they will fight in the game
+            for (let j = 0; j < enemyCount; j++) {
+                const enemyKey = `${enemyType}${j + 1}`;
+                players[enemyKey] = { ...enemies[enemyType] }; // Create a new object for each enemy
+                players[enemyKey].name = enemyKey;
+                players[enemyKey].mode = "battle";
+                players[enemyKey].initiative = Math.floor(Math.random() * 20) + 1; //between 1 and 20
+                players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+                players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
+                players[enemyKey].yPosition = initGridData[mapName].Enemies[j][1];
+                defaultPlayersBattleInitMode(enemyKey);
+
+                console.log("xpos", players[enemyKey].xPosition);
+                console.log("ypos", players[enemyKey].yPosition);
+                console.log("all players with enemies", players);
+
             }
 
+            let activePlayers = 0;
             //update players state for init battle mode
             let i = 0;
             for (let user in players) {
-                if (players.hasOwnProperty(user)) {
 
+                // figure out how many active players
+                if (players.hasOwnProperty(user) && !players[user].away && players[user].type == "player") {
+                    activePlayers++;
+                }
+
+                if (players.hasOwnProperty(user) && players[user].type == "player") {
 
                     if (players[user].away) {
                         players[user].battleMode.initiativeRoll = 1;
                         players[user].mode = "battle" //avoid asking user to roll initiative
                         players[user].active = false;
                     } else {
-
                         //ToDo: figure out how to do the call for away thing for entering this mode
                         players[user].battleMode.initiativeRoll = 0;
                         players[user].mode = "initiative";
                         players[user].active = true;
                     }
 
-                    players[user].xPosition = initGridLData[mapName].Players[i][0];
-                    players[user].yPosition = initGridLData[mapName].Players[i][1];
+                    players[user].xPosition = initGridData[mapName].Players[i][0];
+                    players[user].yPosition = initGridData[mapName].Players[i][1];
                     i++;
 
                     players[user].diceStates = defaultDiceStates;
-                    players[user].activityId = `user${user} -game${serverRoomName} -activity${activityCount} -${dateStamp} `;
+                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
                     players[user].activeSkill = false;
                     players[user].skill = "";
 
@@ -199,7 +217,7 @@ app.prepare().then(() => {
                     players[user].battleMode.mapUrl = mapUrl;
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
-                    players[user].battleMode.initiatveImageShadow = shadowColor;
+                    players[user].battleMode.initiativeImageShadow = shadowColor;
                     players[user].backgroundAudio = backgroundSong;
 
                     players[user].diceStates.D20 = {
@@ -405,7 +423,7 @@ app.prepare().then(() => {
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `user${user} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -488,7 +506,7 @@ app.prepare().then(() => {
             player.skill = "";
             player.activeSkill = false;
             player.timers.enabled = false;
-            player.activityId = `user${player.name} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+            player.activityId = `user${player.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
             activityCount++;
 
             //send updated entire players object to room
@@ -496,12 +514,9 @@ app.prepare().then(() => {
 
         }
 
-
-
-
         async function createDallEImage(prompt) {
 
-            const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
+            //const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
 
             const data = {
                 model: "dall-e-3",
@@ -832,6 +847,7 @@ app.prepare().then(() => {
             let newPlayer = {
                 ...player, // This copies all keys from players object
                 name: userName,
+                type: "player",
                 active: false,
                 away: false,
                 class: "Wizard",
@@ -867,7 +883,7 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            enterBattleMode('ForestRiver', 'Black_Vortex');////////////FOR TESTING!!!!//////////////////////
+            enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
 
         });
 
@@ -938,7 +954,7 @@ app.prepare().then(() => {
             if (players.hasOwnProperty(data.name)) {
                 players[data.name].xPosition = data.xPosition;
                 players[data.name].yPosition = data.yPosition;
-                players[data.name].activityId = `user${data.name} -game${serverRoomName} -activity${activityCount} -${new Date().toISOString()} `;
+                players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
                 activityCount++;
                 io.to(serverRoomName).emit('players objects', players);
             };
@@ -973,16 +989,16 @@ app.prepare().then(() => {
         Object.entries(players).forEach(([userName, playerData]) => {
 
             // check if any player is in iniative mode, means game is in iniative mode
-            if (playerData?.mode == "initiative") {
+            if (playerData?.type == "player" && playerData?.mode == "initiative") {
                 inInitiativeMode = true;
             }
 
-            if (playerData?.mode == "dice" && playerData?.active && !playerData?.away) {
+            if (playerData?.type == "player" && playerData?.mode == "dice" && playerData?.active && !playerData?.away) {
                 console.log("player roll true: ", playerData)
                 anyPlayerRoll = true;
             }
 
-            if (playerData?.mode == "initiative" && !playerData?.away && playerData?.battleMode?.initiativeRoll < 1) {
+            if (playerData?.type == "player" && playerData?.mode == "initiative" && !playerData?.away && playerData?.battleMode?.initiativeRoll < 1) {
                 anyPlayerInitiativeRoll = true;
             }
 

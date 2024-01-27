@@ -18,6 +18,9 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const travelZoneRadius = 200;
 
+    console.log("playerName", playerName);
+    console.log("gridy", gridY);
+
     // const handleClick = (e) => {
     //     // Get the relative position of the click
     //     const clickX = e.evt.offsetX;
