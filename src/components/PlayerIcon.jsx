@@ -2,7 +2,7 @@
 import React from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius }) => {
     const [image] = useImage(playerData.figureIcon);
 
     if (!image) {
@@ -16,7 +16,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const gridY = playerData.yPosition;
     const pixelX = gridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
-    const travelZoneRadius = 200;
 
     console.log("playerName", playerName);
     console.log("gridy", gridY);
@@ -94,13 +93,15 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            <Circle
-                x={pixelX}
-                y={pixelY}
-                radius={travelZoneRadius} // Larger radius for the travel zone
-                fill="rgba(255, 255, 0, 0.5)" // Semi-transparent yellow
-                className={animationClass}
-            />
+            {playerData.type !== 'enemy' && (
+                <Circle
+                    x={pixelX}
+                    y={pixelY}
+                    radius={travelZoneRadius} // Larger radius for the travel zone
+                    fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
+                    className={animationClass}
+                />
+            )}
             <Image
                 image={image}
                 x={pixelX}
