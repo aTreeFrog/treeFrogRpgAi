@@ -170,6 +170,7 @@ export default function Home() {
 
   // Ref to track if audio is currently playing
   const playNextAudio = () => {
+
     if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
       resumeAudioContext();
       console.log("playNextAudio expectedSequence: ", expectedSequence.current)
@@ -183,6 +184,7 @@ export default function Home() {
         volume: -10
         // Start the audio manually after it's loaded and connected to effects
         newAudio.current.start();
+        expectedSequence.current++;
       }).toDestination();
 
       //newAudio.current = new Audio(audioSrc);
@@ -213,7 +215,7 @@ export default function Home() {
       newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
         console.log("make it here?");
-        expectedSequence.current++;
+        //expectedSequence.current++;
       };
 
       newAudio.current.onerror = (error) => {
