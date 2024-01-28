@@ -238,7 +238,7 @@ app.prepare().then(() => {
                         players[user].timers.duration = 120; //seconds
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].active);
                     }
 
                 }
@@ -439,7 +439,7 @@ app.prepare().then(() => {
                     players[user].timers.duration = 60;
                     players[user].timers.enabled = true;
                     //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
+                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].active);
 
 
                 }
@@ -468,12 +468,25 @@ app.prepare().then(() => {
             activityCount++;
         };
 
-        function waitAndCall(duration, func) {
+        function waitAndCall(duration, func, checkCondition) {
             return new Promise(resolve => {
-                setTimeout(() => {
+                const intervalTime = 2000; // Check every 1 second, adjust as needed
+                let intervalId;
+
+                const timeoutId = setTimeout(() => {
+                    clearInterval(intervalId);
                     func();
                     resolve();
                 }, duration * 1000);
+
+                intervalId = setInterval(() => {
+                    //if checkCondition is false, cancel the function call
+                    if (!checkCondition()) {
+                        clearTimeout(timeoutId);
+                        clearInterval(intervalId);
+                        resolve();
+                    }
+                }, intervalTime);
             });
         }
 
