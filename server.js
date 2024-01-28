@@ -156,10 +156,10 @@ app.prepare().then(() => {
             game.mode = "battle";
             game.battleGrid = gridDataUrl;
             game.image = mapUrl;
-            game.activityId = `game${serverRoomName}-activity${activityCount} -${dateStamp}`
+            game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`
 
             // place enemy fighters into the players object since they will fight in the game
-            for (let j = 0; j < enemyCount; j++) {
+            for (let j = 0; j < enemyCount && j < 4; j++) {
                 const enemyKey = `${enemyType}${j + 1}`;
                 players[enemyKey] = { ...enemies[enemyType] }; // Create a new object for each enemy
                 players[enemyKey].name = enemyKey;
@@ -370,7 +370,7 @@ app.prepare().then(() => {
                         msgActivityCount++;
 
                         console.log('made it to chat complete');
-                        io.to(serverRoomName).emit('chat complete');
+                        io.to(serverRoomName).emit('chat complete', serverMessageId);
                         let completeOutput = { "role": "assistant", "content": outputMsg, "processed": true }
                         aiInOrderChatMessage.push(completeOutput)
                         chatMessages.push(completeOutput);
@@ -400,7 +400,7 @@ app.prepare().then(() => {
             //find number of active players. If more then one, set timer to make game faster
             let activePlayers = 0;
             for (let key in players) {
-                if (players.hasOwnProperty(key) && !players[key].away) {
+                if (players.hasOwnProperty(key) && !players[key].away && players[key].type == "player") {
                     activePlayers++;
                 }
             }
@@ -417,13 +417,13 @@ app.prepare().then(() => {
 
                 console.log("user: ", user)
 
-                if (players[user] && players[user]?.mode != "dice" && !players[user].away) {
+                if (players[user] && players[user]?.mode != "dice" && !players[user].away && players[user].type == "player") {
 
                     players[user].active = true;
                     players[user].mode = "dice";
                     players[user].activeSkill = skillValue.length > 0;
                     players[user].skill = skillValue;
-                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
+                    players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -436,13 +436,12 @@ app.prepare().then(() => {
                     }
                     waitingForRolls = true;
 
-                    if (activePlayers > 0) {
+                    players[user].timers.duration = 60;
+                    players[user].timers.enabled = true;
+                    //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
 
-                        players[user].timers.duration = 60;
-                        players[user].timers.enabled = true;
-                        //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]));
-                    }
+
                 }
 
             }
@@ -571,10 +570,15 @@ app.prepare().then(() => {
                     try {
                         console.log("audio is getting called?");
                         console.log("audio msg: ", msg);
-                        const mp3 = await openai.audio.speech.create(msg);
+                        const data = {
+                            model: "tts-1",
+                            voice: "onyx",
+                            input: msg.message,
+                        };
+                        const mp3 = await openai.audio.speech.create(data);
                         const buffer = Buffer.from(await mp3.arrayBuffer());
                         // Emit the buffer to the client
-                        socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence }); //ToDo. for specific user
+                        socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence, messageId: msg.messageId }); //ToDo. for specific user
 
                     } catch (error) {
                         console.error('Error:', error);
