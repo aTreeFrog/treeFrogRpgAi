@@ -370,7 +370,7 @@ app.prepare().then(() => {
                         msgActivityCount++;
 
                         console.log('made it to chat complete');
-                        io.to(serverRoomName).emit('chat complete');
+                        io.to(serverRoomName).emit('chat complete', serverMessageId);
                         let completeOutput = { "role": "assistant", "content": outputMsg, "processed": true }
                         aiInOrderChatMessage.push(completeOutput)
                         chatMessages.push(completeOutput);
@@ -570,10 +570,15 @@ app.prepare().then(() => {
                     try {
                         console.log("audio is getting called?");
                         console.log("audio msg: ", msg);
-                        const mp3 = await openai.audio.speech.create(msg);
+                        const data = {
+                            model: "tts-1",
+                            voice: "onyx",
+                            input: msg.message,
+                        };
+                        const mp3 = await openai.audio.speech.create(data);
                         const buffer = Buffer.from(await mp3.arrayBuffer());
                         // Emit the buffer to the client
-                        socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence }); //ToDo. for specific user
+                        socket.emit('play audio', { audio: buffer.toString('base64'), sequence: currentSequence, messageId: msg.messageId }); //ToDo. for specific user
 
                     } catch (error) {
                         console.error('Error:', error);

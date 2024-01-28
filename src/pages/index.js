@@ -141,6 +141,9 @@ export default function Home() {
   const [shadowDomColor, setShadowDomColor] = useState();
   const [gameObject, setGameObject] = useState();
   const prevPlayerData = useRef();
+  const speechAudioId = useRef({ messageId: null });
+  const waitingForComplete = useRef(false);
+
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -171,21 +174,43 @@ export default function Home() {
   // Ref to track if audio is currently playing
   const playNextAudio = () => {
 
+
     if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
       resumeAudioContext();
       console.log("playNextAudio expectedSequence: ", expectedSequence.current)
-      audio.current = true;
-      const audioSrc = audioQueue.current.get(expectedSequence.current);
+
+      // Retrieve the object from the map
+      const audioObj = audioQueue.current.get(expectedSequence.current);
+      const audioSrc = audioObj.audio;  // Access the audio source
+      const audioMessageId = audioObj.messageId; // If you need messageId
+
       audioQueue.current.delete(expectedSequence.current);
 
+
+      // if brand new ai message came in, reset audioId inhibit to false
+      // if user responds before ai speech is done, it will make inhibit true
+      // and rest of that message will not output in audio form.
+      if (audioMessageId != speechAudioId.current.messageId) {
+        expectedSequence.current++;
+        return;
+      }
+
       //Tone.start();
+
+      console.log("speechAudioId.current.messageId", speechAudioId.current.messageId);
+      console.log("audioMessageId", audioMessageId);
+      console.log("speechAudioId.current.inhibit", speechAudioId.current.inhibit);
+
       newAudio.current = new Tone.Player(audioSrc, () => {
         console.log("Audio is ready to play");
         volume: -10
+        audio.current = true;
         // Start the audio manually after it's loaded and connected to effects
         newAudio.current.start();
-        expectedSequence.current++;
+
       }).toDestination();
+
+
 
       //newAudio.current = new Audio(audioSrc);
       //newAudio.current.volume.value = 1;
@@ -214,8 +239,7 @@ export default function Home() {
 
       newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
-        console.log("make it here?");
-        //expectedSequence.current++;
+        expectedSequence.current++;
       };
 
       newAudio.current.onerror = (error) => {
@@ -224,7 +248,6 @@ export default function Home() {
       };
 
       newAudio.current.onended = () => {
-        console.log('Playback ended');
         newAudio.current.disconnect(); // Disconnect the player
         newAudio.current.dispose();
       };
@@ -258,7 +281,7 @@ export default function Home() {
     });
 
     chatSocket.on('latest user message', (data) => {
-      console.log('latest user message', data);
+      //console.log('latest user message', data);
       chatSocket.emit("received user message", data);
       setUpdatingChatLog(true);
       setChatLog((prevChatLog) => [...prevChatLog, { "role": 'user', "message": data.content, "mode": data.mode }])
@@ -266,7 +289,8 @@ export default function Home() {
     });
 
     const handleChatMessage = (msg) => {
-      console.log("handleChatMessage", msg);
+      waitingForComplete.current = true;
+      //console.log("handleChatMessage", msg);
       setCancelButton(1);
       setIsLoading(false);
       messageQueue.current.push(msg);
@@ -280,7 +304,7 @@ export default function Home() {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
-            textToSpeechCall(sentence); ////////////////TURN BACK ON!!!!///////////////////////////////////////////
+            textToSpeechCall(sentence, msg.messageId); ////////////////TURN BACK ON!!!!///////////////////////////////////////////
           }
           lastIndex = i + 1;  // Update the last index to the new position
         }
@@ -293,11 +317,12 @@ export default function Home() {
     };
 
 
-    const onChatComplete = () => {
+    const onChatComplete = (messageId) => {
+      waitingForComplete.current = false;
       //setCancelButton(0); // Assuming setCancelButton is a state setter function
       console.log("onChatComplete");
       if (tempBuffer.current.length > 0) {
-        textToSpeechCall(tempBuffer.current);
+        textToSpeechCall(tempBuffer.current, messageId);
       }
       tempBuffer.current = '';
 
@@ -310,7 +335,7 @@ export default function Home() {
     chatSocket.on('play audio', (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
       console.log("play audio sequence: ", recording.sequence);
-      audioQueue.current.set(recording.sequence, audioSrc);
+      audioQueue.current.set(recording.sequence, { audio: audioSrc, messageId: recording.messageId });
       //audioQueue.current.push(audioSrc);
       playNextAudio();
     });
@@ -330,7 +355,7 @@ export default function Home() {
 
     // dice roll initializer message (server only sends when starting dice mode)
     chatSocket.on('players objects', (data) => {
-      console.log("players objects received ", data);
+      //console.log("players objects received ", data);
 
       setPlayers(prevPlayers => {
         const updatedPlayers = { ...prevPlayers };
@@ -499,7 +524,7 @@ export default function Home() {
   const processQueue = () => {
     if (messageQueue.current.length > 0 && !updatingChatLog) {
       let msg = messageQueue.current.shift(); // Get the oldest message
-      console.log("processQueue: ", msg);
+      //console.log("processQueue: ", msg);
 
       if (!msg.message) {
         return;
@@ -522,6 +547,11 @@ export default function Home() {
             existingEntry.message += msg.message; // Append new content to existing message
           }
         } else if (msg.message) {
+
+          // current messageId thats on chat log, audio can see if previous one 
+          // was inhibited, and new message came in, don't inhibit it.
+          speechAudioId.current.messageId = msg.messageId;
+
           // No existing entry, add a new one
           updatedChatLog.push({
             role: msg.role,
@@ -543,12 +573,17 @@ export default function Home() {
 
 
 
-  const textToSpeechCall = async (text) => {
+  const textToSpeechCall = async (text, messageId) => {
+
     const data = {
-      model: "tts-1",
-      voice: "onyx",
-      input: text,
+      message: text,
+      messageId: messageId
     };
+    // const data = {
+    //   model: "tts-1",
+    //   voice: "onyx",
+    //   input: text,
+    // };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
     chatSocket.emit('audio message', data);
