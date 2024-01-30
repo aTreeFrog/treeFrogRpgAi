@@ -165,6 +165,8 @@ app.prepare().then(() => {
                 players[enemyKey].name = enemyKey;
                 players[enemyKey].mode = "battle";
                 players[enemyKey].battleMode = { ...players[enemyKey].battleMode }; // Create a new object for each enemy
+                players[enemyKey].timers = { ...players[enemyKey].timers };
+                players[enemyKey].diceStates = { ...players[enemyKey].diceStates };
                 players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
                 players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
                 players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
@@ -1088,15 +1090,26 @@ app.prepare().then(() => {
             return b.battleMode.initiativeRoll - a.battleMode.initiativeRoll;
         });
 
-        // Assign the turn order
+        // Assign the turn order and reset 'yourTurn' for all players
         playersArray.forEach((player, index) => {
             player.battleMode.turnOrder = index + 1;
+            player.battleMode.yourTurn = false; // Resetting 'yourTurn' for all players
         });
+
+        // Set 'yourTurn' and 'active' to true for the first player in the turn order
+        if (playersArray.length > 0) {
+            playersArray[0].battleMode.yourTurn = true;
+            playersArray[0].active = true;
+        }
 
         // Map the sorted array back to the original object structure
         playersArray.forEach(player => {
             players[player.name] = player;
         });
+
+
+
+        io.to(serverRoomName).emit('players objects', players);
     }
 
     async function checkPlayersState() {
@@ -1144,11 +1157,13 @@ app.prepare().then(() => {
             //create battle order
             assignBattleTurnOrder(players);
 
+
+
             console.log("battlemode players: ", players);
 
         }
 
-        io.emit('players objects', players);
+        io.to(serverRoomName).emit('players objects', players);
 
     };
 

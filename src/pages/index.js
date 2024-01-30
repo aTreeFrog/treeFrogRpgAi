@@ -143,6 +143,7 @@ export default function Home() {
   const prevPlayerData = useRef();
   const speechAudioId = useRef({ messageId: null });
   const waitingForComplete = useRef(false);
+  const [floatingValue, setFloatingValue] = useState(null);
 
 
   // Whenever chatLog updates, update the ref
@@ -1440,7 +1441,7 @@ export default function Home() {
                 style={boxShadowStyle}
               />
               <div className="text-center mt-6">
-                <span className="whitespace-nowrap backdrop-blur-sm rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">Roll for Initiative</span>
+                <span className="whitespace-nowrap backdrop-blur-sm mr-2 rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">Roll for Initiative</span>
               </div>
             </div>
           )}
@@ -1450,8 +1451,8 @@ export default function Home() {
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
           )}
           {/* Row of Player Images in Battle Mode */}
-          {players[userName]?.mode == "battle" && (
-            <div className="flex justify-center mt-4">
+          {players[userName]?.mode == "battle" && !floatingValue && (
+            <div className="flex justify-center mt-4 mr-8">
               {Object.values(players)
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter(player => player.userImageUrl)
@@ -1460,8 +1461,11 @@ export default function Home() {
                     key={index}
                     src={player.userImageUrl}
                     alt={player.name}
-                    className="w-10 h-10 rounded-full mx-1" // Adjust size and margin as needed
-                    style={{ border: '2px solid white' }} // Optional: border styling
+                    className={`w-10 h-10 rounded-full mx-1 ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`} // Add 'userpicture-effect' class conditionally
+                    style={{
+                      border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
+                        player.battleMode.yourTurn ? '2px solid white' : 'none'
+                    }}
                   />
                 ))
               }
@@ -1490,7 +1494,7 @@ export default function Home() {
               </div>
             )}
             <div className="text-white text-2xl font-semibold  ml-[-35px]">
-              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} />
+              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} />
             </div>
           </div>
         </div>

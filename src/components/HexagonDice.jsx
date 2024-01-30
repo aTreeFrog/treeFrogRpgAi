@@ -1,13 +1,12 @@
 // HexagonDice.js
 import { useState, useRef } from 'react';
 
-const HexagonDice = ({ diceStates, setDiceStates }) => {
+const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValue }) => {
     const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning state
     const [isD10Spinning, setIsD10Spinning] = useState(false);
     const [isD8Spinning, setIsD8Spinning] = useState(false);
     const [isD6Spinning, setIsD6Spinning] = useState(false);
     const [isD4Spinning, setIsD4Spinning] = useState(false);
-    const [floatingValue, setFloatingValue] = useState(null);
 
     const rollDice = (maxNumber) => {
 
