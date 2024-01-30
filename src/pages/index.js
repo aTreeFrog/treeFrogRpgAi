@@ -210,8 +210,6 @@ export default function Home() {
 
       }).toDestination();
 
-
-
       //newAudio.current = new Audio(audioSrc);
       //newAudio.current.volume.value = 1;
       //newAudio.current.volume = 1;
@@ -642,11 +640,15 @@ export default function Home() {
   }
 
   const handleKeyDown = (e) => {
-    resumeAudioContext();
-    // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault(); // Prevent the default action (new line)
-      handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+
+    // dont allow enter key text submission if theres a pendingDiceUpdate meaning were gonna roll soon.
+    if (!pendingDiceUpdate) {
+      resumeAudioContext();
+      // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Prevent the default action (new line)
+        handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+      }
     }
   };
 
@@ -1429,7 +1431,7 @@ export default function Home() {
               style={boxShadowStyle}
             />
           )}
-          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && (
+          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
             <div>
               <img
                 src={players[userName].battleMode.initiativeImageUrl}
@@ -1595,6 +1597,7 @@ export default function Home() {
                     style={{ minHeight: '10px' }}
                     rows={1}
                     ref={textareaRef}
+                    disabled={pendingDiceUpdate}
                   ></textarea>
                 </>
               }
@@ -1604,7 +1607,7 @@ export default function Home() {
                 ? 'bg-purple-600 hover:bg-purple-700'
                 : 'bg-grey-700 hover:bg-grey-700'
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
+              disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
               {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
             </button>
           </div>

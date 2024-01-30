@@ -238,7 +238,7 @@ app.prepare().then(() => {
                         players[user].timers.duration = 120; //seconds
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].active);
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].timers.enabled);
                     }
 
                 }
@@ -439,7 +439,7 @@ app.prepare().then(() => {
                     players[user].timers.duration = 60;
                     players[user].timers.enabled = true;
                     //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].active);
+                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].timers.enabled);
 
 
                 }
