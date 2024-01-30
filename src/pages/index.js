@@ -143,6 +143,7 @@ export default function Home() {
   const prevPlayerData = useRef();
   const speechAudioId = useRef({ messageId: null });
   const waitingForComplete = useRef(false);
+  const [floatingValue, setFloatingValue] = useState(null);
 
 
   // Whenever chatLog updates, update the ref
@@ -209,8 +210,6 @@ export default function Home() {
         newAudio.current.start();
 
       }).toDestination();
-
-
 
       //newAudio.current = new Audio(audioSrc);
       //newAudio.current.volume.value = 1;
@@ -642,11 +641,15 @@ export default function Home() {
   }
 
   const handleKeyDown = (e) => {
-    resumeAudioContext();
-    // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault(); // Prevent the default action (new line)
-      handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+
+    // dont allow enter key text submission if theres a pendingDiceUpdate meaning were gonna roll soon.
+    if (!pendingDiceUpdate) {
+      resumeAudioContext();
+      // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Prevent the default action (new line)
+        handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+      }
     }
   };
 
@@ -1429,7 +1432,7 @@ export default function Home() {
               style={boxShadowStyle}
             />
           )}
-          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && (
+          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
             <div>
               <img
                 src={players[userName].battleMode.initiativeImageUrl}
@@ -1438,7 +1441,7 @@ export default function Home() {
                 style={boxShadowStyle}
               />
               <div className="text-center mt-6">
-                <span className="whitespace-nowrap backdrop-blur-sm rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">Roll for Initiative</span>
+                <span className="whitespace-nowrap backdrop-blur-sm mr-2 rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">Roll for Initiative</span>
               </div>
             </div>
           )}
@@ -1446,6 +1449,27 @@ export default function Home() {
             <BattleMap
               gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
+          )}
+          {/* Row of Player Images in Battle Mode */}
+          {players[userName]?.mode == "battle" && !floatingValue && (
+            <div className="flex justify-center mt-4 mr-8">
+              {Object.values(players)
+                .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
+                .filter(player => player.userImageUrl)
+                .map((player, index) => (
+                  <img
+                    key={index}
+                    src={player.userImageUrl}
+                    alt={player.name}
+                    className={`w-10 h-10 rounded-full mx-1 ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`} // Add 'userpicture-effect' class conditionally
+                    style={{
+                      border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
+                        player.battleMode.yourTurn ? '2px solid white' : 'none'
+                    }}
+                  />
+                ))
+              }
+            </div>
           )}
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
@@ -1470,7 +1494,7 @@ export default function Home() {
               </div>
             )}
             <div className="text-white text-2xl font-semibold  ml-[-35px]">
-              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} />
+              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} />
             </div>
           </div>
         </div>
@@ -1595,6 +1619,7 @@ export default function Home() {
                     style={{ minHeight: '10px' }}
                     rows={1}
                     ref={textareaRef}
+                    disabled={pendingDiceUpdate}
                   ></textarea>
                 </>
               }
@@ -1604,7 +1629,7 @@ export default function Home() {
                 ? 'bg-purple-600 hover:bg-purple-700'
                 : 'bg-grey-700 hover:bg-grey-700'
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={diceStates.d20.isGlowActive && !diceSelectionOption}>
+              disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
               {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
             </button>
           </div>

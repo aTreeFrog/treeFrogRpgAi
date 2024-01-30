@@ -164,10 +164,14 @@ app.prepare().then(() => {
                 players[enemyKey] = { ...enemies[enemyType] }; // Create a new object for each enemy
                 players[enemyKey].name = enemyKey;
                 players[enemyKey].mode = "battle";
-                players[enemyKey].initiative = Math.floor(Math.random() * 20) + 1; //between 1 and 20
+                players[enemyKey].battleMode = { ...players[enemyKey].battleMode }; // Create a new object for each enemy
+                players[enemyKey].timers = { ...players[enemyKey].timers };
+                players[enemyKey].diceStates = { ...players[enemyKey].diceStates };
+                players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
                 players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
                 players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
                 players[enemyKey].yPosition = initGridData[mapName].Enemies[j][1];
+                players[enemyKey].userImageUrl = 'http://localhost:3000/userImages/goblin.png';
                 defaultPlayersBattleInitMode(enemyKey);
 
                 console.log("xpos", players[enemyKey].xPosition);
@@ -238,7 +242,7 @@ app.prepare().then(() => {
                         players[user].timers.duration = 120; //seconds
                         players[user].timers.enabled = true;
                         //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].active);
+                        waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].timers.enabled);
                     }
 
                 }
@@ -439,7 +443,7 @@ app.prepare().then(() => {
                     players[user].timers.duration = 60;
                     players[user].timers.enabled = true;
                     //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].active);
+                    waitAndCall(players[user].timers.duration, () => forceResetCheck(players[user]), () => players[user].timers.enabled);
 
 
                 }
@@ -968,6 +972,7 @@ app.prepare().then(() => {
                     enabled: false
                 },
                 figureIcon: "/icons/wizard.svg",
+                userImageUrl: `http://localhost:3000/userImages/${userName}.png`
             };
 
             players[userName] = newPlayer;
@@ -1075,6 +1080,37 @@ app.prepare().then(() => {
         players[userName].timers.enabled = false;
     }
 
+    function assignBattleTurnOrder(players) {
+        // Convert the object values into an array and then sort
+        const playersArray = Object.values(players).sort((a, b) => {
+            if (a.battleMode.initiativeRoll === b.battleMode.initiativeRoll) {
+                // Randomly return -1 or 1 when there's a tie.
+                return Math.random() < 0.5 ? -1 : 1;
+            }
+            return b.battleMode.initiativeRoll - a.battleMode.initiativeRoll;
+        });
+
+        // Assign the turn order and reset 'yourTurn' for all players
+        playersArray.forEach((player, index) => {
+            player.battleMode.turnOrder = index + 1;
+            player.battleMode.yourTurn = false; // Resetting 'yourTurn' for all players
+        });
+
+        // Set 'yourTurn' and 'active' to true for the first player in the turn order
+        if (playersArray.length > 0) {
+            playersArray[0].battleMode.yourTurn = true;
+            playersArray[0].active = true;
+        }
+
+        // Map the sorted array back to the original object structure
+        playersArray.forEach(player => {
+            players[player.name] = player;
+        });
+
+
+
+        io.to(serverRoomName).emit('players objects', players);
+    }
 
     async function checkPlayersState() {
 
@@ -1118,9 +1154,16 @@ app.prepare().then(() => {
             });
             activityCount++;
 
+            //create battle order
+            assignBattleTurnOrder(players);
+
+
+
+            console.log("battlemode players: ", players);
+
         }
 
-        io.emit('players objects', players);
+        io.to(serverRoomName).emit('players objects', players);
 
     };
 
