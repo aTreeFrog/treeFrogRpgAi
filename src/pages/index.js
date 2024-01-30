@@ -1449,6 +1449,24 @@ export default function Home() {
               gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
           )}
+          {/* Row of Player Images in Battle Mode */}
+          {players[userName]?.mode == "battle" && (
+            <div className="flex justify-center mt-4">
+              {Object.values(players)
+                .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
+                .filter(player => player.userImageUrl)
+                .map((player, index) => (
+                  <img
+                    key={index}
+                    src={player.userImageUrl}
+                    alt={player.name}
+                    className="w-10 h-10 rounded-full mx-1" // Adjust size and margin as needed
+                    style={{ border: '2px solid white' }} // Optional: border styling
+                  />
+                ))
+              }
+            </div>
+          )}
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}

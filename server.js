@@ -164,10 +164,12 @@ app.prepare().then(() => {
                 players[enemyKey] = { ...enemies[enemyType] }; // Create a new object for each enemy
                 players[enemyKey].name = enemyKey;
                 players[enemyKey].mode = "battle";
-                players[enemyKey].initiative = Math.floor(Math.random() * 20) + 1; //between 1 and 20
+                players[enemyKey].battleMode = { ...players[enemyKey].battleMode }; // Create a new object for each enemy
+                players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
                 players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
                 players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
                 players[enemyKey].yPosition = initGridData[mapName].Enemies[j][1];
+                players[enemyKey].userImageUrl = 'http://localhost:3000/userImages/goblin.png';
                 defaultPlayersBattleInitMode(enemyKey);
 
                 console.log("xpos", players[enemyKey].xPosition);
@@ -968,6 +970,7 @@ app.prepare().then(() => {
                     enabled: false
                 },
                 figureIcon: "/icons/wizard.svg",
+                userImageUrl: `http://localhost:3000/userImages/${userName}.png`
             };
 
             players[userName] = newPlayer;
@@ -1075,6 +1078,26 @@ app.prepare().then(() => {
         players[userName].timers.enabled = false;
     }
 
+    function assignBattleTurnOrder(players) {
+        // Convert the object values into an array and then sort
+        const playersArray = Object.values(players).sort((a, b) => {
+            if (a.battleMode.initiativeRoll === b.battleMode.initiativeRoll) {
+                // Randomly return -1 or 1 when there's a tie.
+                return Math.random() < 0.5 ? -1 : 1;
+            }
+            return b.battleMode.initiativeRoll - a.battleMode.initiativeRoll;
+        });
+
+        // Assign the turn order
+        playersArray.forEach((player, index) => {
+            player.battleMode.turnOrder = index + 1;
+        });
+
+        // Map the sorted array back to the original object structure
+        playersArray.forEach(player => {
+            players[player.name] = player;
+        });
+    }
 
     async function checkPlayersState() {
 
@@ -1117,6 +1140,11 @@ app.prepare().then(() => {
 
             });
             activityCount++;
+
+            //create battle order
+            assignBattleTurnOrder(players);
+
+            console.log("battlemode players: ", players);
 
         }
 
