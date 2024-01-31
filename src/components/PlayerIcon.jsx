@@ -2,8 +2,11 @@
 import React from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord }) => {
     const [image] = useImage(playerData.figureIcon);
+
+    // takes into account amount a player moved during their turn
+    let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
 
     if (!image) {
         return null; // Or some placeholder
@@ -32,16 +35,21 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
             Math.pow(playerY - pixelY, 2)
         );
 
+        const myX = Math.round(playerX / gridSpacing);
+        const myY = Math.round(playerY / gridSpacing);
+
         console.log("key ", playerName);
         console.log("userName ", userName)
 
+        //ensures coordinate moving to is not taken by another player
+        const isUnavailable = unavailCoord.some(coord => {
+            return coord[0] === myX && coord[1] === myY;
+        });
 
-        if (distance <= travelZoneRadius && playerName == userName) {
+
+        if (!isUnavailable && (distance <= travelZone && playerName == userName)) {
             // Calculate the center of the nearest grid cell
             // We use Math.round here to snap to the nearest grid cell based on the icon's current position
-
-            const myX = Math.round(playerX / gridSpacing);
-            const myY = Math.round(playerY / gridSpacing);
 
             console.log("myX  myY", myX, myY);
 
@@ -63,11 +71,11 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            {playerData.type !== 'enemy' && (
+            {playerData.type !== 'enemy' && clickable && (
                 <Circle
                     x={pixelX}
                     y={pixelY}
-                    radius={travelZoneRadius} // Larger radius for the travel zone
+                    radius={travelZone} // Larger radius for the travel zone
                     fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
                     className={animationClass}
                 />
@@ -78,8 +86,8 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 y={pixelY}
                 scaleX={playerScale}
                 scaleY={playerScale}
-                draggable
-                onDragEnd={(e) => handleDragEnd(e)}
+                draggable={clickable}
+                onDragEnd={(e) => clickable && handleDragEnd(e)}
             />
         </>
     );
