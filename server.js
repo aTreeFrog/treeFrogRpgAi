@@ -167,7 +167,8 @@ app.prepare().then(() => {
                 players[enemyKey].battleMode = { ...players[enemyKey].battleMode }; // Create a new object for each enemy
                 players[enemyKey].timers = { ...players[enemyKey].timers };
                 players[enemyKey].diceStates = { ...players[enemyKey].diceStates };
-                players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
+                players[enemyKey].battleMode.initiativeRoll = 1; /////REMOVE THIS LATER FOR TESTING ONLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                //players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
                 players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
                 players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
                 players[enemyKey].yPosition = initGridData[mapName].Enemies[j][1];
@@ -1107,9 +1108,10 @@ app.prepare().then(() => {
             players[player.name] = player;
         });
 
-
-
         io.to(serverRoomName).emit('players objects', players);
+
+
+
     }
 
     async function checkPlayersState() {

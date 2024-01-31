@@ -144,6 +144,9 @@ export default function Home() {
   const speechAudioId = useRef({ messageId: null });
   const waitingForComplete = useRef(false);
   const [floatingValue, setFloatingValue] = useState(null);
+  const [yourTurnText, setYourTurnText] = useState(false);
+  const [showOverlayText, setShowOverlayText] = useState(false);
+
 
 
   // Whenever chatLog updates, update the ref
@@ -505,6 +508,41 @@ export default function Home() {
 
 
   }, [players[userName]?.xPosition, players[userName]?.yPosition]);
+
+  //makes the your turn text appear over the battle map for a little bit
+  useEffect(() => {
+
+    if (players[userName]?.battleMode?.yourTurn) {
+      setTimeout(() => {
+        setYourTurnText(true);
+      }, 2000);
+      setYourTurnText(true); // Use newValue directly
+      setTimeout(() => {
+        setYourTurnText(false);
+      }, 5000);
+
+    }
+  }, [players[userName]?.battleMode?.yourTurn]);
+
+  // makes the your turn text fade away
+  useEffect(() => {
+    if (yourTurnText) {
+      setShowOverlayText(true);
+    } else {
+      // Start the fade-out transition
+      const element = document.querySelector('.overlay-text');
+      if (element) {
+        element.classList.add('your-turn-fade');
+      }
+      // Use a timeout to match the CSS transition duration
+      setTimeout(() => {
+        setShowOverlayText(false);
+      }, 2000); // 1000ms = 1s
+    }
+  }, [yourTurnText]);
+
+
+
 
 
 
@@ -1446,9 +1484,17 @@ export default function Home() {
             </div>
           )}
           {players[userName]?.mode == "battle" && (
-            <BattleMap
-              gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6" />
+            <>
+              <BattleMap
+                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
+                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
+              />
+              {showOverlayText && (
+                <div className="overlay-text">
+                  Your Turn
+                </div>
+              )}
+            </>
           )}
           {/* Row of Player Images in Battle Mode */}
           {players[userName]?.mode == "battle" && !floatingValue && (
