@@ -2,12 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import SkillSheet from './SkillSheet';
 import AttackSheet from './AttackSheet';
 
-export default function CharacterSheet({ name, race, characterClass, level, activeSkill }) {
+export default function CharacterSheet({ name, race, characterClass, level, activeSkill, activeTab, setActiveTab }) {
     const raceRef = useRef(null);
     const classRef = useRef(null);
     const [raceLineWidth, setRaceLineWidth] = useState('0px');
     const [classLineWidth, setClassLineWidth] = useState('0px');
-    const [activeTab, setActiveTab] = useState('Skills');
 
     useEffect(() => {
         // Calculating for Race

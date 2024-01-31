@@ -146,6 +146,7 @@ export default function Home() {
   const [floatingValue, setFloatingValue] = useState(null);
   const [yourTurnText, setYourTurnText] = useState(false);
   const [showOverlayText, setShowOverlayText] = useState(false);
+  const [activeTab, setActiveTab] = useState('Skills');
 
 
 
@@ -513,6 +514,7 @@ export default function Home() {
   useEffect(() => {
 
     if (players[userName]?.battleMode?.yourTurn) {
+      setActiveTab("Attacks/Spells");
       setTimeout(() => {
         setYourTurnText(true);
       }, 2000);
@@ -1419,7 +1421,7 @@ export default function Home() {
             <div>
               <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
               <div>
-                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} />
+                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} />
               </div>
             </div>
             {/* Toggle Meeting Panel Button */}
