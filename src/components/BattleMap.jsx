@@ -77,6 +77,9 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
             return coord[0] === clickedGridX && coord[1] === clickedGridY;
         });
 
+        console.log("distanceMoved", players[userName]?.battleMode?.distanceMoved);
+        console.log("radius stuff", (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)));
+
         if (!isUnavailable && (distance <= (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)))) {
             console.log("Clicked Grid Position:", clickedGridX, clickedGridY);
             console.log("Clicked Pixel Position:", clickedPixelX, clickedPixelY);

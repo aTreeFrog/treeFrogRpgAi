@@ -1495,7 +1495,7 @@ export default function Home() {
                 className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
               />
               {showOverlayText && (
-                <div className="overlay-text">
+                <div className="overlay-text bubble-in">
                   Your Turn
                 </div>
               )}

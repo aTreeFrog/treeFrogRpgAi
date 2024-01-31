@@ -740,7 +740,7 @@ app.prepare().then(() => {
                 if (functionData.name == "createDallEImage") {
                     argumentsJson = JSON.parse(functionData.arguments);
                     promptValue = argumentsJson.prompt;
-                    createDallEImage(promptValue);  ////////////TURN BACK ON!!!////////////////
+                    //createDallEImage(promptValue);  ////////////TURN BACK ON!!!////////////////
                 }
             }
 
@@ -1059,6 +1059,26 @@ app.prepare().then(() => {
         socket.on('player moved', (data) => {
 
             if (players.hasOwnProperty(data.name)) {
+
+                //calculate distance moved
+                // Old position
+                let oldX = players[data.name].xPosition;
+                let oldY = players[data.name].yPosition
+
+                // New position
+                let newX = data.xPosition;
+                let newY = data.yPosition;
+
+                // Calculate the number of steps
+                let steps = Math.max(Math.abs(newX - oldX), Math.abs(newY - oldY));
+
+                // Each step is equivalent to 7 feet
+                let distanceMoved = steps * 7;
+
+                console.log("distanceMoved: ", distanceMoved)
+
+                // Add the distance moved and new x,y position
+                players[data.name].battleMode.distanceMoved += distanceMoved;
                 players[data.name].xPosition = data.xPosition;
                 players[data.name].yPosition = data.yPosition;
                 players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
