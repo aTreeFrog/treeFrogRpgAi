@@ -4,7 +4,7 @@ export default function SkillSheet({ highlight }) {
 
     return (
         <div className="relative block p-3 text-white text-serif text-2xl font-semibold rounded"
-            style={{ height: '23.5rem', width: '69%', position: 'absolute', top: '27%', left: '29%', backgroundColor: "rgba(45, 55, 72, 0.2)" }}>
+            style={{ height: '23.5rem', width: '69%', position: 'absolute', top: '27%', left: '29%', backgroundColor: "rgba(45, 55, 72, 0.2)", borderRadius: "5px", }}>
             <div className="flex flex-col items-start mb-2">
                 <div className="flex items-end">
                     {/* Container for the number and line */}

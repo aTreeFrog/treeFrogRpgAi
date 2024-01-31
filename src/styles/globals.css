@@ -955,3 +955,17 @@ textarea {
 .your-turn-fade {
     opacity: 0;
 }
+
+@keyframes glowing {
+    0% {
+        box-shadow: 0 0 5px #b8e994, 0 0 8px #b8e994;
+    }
+
+    50% {
+        box-shadow: 0 0 10px #b8e994, 0 0 12px #b8e994;
+    }
+
+    100% {
+        box-shadow: 0 0 5px #b8e994, 0 0 8px #b8e994;
+    }
+}
