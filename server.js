@@ -158,29 +158,6 @@ app.prepare().then(() => {
             game.image = mapUrl;
             game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`
 
-            // place enemy fighters into the players object since they will fight in the game
-            for (let j = 0; j < enemyCount && j < 4; j++) {
-                const enemyKey = `${enemyType}${j + 1}`;
-                players[enemyKey] = { ...enemies[enemyType] }; // Create a new object for each enemy
-                players[enemyKey].name = enemyKey;
-                players[enemyKey].mode = "battle";
-                players[enemyKey].battleMode = { ...players[enemyKey].battleMode }; // Create a new object for each enemy
-                players[enemyKey].timers = { ...players[enemyKey].timers };
-                players[enemyKey].diceStates = { ...players[enemyKey].diceStates };
-                players[enemyKey].battleMode.initiativeRoll = 1; /////REMOVE THIS LATER FOR TESTING ONLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                //players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
-                players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
-                players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
-                players[enemyKey].yPosition = initGridData[mapName].Enemies[j][1];
-                players[enemyKey].userImageUrl = 'http://localhost:3000/userImages/goblin.png';
-                defaultPlayersBattleInitMode(enemyKey);
-
-                console.log("xpos", players[enemyKey].xPosition);
-                console.log("ypos", players[enemyKey].yPosition);
-                console.log("all players with enemies", players);
-
-            }
-
             let activePlayers = 0;
             //update players state for init battle mode
             let i = 0;
@@ -189,6 +166,12 @@ app.prepare().then(() => {
                 // figure out how many active players
                 if (players.hasOwnProperty(user) && !players[user].away && players[user].type == "player") {
                     activePlayers++;
+                }
+
+                // delete any enemies that may have existed in previous battles
+                if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+                    delete players[user]
+
                 }
 
                 if (players.hasOwnProperty(user) && players[user].type == "player") {
@@ -247,6 +230,29 @@ app.prepare().then(() => {
                     }
 
                 }
+
+            }
+
+            // place enemy fighters into the players object since they will fight in the game
+            for (let j = 0; j < enemyCount && j < 4; j++) {
+                const enemyKey = `${enemyType}${j + 1}`;
+                players[enemyKey] = { ...enemies[enemyType] }; // Create a new object for each enemy
+                players[enemyKey].name = enemyKey;
+                players[enemyKey].mode = "battle";
+                players[enemyKey].battleMode = { ...players[enemyKey].battleMode }; // Create a new object for each enemy
+                players[enemyKey].timers = { ...players[enemyKey].timers };
+                players[enemyKey].diceStates = { ...players[enemyKey].diceStates };
+                players[enemyKey].battleMode.initiativeRoll = 1; /////REMOVE THIS LATER FOR TESTING ONLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                //players[enemyKey].battleMode.initiativeRoll = Math.floor(Math.random() * 20) + 1; //between 1 and 20
+                players[enemyKey].activityId = `user${enemyKey}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+                players[enemyKey].xPosition = initGridData[mapName].Enemies[j][0];
+                players[enemyKey].yPosition = initGridData[mapName].Enemies[j][1];
+                players[enemyKey].userImageUrl = 'http://localhost:3000/userImages/goblin.png';
+                defaultPlayersBattleInitMode(enemyKey);
+
+                console.log("xpos", players[enemyKey].xPosition);
+                console.log("ypos", players[enemyKey].yPosition);
+                console.log("all players with enemies", players);
 
             }
             activityCount++;
