@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import SkillSheet from './SkillSheet';
 import AttackSheet from './AttackSheet';
 
-export default function CharacterSheet({ name, race, characterClass, level, activeSkill, activeTab, setActiveTab }) {
+export default function CharacterSheet({ name, race, characterClass, level, activeSkill, activeTab, setActiveTab, player }) {
     const raceRef = useRef(null);
     const classRef = useRef(null);
     const [raceLineWidth, setRaceLineWidth] = useState('0px');
@@ -254,7 +254,7 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
                 )}
                 {activeTab === 'Attacks/Spells' && (
                     <div>
-                        <AttackSheet />
+                        <AttackSheet player={player} />
                     </div>
                 )}
             </div>

@@ -12,9 +12,23 @@ const yourDataArray = [
     // Add more mock data as needed
 ];
 
-export default function AttackSheet() {
+export default function AttackSheet(player) {
     const [selectedRow, setSelectedRow] = useState(null);
     const [hoveredRow, setHoveredRow] = useState(null);
+    const [headerGlow, setHeaderGlow] = useState(false);
+
+
+    useEffect(() => {
+
+        if (player && player['player'].battleMode?.yourTurn && !player['player']?.battleMode?.actionAttempted) {
+
+            setHeaderGlow(true);
+        } else {
+            console.log("setHeaderGlow", player['player']);
+            setHeaderGlow(false);
+        }
+
+    }, [player]);
 
     const getClassName = (item, position) => {
         if (selectedRow === item) {
@@ -33,14 +47,17 @@ export default function AttackSheet() {
                 position: 'absolute',
                 top: '27%', // Adjust the top position as needed
                 left: '29%',
+                borderRadius: '5px',
                 backgroundColor: "rgba(45, 55, 72, 0.2)",
+                boxShadow: headerGlow ? '0 0 8px #b8e994, 0 0 8px #b8e994' : 'none',
+                //animation: headerGlow ? 'glowing 4s infinite' : 'none',
             }}
         >
             <div className="absolute top-1/2 left-1/2 overflow-auto scrollable-container transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-opacity-20">
                 <div className="grid grid-cols-3 text-white font-semibold text-center whitespace-nowrap">
-                    <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">Name</button>
-                    <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">ATK Bonus</button>
-                    <button onClick={() => setSelectedRow(null)} className="p-3 text-sm attack-header-border">Damage</button>
+                    <button onClick={() => setSelectedRow(null)} className={`p-3 text-sm attack-header-border`}>Name</button>
+                    <button onClick={() => setSelectedRow(null)} className={`p-3 text-sm attack-header-border`} style={{ paddingLeft: '5px' }}>ATK Bonus</button>
+                    <button onClick={() => setSelectedRow(null)} className={`p-3 text-sm attack-header-border`}>Damage</button>
                     {/* Dynamic data cells */}
                     {/* Use a mapping function to generate the data cells dynamically */}
                     {yourDataArray.map((item, index) => (

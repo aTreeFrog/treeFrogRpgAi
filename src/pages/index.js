@@ -1424,7 +1424,7 @@ export default function Home() {
             <div>
               <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
               <div>
-                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} />
+                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} player={players[userName]} />
               </div>
             </div>
             {/* Toggle Meeting Panel Button */}
