@@ -19,6 +19,8 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const gridY = playerData.yPosition;
     const pixelX = gridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
+    const circleX = gridX * gridSpacing + gridSpacing / 2;
+    const circleY = gridY * gridSpacing + gridSpacing / 2;
 
     console.log("playerName", playerName);
     console.log("gridy", gridY);
@@ -73,8 +75,8 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
         <>
             {playerData.type !== 'enemy' && clickable && (
                 <Circle
-                    x={pixelX}
-                    y={pixelY}
+                    x={circleX}
+                    y={circleY}
                     radius={travelZone} // Larger radius for the travel zone
                     fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
                     className={animationClass}
