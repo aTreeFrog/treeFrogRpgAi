@@ -2,7 +2,7 @@
 import React from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord }) => {
     const [image] = useImage(playerData.figureIcon);
 
     // takes into account amount a player moved during their turn
@@ -35,16 +35,21 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
             Math.pow(playerY - pixelY, 2)
         );
 
+        const myX = Math.round(playerX / gridSpacing);
+        const myY = Math.round(playerY / gridSpacing);
+
         console.log("key ", playerName);
         console.log("userName ", userName)
 
+        //ensures coordinate moving to is not taken by another player
+        const isUnavailable = unavailCoord.some(coord => {
+            return coord[0] === myX && coord[1] === myY;
+        });
 
-        if (distance <= travelZone && playerName == userName) {
+
+        if (!isUnavailable && (distance <= travelZone && playerName == userName)) {
             // Calculate the center of the nearest grid cell
             // We use Math.round here to snap to the nearest grid cell based on the icon's current position
-
-            const myX = Math.round(playerX / gridSpacing);
-            const myY = Math.round(playerY / gridSpacing);
 
             console.log("myX  myY", myX, myY);
 

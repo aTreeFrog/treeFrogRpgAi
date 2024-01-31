@@ -15,6 +15,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
     const [pixelX, setPixelX] = useState();
     const [pixelY, setPixelY] = useState();
     const [clickable, setClickable] = useState(false);
+    const [unavailCoord, setUnavailCoord] = useState([])
 
     useEffect(() => {
         if (status === 'loaded') {
@@ -71,7 +72,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
 
         console.log("distance", distance);
 
-        if (distance <= (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved))) {
+        //ensures coordinate moving to is not taken by another player
+        const isUnavailable = unavailCoord.some(coord => {
+            return coord[0] === clickedGridX && coord[1] === clickedGridY;
+        });
+
+        if (!isUnavailable && (distance <= (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)))) {
             console.log("Clicked Grid Position:", clickedGridX, clickedGridY);
             console.log("Clicked Pixel Position:", clickedPixelX, clickedPixelY);
 
@@ -120,6 +126,18 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
 
     }, [imageFigureUrl, players[userName]]);
 
+    // set unavailable move to coordinates cause theres players there
+    useEffect(() => {
+        const newUnavailCoord = Object.entries(players).map(([playerName, playerData]) => {
+            return [playerData.xPosition, playerData.yPosition];
+        });
+
+        console.log("newUnavailCoord", newUnavailCoord);
+
+        setUnavailCoord(newUnavailCoord);
+
+    }, [players]);
+
 
 
 
@@ -147,6 +165,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                                 updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
                                 travelZoneRadius={travelZoneRadius}
                                 clickable={clickable}
+                                unavailCoord={unavailCoord}
                             />
                         ))}
                     </Layer>

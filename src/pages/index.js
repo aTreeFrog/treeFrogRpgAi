@@ -360,6 +360,8 @@ export default function Home() {
     chatSocket.on('players objects', (data) => {
       //console.log("players objects received ", data);
 
+      //ToDo: SEE IF WE CAN PREVENT UPDATING THE USESTATE OF PLAYERS IF ITS NOT UPDATED INFORMATION
+
       setPlayers(prevPlayers => {
         const updatedPlayers = { ...prevPlayers };
 
