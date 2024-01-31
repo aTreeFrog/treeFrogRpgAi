@@ -2,8 +2,11 @@
 import React from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable }) => {
     const [image] = useImage(playerData.figureIcon);
+
+    // takes into account amount a player moved during their turn
+    let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
 
     if (!image) {
         return null; // Or some placeholder
@@ -36,7 +39,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
         console.log("userName ", userName)
 
 
-        if (distance <= travelZoneRadius && playerName == userName) {
+        if (distance <= travelZone && playerName == userName) {
             // Calculate the center of the nearest grid cell
             // We use Math.round here to snap to the nearest grid cell based on the icon's current position
 
@@ -63,11 +66,11 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            {playerData.type !== 'enemy' && (
+            {playerData.type !== 'enemy' && clickable && (
                 <Circle
                     x={pixelX}
                     y={pixelY}
-                    radius={travelZoneRadius} // Larger radius for the travel zone
+                    radius={travelZone} // Larger radius for the travel zone
                     fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
                     className={animationClass}
                 />
@@ -78,8 +81,8 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 y={pixelY}
                 scaleX={playerScale}
                 scaleY={playerScale}
-                draggable
-                onDragEnd={(e) => handleDragEnd(e)}
+                draggable={clickable}
+                onDragEnd={(e) => clickable && handleDragEnd(e)}
             />
         </>
     );

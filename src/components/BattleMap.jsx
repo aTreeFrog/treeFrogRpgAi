@@ -8,12 +8,13 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
     const [scale, setScale] = useState(1); // Default scale is 1
     //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
     const [imageLoaded, setImageLoaded] = useState(false);
-    const travelZoneRadius = 200;
+    const travelZoneRadius = 6.67;
     const [imageFigureUrl, setImageFigureUrl] = useState(null);
     let [userNameFigureImage] = useImage(imageFigureUrl);
     const [playerSize, setPlayerSize] = useState();
     const [pixelX, setPixelX] = useState();
     const [pixelY, setPixelY] = useState();
+    const [clickable, setClickable] = useState(false);
 
     useEffect(() => {
         if (status === 'loaded') {
@@ -70,7 +71,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
 
         console.log("distance", distance);
 
-        if (distance <= travelZoneRadius) {
+        if (distance <= (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved))) {
             console.log("Clicked Grid Position:", clickedGridX, clickedGridY);
             console.log("Clicked Pixel Position:", clickedPixelX, clickedPixelY);
 
@@ -92,6 +93,9 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                 yPosition: newY,
             }
         }));
+
+
+
     };
 
 
@@ -107,7 +111,16 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
             setPixelY(gridY * gridSpacing + gridSpacing / 2 - playerSize / 2);
             console.log("battlemap pixelX", pixelX);
         }
+
+        if (players[userName]?.battleMode?.yourTurn) {
+            setClickable(true);
+        } else {
+            setClickable(false);
+        }
+
     }, [imageFigureUrl, players[userName]]);
+
+
 
 
     return (
@@ -117,8 +130,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                 <Stage
                     width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
                     className={animationClass}
-                    onClick={handleMapClick}
-                    onTap={handleMapClick}
+                    onClick={clickable ? handleMapClick : null}
+                    onTap={clickable ? handleMapClick : null}
                 >
                     <Layer>
                         <Image image={image} scaleX={scale} scaleY={scale}
@@ -133,6 +146,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                                 imageLoaded={imageLoaded}
                                 updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
                                 travelZoneRadius={travelZoneRadius}
+                                clickable={clickable}
                             />
                         ))}
                     </Layer>

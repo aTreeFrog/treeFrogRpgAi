@@ -503,6 +503,7 @@ export default function Home() {
 
     if (players[userName]?.xPosition && players[userName]?.yPosition) {
 
+
       chatSocket.emit('player moved', players[userName]);
 
     }
