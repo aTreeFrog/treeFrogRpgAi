@@ -146,7 +146,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 setLineLength(attack.distance);
                 // Assuming xWidth and yWidth are diameters, calculating average radius
                 const radius = (attack.xWidth + attack.yWidth) / 4; // Divided by 4 because we need the average radius
-                setAttackRadius(radius);
+                setAttackRadius(radius * travelZoneRadius);
             }
         }
 
