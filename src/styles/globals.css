@@ -969,3 +969,17 @@ textarea {
         box-shadow: 0 0 5px rgb(204, 85, 0), 0 0 8px rgb(204, 85, 0);
     }
 }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 2s ease-in-out;
+}

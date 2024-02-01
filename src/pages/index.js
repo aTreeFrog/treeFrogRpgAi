@@ -1497,11 +1497,11 @@ export default function Home() {
           {players[userName]?.mode == "battle" && (
             <>
               <BattleMap
-                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
+                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow}
                 className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
               />
               {showOverlayText && (
-                <div className="overlay-text bubble-in">
+                <div className="overlay-text fade-in">
                   Your Turn
                 </div>
               )}

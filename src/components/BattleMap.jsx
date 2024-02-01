@@ -3,7 +3,7 @@ import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 
-const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) => {
+const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
     const [scale, setScale] = useState(1); // Default scale is 1
     //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
@@ -16,6 +16,16 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
     const [pixelY, setPixelY] = useState();
     const [clickable, setClickable] = useState(false);
     const [unavailCoord, setUnavailCoord] = useState([])
+    const [lineLength, setLineLength] = useState();
+    const [cursorPos, setCursorPos] = useState({ x: -50, y: -50 }); // Initial position off-screen
+    const [attackRadius, setAttackRadius] = useState(0); // Initial attack radius
+
+
+    const handleMouseMove = (e) => {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
+        setCursorPos(pointerPosition);
+    };
 
     useEffect(() => {
         if (status === 'loaded') {
@@ -121,13 +131,26 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
             console.log("battlemap pixelX", pixelX);
         }
 
-        if (players[userName]?.battleMode?.yourTurn) {
+        console.log("selectedRow", selectedRow);
+        //selected row means the user selected an attack, so dont show travel radius circle
+        if (players[userName]?.battleMode?.yourTurn && !selectedRow) {
             setClickable(true);
         } else {
             setClickable(false);
         }
 
-    }, [imageFigureUrl, players[userName]]);
+        if (players[userName]?.battleMode?.yourTurn && selectedRow) {
+            const attack = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
+            console.log("attack", attack);
+            if (attack) {
+                setLineLength(attack.distance);
+                // Assuming xWidth and yWidth are diameters, calculating average radius
+                const radius = (attack.xWidth + attack.yWidth) / 4; // Divided by 4 because we need the average radius
+                setAttackRadius(radius);
+            }
+        }
+
+    }, [imageFigureUrl, players[userName], selectedRow]);
 
     // set unavailable move to coordinates cause theres players there
     useEffect(() => {
@@ -153,11 +176,20 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                     className={animationClass}
                     onClick={clickable ? handleMapClick : null}
                     onTap={clickable ? handleMapClick : null}
+                    onMouseMove={handleMouseMove}
                 >
                     <Layer>
                         <Image image={image} scaleX={scale} scaleY={scale}
                             className={animationClass} />
                         {drawGrid()}
+                        {/* Cursor-following attack range circle */}
+                        <Circle
+                            x={cursorPos.x}
+                            y={cursorPos.y}
+                            radius={attackRadius}
+                            fill="rgba(0, 0, 255, 0.3)" // Example styling
+                            visible={!!attackRadius} // Only visible if attackRadius is set
+                        />
                         {Object.entries(players).map(([playerName, playerData]) => (
                             <PlayerIcon key={playerName}
                                 playerName={playerName}
@@ -169,6 +201,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                                 travelZoneRadius={travelZoneRadius}
                                 clickable={clickable}
                                 unavailCoord={unavailCoord}
+                                selectedRow={selectedRow}
                             />
                         ))}
                     </Layer>
