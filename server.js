@@ -170,6 +170,7 @@ app.prepare().then(() => {
 
                 // delete any enemies that may have existed in previous battles
                 if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+                    console.log("deleting player", user);
                     delete players[user]
 
                 }
@@ -962,9 +963,11 @@ app.prepare().then(() => {
                 attacks: [{
                     name: "staff",
                     attackBonus: 5,
-                    damage: "2d6+2",
+                    damage: "1d6",
                     type: "melee",
-                    distance: 5
+                    distance: 7,
+                    xWidth: 7,
+                    yWidth: 7,
                 }],
                 initiative: 5,
                 armorClass: 14,

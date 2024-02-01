@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // Mock data for testing
 const yourDataArray = [
-    { name: 'Item 1', atkBonus: '+5', type: 'Type A' },
-    { name: 'Item 2', atkBonus: '+2', type: 'Type B' },
+    { name: 'staff', atkBonus: '+5', type: '1d6' },
+    { name: 'ice blast', atkBonus: '+2', type: '1d8+2' },
     { name: 'Item 3', atkBonus: '+7', type: 'Type C' },
     { name: 'Item 1', atkBonus: '+5', type: 'Type A' },
     { name: 'Item 2', atkBonus: '+2', type: 'Type B' },
@@ -12,21 +12,22 @@ const yourDataArray = [
     // Add more mock data as needed
 ];
 
-export default function AttackSheet(player) {
-    const [selectedRow, setSelectedRow] = useState(null);
+export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
     const [hoveredRow, setHoveredRow] = useState(null);
     const [headerGlow, setHeaderGlow] = useState(false);
 
 
     useEffect(() => {
 
-        if (player && player['player'].battleMode?.yourTurn && !player['player']?.battleMode?.actionAttempted) {
+        if (player && player['player']?.battleMode?.yourTurn && !player['player']?.battleMode?.actionAttempted) {
 
             setHeaderGlow(true);
         } else {
             console.log("setHeaderGlow", player['player']);
             setHeaderGlow(false);
         }
+
+        console.log("selectedRow", selectedRow);
 
     }, [player]);
 
@@ -63,18 +64,19 @@ export default function AttackSheet(player) {
                     {yourDataArray.map((item, index) => (
                         <React.Fragment key={index}>
                             <button
-                                onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
+                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}>
                                 {item.name}
                             </button>
                             <button
-                                onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
+                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}
                             > {item.atkBonus}
                             </button>
-                            <button onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
+                            <button
+                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}
                             >{item.type}
