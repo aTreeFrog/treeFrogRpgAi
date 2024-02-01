@@ -19,11 +19,13 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
 
     useEffect(() => {
 
-        if (player && player['player']?.battleMode?.yourTurn && !player['player']?.battleMode?.actionAttempted) {
+
+        console.log("setHeaderGlow", player);
+        if (player && player?.battleMode?.yourTurn && !player?.battleMode?.actionAttempted) {
 
             setHeaderGlow(true);
         } else {
-            console.log("setHeaderGlow", player['player']);
+
             setHeaderGlow(false);
         }
 
