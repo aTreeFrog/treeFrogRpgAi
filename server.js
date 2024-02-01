@@ -993,7 +993,7 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            //enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
+            enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
 
         });
 
