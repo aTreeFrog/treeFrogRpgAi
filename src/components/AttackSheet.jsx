@@ -48,8 +48,8 @@ export default function AttackSheet(player) {
                 top: '27%', // Adjust the top position as needed
                 left: '29%',
                 borderRadius: '5px',
-                backgroundColor: "rgba(45, 55, 72, 0.2)",
-                boxShadow: headerGlow ? '0 0 8px #b8e994, 0 0 8px #b8e994' : 'none',
+                backgroundColor: headerGlow ? 'rgba(204, 166, 96, 0.1)' : 'rgba(45, 55, 72, 0.2)',
+                boxShadow: headerGlow ? '0 0 5px rgb(204, 85, 0), 0 0 8px rgb(204, 85, 0)' : 'none',
                 //animation: headerGlow ? 'glowing 4s infinite' : 'none',
             }}
         >
