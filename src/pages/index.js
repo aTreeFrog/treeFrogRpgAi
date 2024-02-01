@@ -147,6 +147,7 @@ export default function Home() {
   const [yourTurnText, setYourTurnText] = useState(false);
   const [showOverlayText, setShowOverlayText] = useState(false);
   const [activeTab, setActiveTab] = useState('Skills');
+  const [selectedRow, setSelectedRow] = useState(null);
 
 
 
@@ -369,6 +370,11 @@ export default function Home() {
           // For other players, always update
           if (playerName !== userName) {
             updatedPlayers[playerName] = playerData;
+          }
+
+          // if user is in story mode, delete any enemy players in the players object so it doesn't stay for next battle
+          if (updatedPlayers[userName]?.mode == "story" && updatedPlayers[playerName]?.type == "enemy") {
+            delete updatedPlayers[playerName];
           }
           // For the current user, update only if the activityId is new
           else if (!playersMsgActIds.current.includes(playerData?.activityId)) {
@@ -1424,7 +1430,7 @@ export default function Home() {
             <div>
               <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
               <div>
-                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} player={players[userName]} />
+                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} player={players[userName]} selectedRow={selectedRow} setSelectedRow={setSelectedRow} />
               </div>
             </div>
             {/* Toggle Meeting Panel Button */}
@@ -1491,11 +1497,11 @@ export default function Home() {
           {players[userName]?.mode == "battle" && (
             <>
               <BattleMap
-                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName}
+                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow}
                 className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
               />
               {showOverlayText && (
-                <div className="overlay-text bubble-in">
+                <div className="overlay-text fade-in">
                   Your Turn
                 </div>
               )}

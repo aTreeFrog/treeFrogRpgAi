@@ -947,7 +947,7 @@ textarea {
     opacity: 1;
 
     /* Enhanced glow effect around the text */
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(255, 165, 0, 0.5), 0 0 30px rgba(255, 165, 0, 0.4);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(204, 166, 96, 0.5), 0 0 30px rgba(255, 165, 0, 0.4);
     /* Orange glow */
 }
 
@@ -958,14 +958,28 @@ textarea {
 
 @keyframes glowing {
     0% {
-        box-shadow: 0 0 5px #b8e994, 0 0 8px #b8e994;
+        box-shadow: 0 0 5px rgb(204, 85, 0), 0 0 8px rgb(204, 85, 0);
     }
 
     50% {
-        box-shadow: 0 0 10px #b8e994, 0 0 12px #b8e994;
+        box-shadow: 0 0 10px rgb(204, 85, 0), 0 0 12px rgb(204, 85, 0);
     }
 
     100% {
-        box-shadow: 0 0 5px #b8e994, 0 0 8px #b8e994;
+        box-shadow: 0 0 5px rgb(204, 85, 0), 0 0 8px rgb(204, 85, 0);
     }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+    animation: fadeIn 2s ease-in-out;
 }

@@ -1,8 +1,8 @@
 // components/PlayerIcon.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, selectedRow }) => {
     const [image] = useImage(playerData.figureIcon);
 
     // takes into account amount a player moved during their turn

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 // Mock data for testing
 const yourDataArray = [
-    { name: 'Item 1', atkBonus: '+5', type: 'Type A' },
-    { name: 'Item 2', atkBonus: '+2', type: 'Type B' },
+    { name: 'staff', atkBonus: '+5', type: '1d6' },
+    { name: 'ice blast', atkBonus: '+2', type: '1d8+2' },
     { name: 'Item 3', atkBonus: '+7', type: 'Type C' },
     { name: 'Item 1', atkBonus: '+5', type: 'Type A' },
     { name: 'Item 2', atkBonus: '+2', type: 'Type B' },
@@ -12,21 +12,24 @@ const yourDataArray = [
     // Add more mock data as needed
 ];
 
-export default function AttackSheet(player) {
-    const [selectedRow, setSelectedRow] = useState(null);
+export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
     const [hoveredRow, setHoveredRow] = useState(null);
     const [headerGlow, setHeaderGlow] = useState(false);
 
 
     useEffect(() => {
 
-        if (player && player['player'].battleMode?.yourTurn && !player['player']?.battleMode?.actionAttempted) {
+
+        console.log("setHeaderGlow", player);
+        if (player && player?.battleMode?.yourTurn && !player?.battleMode?.actionAttempted) {
 
             setHeaderGlow(true);
         } else {
-            console.log("setHeaderGlow", player['player']);
+
             setHeaderGlow(false);
         }
+
+        console.log("selectedRow", selectedRow);
 
     }, [player]);
 
@@ -48,8 +51,8 @@ export default function AttackSheet(player) {
                 top: '27%', // Adjust the top position as needed
                 left: '29%',
                 borderRadius: '5px',
-                backgroundColor: "rgba(45, 55, 72, 0.2)",
-                boxShadow: headerGlow ? '0 0 8px #b8e994, 0 0 8px #b8e994' : 'none',
+                backgroundColor: headerGlow ? 'rgba(204, 166, 96, 0.1)' : 'rgba(45, 55, 72, 0.2)',
+                boxShadow: headerGlow ? '0 0 5px rgb(204, 85, 0), 0 0 8px rgb(204, 85, 0)' : 'none',
                 //animation: headerGlow ? 'glowing 4s infinite' : 'none',
             }}
         >
@@ -63,18 +66,19 @@ export default function AttackSheet(player) {
                     {yourDataArray.map((item, index) => (
                         <React.Fragment key={index}>
                             <button
-                                onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
+                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}>
                                 {item.name}
                             </button>
                             <button
-                                onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
+                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}
                             > {item.atkBonus}
                             </button>
-                            <button onClick={() => setSelectedRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
+                            <button
+                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}
                             >{item.type}

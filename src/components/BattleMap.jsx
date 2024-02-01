@@ -3,7 +3,7 @@ import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 
-const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) => {
+const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
     const [scale, setScale] = useState(1); // Default scale is 1
     //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
@@ -16,6 +16,34 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
     const [pixelY, setPixelY] = useState();
     const [clickable, setClickable] = useState(false);
     const [unavailCoord, setUnavailCoord] = useState([])
+    const [cursorPos, setCursorPos] = useState({ x: -50, y: -50 }); // Initial position off-screen
+    const [attackDistance, setAttackDistance] = useState(0); // Initial attack radius
+    const [attackRadius, setAttackRadius] = useState(0);
+    const [enableLines, setEnableLines] = useState(false);
+
+    const handleMouseMove = (e) => {
+        const stage = e.target.getStage();
+        const pointerPosition = stage.getPointerPosition();
+        setCursorPos(pointerPosition);
+    };
+
+    // Calculate the distance between the figure icon and the cursor position
+    const distanceToCursor = Math.sqrt(Math.pow(cursorPos.x - (pixelX + playerSize / 2), 2) + Math.pow(cursorPos.y - (pixelY + playerSize / 2), 2));
+
+    // Calculate the endpoint for the line within the allowed distance
+    let endPoint = { x: cursorPos.x, y: cursorPos.y };
+    if (distanceToCursor > attackDistance) {
+        // Calculate the direction vector and normalize it
+        const direction = { x: cursorPos.x - (pixelX + playerSize / 2), y: cursorPos.y - (pixelY + playerSize / 2) };
+        const length = Math.sqrt(direction.x ** 2 + direction.y ** 2);
+        const normalized = { x: direction.x / length, y: direction.y / length };
+
+        // Scale the normalized direction by the attack distance to get the new endpoint
+        endPoint = {
+            x: (pixelX + playerSize / 2) + normalized.x * attackDistance,
+            y: (pixelY + playerSize / 2) + normalized.y * attackDistance
+        };
+    }
 
     useEffect(() => {
         if (status === 'loaded') {
@@ -121,13 +149,43 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
             console.log("battlemap pixelX", pixelX);
         }
 
+        console.log("selectedRow", selectedRow);
+
+
         if (players[userName]?.battleMode?.yourTurn) {
-            setClickable(true);
+
+            //selected row means the user selected an attack, so dont show travel radius circle
+            // but enable lines
+            if (!selectedRow) {
+                setClickable(true);
+                setEnableLines(false);
+            } else {
+                setClickable(false);
+                setEnableLines(true);
+            }
+
+            // not your turn so no lines or travel circle
         } else {
             setClickable(false);
+            setEnableLines(false);
         }
 
-    }, [imageFigureUrl, players[userName]]);
+
+
+        if (players[userName]?.battleMode?.yourTurn && selectedRow) {
+            const attack = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
+            console.log("attack", attack);
+            if (attack) {
+                setAttackDistance(attack.distance * travelZoneRadius + 3); // +3 for margin
+                // Assuming xWidth and yWidth are diameters, calculating average radius
+                const radius = (attack.xWidth + attack.yWidth) / 4; // Divided by 4 because we need the average radius
+                setAttackRadius(radius * travelZoneRadius);
+            }
+        } else {
+            setAttackRadius(0);
+        }
+
+    }, [imageFigureUrl, players, selectedRow]);
 
     // set unavailable move to coordinates cause theres players there
     useEffect(() => {
@@ -153,11 +211,43 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                     className={animationClass}
                     onClick={clickable ? handleMapClick : null}
                     onTap={clickable ? handleMapClick : null}
+                    onMouseMove={handleMouseMove}
                 >
                     <Layer>
                         <Image image={image} scaleX={scale} scaleY={scale}
                             className={animationClass} />
                         {drawGrid()}
+                        {enableLines && (
+                            <>
+                                <Line
+                                    points={[pixelX + playerSize / 2, pixelY + playerSize / 2, endPoint.x, endPoint.y]}
+                                    stroke="white"
+                                    strokeWidth={2}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    dash={[10, 5]} // This makes the line dashed
+                                />
+                                {/* Line beyond attack distance, if any */}
+                                {distanceToCursor > attackDistance && (
+                                    <Line
+                                        points={[endPoint.x, endPoint.y, cursorPos.x, cursorPos.y]}
+                                        stroke="red"
+                                        strokeWidth={2}
+                                        lineCap="round"
+                                        lineJoin="round"
+                                        dash={[10, 5]} // This makes the line dashed
+                                    />
+                                )}
+                            </>
+                        )}
+                        {/* Cursor-following attack range circle */}
+                        <Circle
+                            x={cursorPos.x}
+                            y={cursorPos.y}
+                            radius={attackRadius}
+                            fill="rgba(0, 0, 255, 0.3)" // Example styling
+                            visible={!!attackRadius} // Only visible if attackRadius is set
+                        />
                         {Object.entries(players).map(([playerName, playerData]) => (
                             <PlayerIcon key={playerName}
                                 playerName={playerName}
@@ -169,6 +259,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName }) =>
                                 travelZoneRadius={travelZoneRadius}
                                 clickable={clickable}
                                 unavailCoord={unavailCoord}
+                                selectedRow={selectedRow}
                             />
                         ))}
                     </Layer>
