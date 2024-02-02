@@ -199,7 +199,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
         //set attack bubble if attack/spell selected
-        if (selectedRow) {
+        if (selectedRow && !circleStop) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
@@ -227,7 +227,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             }
 
             // move icon to new clicked position. 
-        } else {
+        } else if (!circleStop) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
@@ -335,7 +335,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setAttackRadius(0);
         }
 
-    }, [imageFigureUrl, players, selectedRow, circleStop, cursorPos]);
+    }, [imageFigureUrl, players, selectedRow, circleStop]);
 
     // set unavailable move to coordinates cause theres players there
     useEffect(() => {
