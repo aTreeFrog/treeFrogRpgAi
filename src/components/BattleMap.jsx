@@ -20,12 +20,58 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [attackDistance, setAttackDistance] = useState(0); // Initial attack radius
     const [attackRadius, setAttackRadius] = useState(0);
     const [enableLines, setEnableLines] = useState(false);
+    const [circleStop, setCircleStop] = useState(false);
+    const [circleStopPosition, setCircleStopPosition] = useState({ x: 0, y: 0 });
+
+
 
     const handleMouseMove = (e) => {
+
+        if (circleStop) {
+            // If circleStop is true, prevent the circle from moving
+            return;
+        }
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
         setCursorPos(pointerPosition);
     };
+
+
+
+    // Function to calculate the distance from a point to a line segment
+    function pointToLineDistance(x, y, x1, y1, x2, y2) {
+        const A = x - x1;
+        const B = y - y1;
+        const C = x2 - x1;
+        const D = y2 - y1;
+
+        const dot = A * C + B * D;
+        const len_sq = C * C + D * D;
+        let param = -1;
+        if (len_sq != 0) { // in case of 0 length line
+            param = dot / len_sq;
+        }
+
+        let xx, yy;
+
+        if (param < 0) {
+            xx = x1;
+            yy = y1;
+        } else if (param > 1) {
+            xx = x2;
+            yy = y2;
+        } else {
+            xx = x1 + param * C;
+            yy = y1 + param * D;
+        }
+
+        const dx = x - xx;
+        const dy = y - yy;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+
+
 
     // Calculate the distance between the figure icon and the cursor position
     const distanceToCursor = Math.sqrt(Math.pow(cursorPos.x - (pixelX + playerSize / 2), 2) + Math.pow(cursorPos.y - (pixelY + playerSize / 2), 2));
@@ -54,6 +100,16 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     }, [status]);
 
     useEffect(() => {
+
+        if (!selectedRow) {
+            setCircleStop(false);
+            setCircleStopPosition({ x: 0, y: 0 });
+        }
+
+
+    }, [selectedRow]);
+
+    useEffect(() => {
         if (image) {
             // Calculate scale to fit the image into 1024x1024
             const newScale = Math.min(600 / image.width, 600 / image.height);
@@ -79,42 +135,70 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     };
 
     const handleMapClick = (e) => {
+
+
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
 
-        const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
-        const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
+        if (selectedRow) {
 
-        // Calculate the pixel position of the center of the clicked grid cell
-        const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
-        const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
+            // Define the circle center and radius
+            const circleCenter = cursorPos;
+            const circleRadius = attackRadius;
 
-        console.log("Click event");
+            // Define the line segment for the white part
+            const lineStart = { x: pixelX + playerSize / 2, y: pixelY + playerSize / 2 };
+            const lineEnd = endPoint;
 
-        const distance = Math.sqrt(
-            Math.pow(clickedPixelX - pixelX, 2) +
-            Math.pow(clickedPixelY - pixelY, 2)
-        );
+            // Calculate distance from the line segment to the circle's center
+            const distance = pointToLineDistance(circleCenter.x, circleCenter.y, lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
 
-        console.log("pixelX", pixelX);
+            if (distance <= circleRadius) {
+                setCircleStop(true);
+                setCircleStopPosition(cursorPos);
+            } else {
+                setCircleStop(false);
+                setCircleStopPosition({ x: 0, y: 0 });
+            }
 
-        console.log("distance", distance);
+        } else {
 
-        //ensures coordinate moving to is not taken by another player
-        const isUnavailable = unavailCoord.some(coord => {
-            return coord[0] === clickedGridX && coord[1] === clickedGridY;
-        });
+            const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
+            const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
-        console.log("distanceMoved", players[userName]?.battleMode?.distanceMoved);
-        console.log("radius stuff", (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)));
+            // Calculate the pixel position of the center of the clicked grid cell
+            const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
+            const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
 
-        if (!isUnavailable && (distance <= (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)))) {
-            console.log("Clicked Grid Position:", clickedGridX, clickedGridY);
-            console.log("Clicked Pixel Position:", clickedPixelX, clickedPixelY);
+            console.log("Click event");
 
-            // Update player data with the new grid position
-            updatePlayerData(userName, clickedGridX, clickedGridY);
+            const distance = Math.sqrt(
+                Math.pow(clickedPixelX - pixelX, 2) +
+                Math.pow(clickedPixelY - pixelY, 2)
+            );
+
+            console.log("pixelX", pixelX);
+
+            console.log("distance", distance);
+
+            //ensures coordinate moving to is not taken by another player
+            const isUnavailable = unavailCoord.some(coord => {
+                return coord[0] === clickedGridX && coord[1] === clickedGridY;
+            });
+
+            console.log("distanceMoved", players[userName]?.battleMode?.distanceMoved);
+            console.log("radius stuff", (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)));
+
+            if (!isUnavailable && (distance <= (travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)))) {
+                console.log("Clicked Grid Position:", clickedGridX, clickedGridY);
+                console.log("Clicked Pixel Position:", clickedPixelX, clickedPixelY);
+
+                // Update player data with the new grid position
+                updatePlayerData(userName, clickedGridX, clickedGridY);
+            }
+
         }
+
     };
 
 
@@ -170,8 +254,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setEnableLines(false);
         }
 
-
-
         if (players[userName]?.battleMode?.yourTurn && selectedRow) {
             const attack = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
             console.log("attack", attack);
@@ -209,8 +291,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 <Stage
                     width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
                     className={animationClass}
-                    onClick={clickable ? handleMapClick : null}
-                    onTap={clickable ? handleMapClick : null}
+                    onClick={handleMapClick}
+                    onTap={handleMapClick}
                     onMouseMove={handleMouseMove}
                 >
                     <Layer>
