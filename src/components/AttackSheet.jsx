@@ -21,7 +21,7 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
 
 
         console.log("setHeaderGlow", player);
-        if (player && player?.battleMode?.yourTurn && !player?.battleMode?.actionAttempted) {
+        if (player && player?.mode == "battle" && player?.battleMode?.yourTurn && !player?.battleMode?.actionAttempted) {
 
             setHeaderGlow(true);
         } else {

@@ -185,7 +185,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setAttackRadius(0);
         }
 
-    }, [imageFigureUrl, players, selectedRow]);
+    }, [imageFigureUrl, players, selectedRow, cursorPos]);
 
     // set unavailable move to coordinates cause theres players there
     useEffect(() => {
