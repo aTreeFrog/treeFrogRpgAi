@@ -103,10 +103,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         if (!selectedRow) {
             setCircleStop(false);
-            setCircleStopPosition({ x: 0, y: 0 });
+        } else if (circleStop) {
+            const coveredCells = getCoveredCells(circleStopPosition, attackRadius, gridSpacing);
+            console.log("Covered Cells: ", coveredCells);
         }
 
-    }, [selectedRow]);
+    }, [selectedRow, circleStopPosition]);
 
     useEffect(() => {
         if (image) {
@@ -164,6 +166,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             if (distance <= circleRadius) {
                 setCircleStop(true);
                 setCircleStopPosition(circleCenter);
+                console.log("clickedPixelX", clickedPixelX);
+                console.log("clickedPixelY", clickedPixelY);
             } else {
                 // Optionally, allow resetting or adjusting behavior here
                 setCircleStop(false);
@@ -251,7 +255,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 setEnableLines(false);
             } else {
                 setClickable(false);
-                setEnableLines(true);
+                //if the attack circle is selected at a spot, dont keep showing the lines
+                if (!circleStop) {
+                    setEnableLines(true);
+                } else {
+                    setEnableLines(false);
+                }
             }
 
             // not your turn so no lines or travel circle
@@ -273,7 +282,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setAttackRadius(0);
         }
 
-    }, [imageFigureUrl, players, selectedRow, cursorPos]);
+    }, [imageFigureUrl, players, selectedRow, circleStop, cursorPos]);
 
     // set unavailable move to coordinates cause theres players there
     useEffect(() => {
@@ -286,6 +295,46 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         setUnavailCoord(newUnavailCoord);
 
     }, [players]);
+
+
+    //figure out which cells contain the attack circle if its clicked
+    const getCoveredCells = (circleCenter, radius, gridSpacing) => {
+        // Calculate the bounds of the circle in terms of grid coordinates
+        const left = circleCenter.x - radius;
+        const right = circleCenter.x + radius;
+        const top = circleCenter.y - radius;
+        const bottom = circleCenter.y + radius;
+
+        // Convert these bounds to grid indices
+        const leftIndex = Math.floor(left / gridSpacing);
+        const rightIndex = Math.floor(right / gridSpacing);
+        const topIndex = Math.floor(top / gridSpacing);
+        const bottomIndex = Math.floor(bottom / gridSpacing);
+
+        const coveredCells = [];
+
+        // Check each cell within the bounds to see if it's at least half covered
+        for (let i = leftIndex; i <= rightIndex; i++) {
+            for (let j = topIndex; j <= bottomIndex; j++) {
+                // Calculate the center of the current cell
+                const cellCenter = {
+                    x: (i * gridSpacing) + (gridSpacing / 2),
+                    y: (j * gridSpacing) + (gridSpacing / 2),
+                };
+
+                // Calculate distance from the cell center to the circle center
+                const distance = Math.sqrt(Math.pow(cellCenter.x - circleCenter.x, 2) + Math.pow(cellCenter.y - circleCenter.y, 2));
+
+                // If the distance is less than or equal to radius - gridSpacing/2, the cell is at least half covered
+                if (distance <= radius - (gridSpacing / 2)) {
+                    coveredCells.push({ i, j });
+                }
+            }
+        }
+
+        return coveredCells;
+    };
+
 
 
 
