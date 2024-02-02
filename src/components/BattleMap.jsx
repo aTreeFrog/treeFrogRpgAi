@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
+import BlurredLineEffect from '../components/BlurredLineEffect';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -455,18 +456,26 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             visible={!!attackRadius} // Only visible if attackRadius is set
                         />
                         {Object.entries(players).map(([playerName, playerData]) => (
-                            <PlayerIcon key={playerName}
-                                playerName={playerName}
-                                playerData={playerData}
-                                gridSpacing={gridSpacing}
-                                userName={userName}
-                                imageLoaded={imageLoaded}
-                                updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
-                                travelZoneRadius={travelZoneRadius}
-                                clickable={clickable}
-                                unavailCoord={unavailCoord}
-                                selectedRow={selectedRow}
-                            />
+                            <>
+                                <PlayerIcon key={playerName}
+                                    playerName={playerName}
+                                    playerData={playerData}
+                                    gridSpacing={gridSpacing}
+                                    userName={userName}
+                                    imageLoaded={imageLoaded}
+                                    updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
+                                    travelZoneRadius={travelZoneRadius}
+                                    clickable={clickable}
+                                    unavailCoord={unavailCoord}
+                                    selectedRow={selectedRow}
+                                />
+                                {playerData?.battleMode?.targeted && (
+                                    <BlurredLineEffect
+                                        playerData={playerData}
+                                        gridSpacing={gridSpacing}
+                                    />
+                                )}
+                            </>
                         ))}
                     </Layer>
                 </Stage>
