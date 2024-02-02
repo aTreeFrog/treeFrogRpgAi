@@ -106,7 +106,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setCircleStopPosition({ x: 0, y: 0 });
         }
 
-
     }, [selectedRow]);
 
     useEffect(() => {
