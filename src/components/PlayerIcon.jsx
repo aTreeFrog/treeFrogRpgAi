@@ -36,8 +36,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
         const myX = Math.round(playerX / gridSpacing);
         const myY = Math.round(playerY / gridSpacing);
 
-        console.log("key ", playerName);
-        console.log("userName ", userName)
 
         //ensures coordinate moving to is not taken by another player
         const isUnavailable = unavailCoord.some(coord => {
