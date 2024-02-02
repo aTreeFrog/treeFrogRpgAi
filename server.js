@@ -207,7 +207,9 @@ app.prepare().then(() => {
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
                     players[user].battleMode.initiativeImageShadow = shadowColor;
+                    players[user].battleMode.targeted = false;
                     players[user].backgroundAudio = backgroundSong;
+
 
                     players[user].diceStates.D20 = {
                         value: [],
@@ -257,6 +259,8 @@ app.prepare().then(() => {
 
             }
             activityCount++;
+
+            console.log("enter battle mode");
 
             io.to(serverRoomName).emit('enter battle mode', game); //not sure i need game object at all yet
             io.to(serverRoomName).emit('players objects', players);
@@ -475,6 +479,7 @@ app.prepare().then(() => {
             // Sending the message to the connected client
             //io.to(serverRoomName).emit('dice roll', diceRollMessage); //ToDo. determine who to send this too
 
+            console.log("dice roll message");
             io.to(serverRoomName).emit('players objects', players);
 
             activityCount++;
@@ -534,6 +539,8 @@ app.prepare().then(() => {
             activityCount++;
 
             //send updated entire players object to room
+
+            console.log("make player inactive");
             io.to(serverRoomName).emit('players objects', players);
 
         }
@@ -903,6 +910,7 @@ app.prepare().then(() => {
             // Emit the updated list of connected users
             io.to(serverRoomName).emit('connected users', Object.keys(clients));
 
+            console.log("connected user");
 
             io.to(serverRoomName).emit('players objects', players);
 
@@ -931,6 +939,8 @@ app.prepare().then(() => {
         });
 
         socket.on('user name', (userName) => {
+
+            console.log("user name");
 
             if (clients[userName] && clients[userName] !== socket.id) {
                 // Disconnect the previous socket
@@ -993,11 +1003,13 @@ app.prepare().then(() => {
 
             io.to(serverRoomName).emit('players objects', players);
 
-            enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
+            //enterBattleMode('ForestRiver', 'Black_Vortex', 'goblin', 3);////////////FOR TESTING!!!!//////////////////////
 
         });
 
         socket.on('obtain all users', () => {
+
+            console.log("obtain all users");
 
             io.emit('connected users', Object.keys(clients));
 
@@ -1044,6 +1056,8 @@ app.prepare().then(() => {
             players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
 
+            console.log("playing again");
+
             io.emit('players objects', players);
 
         });
@@ -1086,6 +1100,34 @@ app.prepare().then(() => {
                 players[data.name].yPosition = data.yPosition;
                 players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
                 activityCount++;
+
+                io.to(serverRoomName).emit('players objects', players);
+            };
+
+        });
+
+        socket.on('users targeted', (data) => {
+
+            const activityDate = new Date().toISOString();
+
+            if (players.hasOwnProperty(data?.name)) {
+
+                players[data.name].battleMode.usersTargeted = data.battleMode.usersTargeted;
+
+                Object.entries(players).forEach(([userName, playerData]) => {
+
+                    if (data?.battleMode?.usersTargeted.includes(userName)) {
+                        players[userName].battleMode.targeted = true;
+                    } else {
+                        players[userName].battleMode.targeted = false;
+                    }
+                    players[userName].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
+                });
+
+                activityCount++;
+
+                console.log("users targeted", data);
+
                 io.to(serverRoomName).emit('players objects', players);
             };
 
@@ -1105,6 +1147,7 @@ app.prepare().then(() => {
         players[userName].battleMode.damageDelt = null;
         players[userName].battleMode.usersTargeted = [];
         players[userName].battleMode.turnCompleted = false;
+        players[userName].battleMode.targeted = false;
         players[userName].skill = "";
         players[userName].activeSkill = false;
         players[userName].timers.enabled = false;
@@ -1136,6 +1179,8 @@ app.prepare().then(() => {
         playersArray.forEach(player => {
             players[player.name] = player;
         });
+
+        console.log("assign battle turn order");
 
         io.to(serverRoomName).emit('players objects', players);
 
@@ -1193,6 +1238,8 @@ app.prepare().then(() => {
             console.log("battlemode players: ", players);
 
         }
+
+        console.log("update");
 
         io.to(serverRoomName).emit('players objects', players);
 
