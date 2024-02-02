@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
+import BlurredLineEffect from '../components/BlurredLineEffect';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -22,6 +23,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [enableLines, setEnableLines] = useState(false);
     const [circleStop, setCircleStop] = useState(false);
     const [circleStopPosition, setCircleStopPosition] = useState({ x: 0, y: 0 });
+    const attackSelection = useRef();
 
 
 
@@ -98,7 +100,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     useEffect(() => {
 
-        if (!selectedRow) {
+        if (!selectedRow || attackSelection.current != selectedRow.name) {
             setCircleStop(false);
 
             console.log("update targeted");
@@ -146,6 +148,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             },
                         }
                     }));
+                } else {
+                    setCircleStop(false); //no players to mark so dont' stop circle position
                 }
 
                 //ToDo: handle heal spells here 
@@ -156,7 +160,9 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         }
 
-    }, [selectedRow, circleStopPosition]);
+        attackSelection.current = selectedRow?.name;
+
+    }, [selectedRow, circleStop, circleStopPosition]);
 
     useEffect(() => {
         if (image) {
@@ -194,7 +200,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
         //set attack bubble if attack/spell selected
-        if (selectedRow) {
+        if (selectedRow && !circleStop) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
@@ -222,7 +228,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             }
 
             // move icon to new clicked position. 
-        } else {
+        } else if (!circleStop) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
@@ -330,7 +336,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setAttackRadius(0);
         }
 
-    }, [imageFigureUrl, players, selectedRow, circleStop, cursorPos]);
+    }, [imageFigureUrl, players, selectedRow, circleStop]);
 
     // set unavailable move to coordinates cause theres players there
     useEffect(() => {
@@ -446,22 +452,30 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             x={circleStop ? circleStopPosition.x : cursorPos.x}
                             y={circleStop ? circleStopPosition.y : cursorPos.y}
                             radius={attackRadius}
-                            fill="rgba(0, 0, 255, 0.3)" // Example styling
-                            visible={!!attackRadius} // Only visible if attackRadius is set
+                            fill="rgba(235, 48, 67, 0.5)" // Example styling
+                            visible={!!attackRadius && !circleStop} // Only visible if attackRadius is set
                         />
                         {Object.entries(players).map(([playerName, playerData]) => (
-                            <PlayerIcon key={playerName}
-                                playerName={playerName}
-                                playerData={playerData}
-                                gridSpacing={gridSpacing}
-                                userName={userName}
-                                imageLoaded={imageLoaded}
-                                updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
-                                travelZoneRadius={travelZoneRadius}
-                                clickable={clickable}
-                                unavailCoord={unavailCoord}
-                                selectedRow={selectedRow}
-                            />
+                            <>
+                                <PlayerIcon key={playerName}
+                                    playerName={playerName}
+                                    playerData={playerData}
+                                    gridSpacing={gridSpacing}
+                                    userName={userName}
+                                    imageLoaded={imageLoaded}
+                                    updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
+                                    travelZoneRadius={travelZoneRadius}
+                                    clickable={clickable}
+                                    unavailCoord={unavailCoord}
+                                    selectedRow={selectedRow}
+                                />
+                                {playerData?.battleMode?.targeted && (
+                                    <BlurredLineEffect
+                                        playerData={playerData}
+                                        gridSpacing={gridSpacing}
+                                    />
+                                )}
+                            </>
                         ))}
                     </Layer>
                 </Stage>
