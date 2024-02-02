@@ -27,10 +27,10 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     const handleMouseMove = (e) => {
 
-        if (circleStop) {
-            // If circleStop is true, prevent the circle from moving
-            return;
-        }
+        // if (circleStop) {
+        //     // If circleStop is true, prevent the circle from moving
+        //     return;
+        // }
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
         setCursorPos(pointerPosition);
@@ -139,31 +139,38 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
 
+        // Calculate the nearest grid cell center
+        const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
+        const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
+
+        //set attack bubble if attack/spell selected
         if (selectedRow) {
 
-            // Define the circle center and radius
-            const circleCenter = cursorPos;
-            const circleRadius = attackRadius;
+            // Calculate the pixel position of the center of the clicked grid cell
+            const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
+            const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2;
 
-            // Define the line segment for the white part
+            // Check if the circle should stop based on the line logic
             const lineStart = { x: pixelX + playerSize / 2, y: pixelY + playerSize / 2 };
-            const lineEnd = endPoint;
+            const lineEnd = endPoint; // Ensure this is correctly calculated based on previous logic
+            const circleCenter = { x: clickedPixelX, y: clickedPixelY };
+            const circleRadius = attackRadius; // Ensure this is set to your circle's radius
 
-            // Calculate distance from the line segment to the circle's center
-            const distance = pointToLineDistance(circleCenter.x, circleCenter.y, lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
+            // Calculate distance from the line segment to the new circle's center
+            // (Use the pointToLineDistance function provided in the previous message)
+            const distance = pointToLineDistance(pointerPosition.x, pointerPosition.y, lineStart.x, lineStart.y, lineEnd.x, lineEnd.y);
 
+            // Only update if within white line segment and not intersecting with the red part or beyond
             if (distance <= circleRadius) {
                 setCircleStop(true);
-                setCircleStopPosition(cursorPos);
+                setCircleStopPosition(circleCenter);
             } else {
+                // Optionally, allow resetting or adjusting behavior here
                 setCircleStop(false);
-                setCircleStopPosition({ x: 0, y: 0 });
             }
 
+            // move icon to new clicked position. 
         } else {
-
-            const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
-            const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
@@ -323,8 +330,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         )}
                         {/* Cursor-following attack range circle */}
                         <Circle
-                            x={cursorPos.x}
-                            y={cursorPos.y}
+                            x={circleStop ? circleStopPosition.x : cursorPos.x}
+                            y={circleStop ? circleStopPosition.y : cursorPos.y}
                             radius={attackRadius}
                             fill="rgba(0, 0, 255, 0.3)" // Example styling
                             visible={!!attackRadius} // Only visible if attackRadius is set

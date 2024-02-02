@@ -387,13 +387,11 @@ export default function Home() {
       });
     });
 
-
     //detect all users in the server
     chatSocket.on('connected users', (clients) => {
       console.log("connected users: ", clients);
       setUsersInServer(clients);
     });
-
 
     chatSocket.on('speech to text data', (data) => {
 
