@@ -76,6 +76,18 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                     className={animationClass}
                 />
             )}
+            {playerData.battleMode.targeted && (
+                <Circle
+                    x={circleX}
+                    y={circleY}
+                    radius={22} // Larger radius for the travel zone
+                    fill="rgba(235, 48, 67, 0.5)" // Semi-transparent yellow
+                    shadowColor="rgba(235, 48, 67, 0.5)"
+                    shadowBlur={10}
+                    shadowOpacity={1}
+                    opacity={0.9}
+                />
+            )}
             <Image
                 image={image}
                 x={pixelX}
