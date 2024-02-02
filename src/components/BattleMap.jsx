@@ -101,6 +101,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         if (!selectedRow) {
             setCircleStop(false);
 
+            console.log("update targeted");
+
             //ToDo: if no attack made, clear out any attacked enemies array for this player
             if (!players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.usersTargeted?.length > 0) {
                 setPlayers(prevPlayers => ({
@@ -400,10 +402,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         return results;
     }
-
-
-
-
 
     return (
 

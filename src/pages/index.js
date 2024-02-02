@@ -130,7 +130,7 @@ export default function Home() {
   const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
   const [usersInServer, setUsersInServer] = useState([]);
   const [players, setPlayers] = useState({ userName: player }); // init player dict
-  const playersMsgActIds = useRef([]);
+  const playersMsgActIds = useRef({});
   const [awayMode, setAwayMode] = useState(false);
   const iAmBack = useRef(false)
   const [isTimerVisible, setIsTimerVisible] = useState(false);
@@ -148,8 +148,7 @@ export default function Home() {
   const [showOverlayText, setShowOverlayText] = useState(false);
   const [activeTab, setActiveTab] = useState('Skills');
   const [selectedRow, setSelectedRow] = useState(null);
-
-
+  const latestUserServer = useRef();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -359,17 +358,31 @@ export default function Home() {
 
     // dice roll initializer message (server only sends when starting dice mode)
     chatSocket.on('players objects', (data) => {
-      //console.log("players objects received ", data);
+      console.log("players objects received ", data);
+
+
+      if (data[userName]) {
+        latestUserServer.current = data[userName];
+      }
 
       //ToDo: SEE IF WE CAN PREVENT UPDATING THE USESTATE OF PLAYERS IF ITS NOT UPDATED INFORMATION
 
       setPlayers(prevPlayers => {
         const updatedPlayers = { ...prevPlayers };
 
+        //console.log("playersMsgActIds", playersMsgActIds);
+
         Object.entries(data).forEach(([playerName, playerData]) => {
+
+          if (!playersMsgActIds.current[playerName]) {
+            playersMsgActIds.current[playerName] = {};
+            playersMsgActIds.current[playerName].activityId = "";
+          }
+
           // For other players, always update
-          if (playerName !== userName) {
+          if (playerName !== userName && !playersMsgActIds.current[playerName]?.activityId == playerData?.activityId) {
             updatedPlayers[playerName] = playerData;
+            playersMsgActIds.current[playerName].activityId = playerData?.activityId;
           }
 
           // if user is in story mode, delete any enemy players in the players object so it doesn't stay for next battle
@@ -377,7 +390,8 @@ export default function Home() {
             delete updatedPlayers[playerName];
           }
           // For the current user, update only if the activityId is new
-          else if (!playersMsgActIds.current.includes(playerData?.activityId)) {
+          // don't update the userName activity Id yet do it after the use effect
+          else if (!(playersMsgActIds.current[playerName]?.activityId == playerData?.activityId) && playerName === userName) {
             console.log("updated myself");
             updatedPlayers[playerName] = playerData;
           }
@@ -455,14 +469,15 @@ export default function Home() {
     if (!players) {
       return;
     }
-    console.log("my players ", players);
+
     //check if already processed this message
-    if (playersMsgActIds.current.includes(players[userName]?.activityId)) {
+    if (playersMsgActIds.current[userName]?.activityId == players[userName]?.activityId) {
       return;
     }
 
+    console.log("my players ", players);
     // add to list of received messages
-    playersMsgActIds.current.push(players[userName]?.activityId);
+    playersMsgActIds.current[userName].activityId = players[userName]?.activityId;
 
     if (!players[userName]?.active) {
       cleanUpDiceStates();
@@ -507,19 +522,19 @@ export default function Home() {
 
   useEffect(() => {
 
-    if (players[userName]?.xPosition && players[userName]?.yPosition) {
+    if (latestUserServer.current?.xPosition != players[userName]?.xPosition || latestUserServer.current?.yPosition != players[userName]?.yPosition) {
 
+      console.log('player moved', players[userName]);
 
       chatSocket.emit('player moved', players[userName]);
 
     }
 
-
   }, [players[userName]?.xPosition, players[userName]?.yPosition]);
 
   useEffect(() => {
 
-    if (players[userName]?.battleMode?.usersTargeted !== null) {
+    if (latestUserServer.current?.battleMode?.usersTargeted != players[userName]?.battleMode?.usersTargeted) {
 
       console.log("users targeted: ", players[userName]?.battleMode?.usersTargeted);
 
