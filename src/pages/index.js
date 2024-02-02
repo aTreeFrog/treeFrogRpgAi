@@ -380,7 +380,7 @@ export default function Home() {
           }
 
           // For other players, always update
-          if (playerName !== userName && !playersMsgActIds.current[playerName]?.activityId == playerData?.activityId) {
+          if (playerName !== userName && playersMsgActIds.current[playerName]?.activityId != playerData?.activityId) {
             updatedPlayers[playerName] = playerData;
             playersMsgActIds.current[playerName].activityId = playerData?.activityId;
           }
@@ -391,7 +391,7 @@ export default function Home() {
           }
           // For the current user, update only if the activityId is new
           // don't update the userName activity Id yet do it after the use effect
-          else if (!(playersMsgActIds.current[playerName]?.activityId == playerData?.activityId) && playerName === userName) {
+          else if ((playersMsgActIds.current[playerName]?.activityId != playerData?.activityId) && playerName === userName) {
             console.log("updated myself");
             updatedPlayers[playerName] = playerData;
           }
@@ -522,7 +522,7 @@ export default function Home() {
 
   useEffect(() => {
 
-    if (latestUserServer.current?.xPosition != players[userName]?.xPosition || latestUserServer.current?.yPosition != players[userName]?.yPosition) {
+    if ((latestUserServer.current?.xPosition != players[userName]?.xPosition) || (latestUserServer.current?.yPosition != players[userName]?.yPosition)) {
 
       console.log('player moved', players[userName]);
 
@@ -534,12 +534,22 @@ export default function Home() {
 
   useEffect(() => {
 
-    if (latestUserServer.current?.battleMode?.usersTargeted != players[userName]?.battleMode?.usersTargeted) {
+    if (latestUserServer.current?.battleMode?.usersTargeted.length != players[userName]?.battleMode?.usersTargeted.length) {
 
       console.log("users targeted: ", players[userName]?.battleMode?.usersTargeted);
 
       chatSocket.emit('users targeted', players[userName]);
 
+      return;
+    }
+
+    for (let i = 0; i < latestUserServer.current?.battleMode?.usersTargeted.length; i++) {
+      if (latestUserServer.current.battleMode.usersTargeted[i] !== players[userName].battleMode.usersTargeted[i]) {
+        console.log("users targeted: ", players[userName]?.battleMode?.usersTargeted);
+        chatSocket.emit('users targeted', players[userName]);
+
+        return;
+      }
     }
 
   }, [players[userName]?.battleMode?.usersTargeted]);
