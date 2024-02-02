@@ -484,7 +484,7 @@ export default function Home() {
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
 
-    } else if (players[userName]?.mode == "initiative") {
+    } else if (players[userName]?.mode == "initiative" && players[userName]?.battleMode?.initiativeRoll < 1) {
 
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(players[userName]); // Save the data for later
