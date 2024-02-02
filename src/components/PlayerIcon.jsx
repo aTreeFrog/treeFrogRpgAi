@@ -22,10 +22,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const circleX = gridX * gridSpacing + gridSpacing / 2;
     const circleY = gridY * gridSpacing + gridSpacing / 2;
 
-    console.log("playerName", playerName);
-    console.log("gridy", gridY);
-
-
     const handleDragEnd = (e) => {
         // Get the position of the dragged icon
         const playerX = e.target.x();
@@ -40,8 +36,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
         const myX = Math.round(playerX / gridSpacing);
         const myY = Math.round(playerY / gridSpacing);
 
-        console.log("key ", playerName);
-        console.log("userName ", userName)
 
         //ensures coordinate moving to is not taken by another player
         const isUnavailable = unavailCoord.some(coord => {

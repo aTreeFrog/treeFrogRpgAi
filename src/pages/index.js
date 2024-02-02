@@ -380,7 +380,7 @@ export default function Home() {
           }
 
           // For other players, always update
-          if (playerName !== userName && !playersMsgActIds.current[playerName]?.activityId == playerData?.activityId) {
+          if (playerName !== userName && (playersMsgActIds.current[playerName]?.activityId != playerData?.activityId)) {
             updatedPlayers[playerName] = playerData;
             playersMsgActIds.current[playerName].activityId = playerData?.activityId;
           }
@@ -391,7 +391,7 @@ export default function Home() {
           }
           // For the current user, update only if the activityId is new
           // don't update the userName activity Id yet do it after the use effect
-          else if (!(playersMsgActIds.current[playerName]?.activityId == playerData?.activityId) && playerName === userName) {
+          else if ((playersMsgActIds.current[playerName]?.activityId != playerData?.activityId) && playerName === userName) {
             console.log("updated myself");
             updatedPlayers[playerName] = playerData;
           }
