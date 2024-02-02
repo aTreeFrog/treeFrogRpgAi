@@ -1,7 +1,7 @@
 // components/PlayerIcon.jsx
 import React, { useState } from 'react';
 import useImage from 'use-image';
-import { Layer, Image, Circle } from 'react-konva';
+import { Layer, Image, Circle, Rect } from 'react-konva';
 const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, selectedRow }) => {
     const [image] = useImage(playerData.figureIcon);
 
@@ -77,15 +77,17 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 />
             )}
             {playerData.battleMode.targeted && (
-                <Circle
-                    x={circleX}
-                    y={circleY}
-                    radius={22} // Larger radius for the travel zone
-                    fill="rgba(235, 48, 67, 0.5)" // Semi-transparent yellow
+                <Rect
+                    x={circleX - 22}
+                    y={circleY - 22}
+                    width={44} // Width of the rectangle, twice the radius to mimic a square with the same diameter as the circle
+                    height={44} // Height of the rectangle, same as width for a square
+                    fill="rgba(235, 48, 67, 0.7)" // Semi-transparent yellow
                     shadowColor="rgba(235, 48, 67, 0.5)"
                     shadowBlur={10}
                     shadowOpacity={1}
                     opacity={0.9}
+                    cornerRadius={10}
                 />
             )}
             <Image

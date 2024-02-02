@@ -453,7 +453,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             y={circleStop ? circleStopPosition.y : cursorPos.y}
                             radius={attackRadius}
                             fill="rgba(235, 48, 67, 0.5)" // Example styling
-                            visible={!!attackRadius} // Only visible if attackRadius is set
+                            visible={!!attackRadius && !circleStop} // Only visible if attackRadius is set
                         />
                         {Object.entries(players).map(([playerName, playerData]) => (
                             <>

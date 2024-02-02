@@ -4,11 +4,11 @@ import { Line } from 'react-konva';
 const BlurredLineEffect = ({ playerData, gridSpacing }) => {
     const gridX = playerData.xPosition;
     const gridY = playerData.yPosition;
-    const theX = gridX * gridSpacing;
+    const theX = gridX * gridSpacing + gridSpacing / 10;
     const theY = gridY * gridSpacing; // Center of the cell vertically
-    const cellTop = theY; // Top boundary of the cell
-    const cellBottom = theY + gridSpacing; // Bottom boundary of the cell
-    const cellWidth = gridSpacing;
+    const cellTop = theY + gridSpacing / 10; // Top boundary of the cell
+    const cellBottom = theY + gridSpacing - gridSpacing / 10; // Bottom boundary of the cell
+    const cellWidth = gridSpacing - gridSpacing / 5;
 
     const [lineY, setLineY] = useState(theY); // Start from the center of the cell
     const animationRef = useRef();
