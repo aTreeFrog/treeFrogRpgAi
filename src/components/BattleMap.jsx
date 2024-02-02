@@ -139,11 +139,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
 
-        if (selectedRow) {
+        // Calculate the nearest grid cell center
+        const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
+        const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
-            // Calculate the nearest grid cell center
-            const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
-            const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
+        //set attack bubble if attack/spell selected
+        if (selectedRow) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
@@ -168,10 +169,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 setCircleStop(false);
             }
 
+            // move icon to new clicked position. 
         } else {
-
-            const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
-            const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
