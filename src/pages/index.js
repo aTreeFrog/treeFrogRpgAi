@@ -517,6 +517,18 @@ export default function Home() {
 
   }, [players[userName]?.xPosition, players[userName]?.yPosition]);
 
+  useEffect(() => {
+
+    if (players[userName]?.battleMode?.usersTargeted !== null) {
+
+      console.log("users targeted: ", players[userName]?.battleMode?.usersTargeted);
+
+      chatSocket.emit('users targeted', players[userName]);
+
+    }
+
+  }, [players[userName]?.battleMode?.usersTargeted]);
+
   //makes the your turn text appear over the battle map for a little bit
   useEffect(() => {
 

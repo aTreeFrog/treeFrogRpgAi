@@ -70,9 +70,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-
-
-
     // Calculate the distance between the figure icon and the cursor position
     const distanceToCursor = Math.sqrt(Math.pow(cursorPos.x - (pixelX + playerSize / 2), 2) + Math.pow(cursorPos.y - (pixelY + playerSize / 2), 2));
 
@@ -103,9 +100,58 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         if (!selectedRow) {
             setCircleStop(false);
+
+            //ToDo: if no attack made, clear out any attacked enemies array for this player
+            if (!players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.usersTargeted?.length > 0) {
+                setPlayers(prevPlayers => ({
+                    ...prevPlayers,
+                    [userName]: { // userName is the name/key of the user you want to update
+                        ...prevPlayers[userName],
+                        battleMode: {
+                            ...prevPlayers[userName].battleMode,
+                            usersTargeted: [], // Set usersTargeted to new array
+                        },
+                    }
+                }));
+            }
+
         } else if (circleStop) {
             const coveredCells = getCoveredCells(circleStopPosition, attackRadius, gridSpacing);
             console.log("Covered Cells: ", coveredCells);
+
+            const coveredPlayers = checkPlayerPositions(players, coveredCells);
+            console.log("Covered players: ", coveredPlayers);
+
+            let enemiesToMark = [];
+            coveredPlayers.forEach(figure => {
+                const attackData = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
+                console.log("attackData: ", attackData);
+
+                if ((attackData.type == "spell" || attackData.type == "melee") && figure.type == "enemy") {
+                    console.log("cell stuff: ", figure);
+                    enemiesToMark.push(figure.name);
+
+                }
+
+                if (enemiesToMark.length > 0) {
+                    setPlayers(prevPlayers => ({
+                        ...prevPlayers,
+                        [userName]: { // userName is the name/key of the user you want to update
+                            ...prevPlayers[userName],
+                            battleMode: {
+                                ...prevPlayers[userName].battleMode,
+                                usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
+                            },
+                        }
+                    }));
+                }
+
+                //ToDo: handle heal spells here 
+
+            });
+
+
+
         }
 
     }, [selectedRow, circleStopPosition]);
@@ -327,13 +373,33 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
                 // If the distance is less than or equal to radius - gridSpacing/2, the cell is at least half covered
                 if (distance <= radius - (gridSpacing / 2)) {
-                    coveredCells.push({ i, j });
+                    coveredCells.push({ x: i, y: j });
                 }
             }
         }
 
         return coveredCells;
     };
+
+    // Function to check if a player's position exists in the coordinates array
+    function checkPlayerPositions(players, coordinates) {
+        const results = [];
+
+        Object.entries(players).forEach(([playerName, player]) => {
+            const { xPosition, yPosition } = player;
+            const positionExists = coordinates.some(coord => coord.x === xPosition && coord.y === yPosition);
+
+            if (positionExists) {
+                results.push({
+                    name: playerName,
+                    position: { x: xPosition, y: yPosition },
+                    type: player.type,
+                });
+            }
+        });
+
+        return results;
+    }
 
 
 
