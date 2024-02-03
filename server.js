@@ -1253,7 +1253,7 @@ app.prepare().then(() => {
 
     };
 
-    setInterval(checkPlayersState, 20000);
+    setInterval(checkPlayersState, 5000);
 
     setInterval(() => {
         responseSent.clear();
