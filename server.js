@@ -1126,7 +1126,7 @@ app.prepare().then(() => {
 
                 activityCount++;
 
-                console.log("users targeted", data);
+                console.log("users targeted", players);
 
                 io.to(serverRoomName).emit('players objects', players);
             };
@@ -1245,7 +1245,7 @@ app.prepare().then(() => {
 
     };
 
-    setInterval(checkPlayersState, 5000);
+    setInterval(checkPlayersState, 20000);
 
     setInterval(() => {
         responseSent.clear();

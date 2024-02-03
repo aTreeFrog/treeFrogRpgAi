@@ -23,7 +23,8 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
 
     useEffect(() => {
 
-        if (activeTab != "Attacks/Spells") {
+        //if moved to another tab and didn't already select attack on target, clear out attack.
+        if (activeTab != "Attacks/Spells" && player?.battleMode?.usersTargeted?.length < 1) {
             setSelectedRow(false);
         }
 

@@ -26,6 +26,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const attackSelection = useRef();
 
 
+    console.log("battlemap players", players);
+
 
     const handleMouseMove = (e) => {
 
@@ -164,7 +166,52 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         attackSelection.current = selectedRow?.name;
 
-    }, [selectedRow, circleStop, circleStopPosition]);
+    }, [selectedRow]);
+
+
+    useEffect(() => {
+        if (circleStop) {
+            const coveredCells = getCoveredCells(circleStopPosition, attackRadius, gridSpacing);
+            console.log("Covered Cells: ", coveredCells);
+
+            const coveredPlayers = checkPlayerPositions(players, coveredCells);
+            console.log("Covered players: ", coveredPlayers);
+
+            let enemiesToMark = [];
+            coveredPlayers.forEach(figure => {
+                const attackData = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
+                console.log("attackData: ", attackData);
+
+                if ((attackData.type == "spell" || attackData.type == "melee") && figure.type == "enemy") {
+                    console.log("cell stuff: ", figure);
+                    enemiesToMark.push(figure.name);
+
+                }
+
+                if (enemiesToMark.length > 0) {
+                    setPlayers(prevPlayers => ({
+                        ...prevPlayers,
+                        [userName]: { // userName is the name/key of the user you want to update
+                            ...prevPlayers[userName],
+                            battleMode: {
+                                ...prevPlayers[userName].battleMode,
+                                usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
+                            },
+                        }
+                    }));
+                }
+
+                //ToDo: handle heal spells here 
+
+            });
+
+            if (enemiesToMark.length < 1) {
+                setCircleStop(false); //no players to mark so dont' stop circle position
+            }
+
+        }
+
+    }, [circleStop]);
 
     useEffect(() => {
         if (image) {
@@ -224,13 +271,10 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 setCircleStopPosition(circleCenter);
                 console.log("clickedPixelX", clickedPixelX);
                 console.log("clickedPixelY", clickedPixelY);
-            } else {
-                // Optionally, allow resetting or adjusting behavior here
-                setCircleStop(false);
             }
 
             // move icon to new clicked position. 
-        } else if (!circleStop) {
+        } else if (!selectedRow) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
