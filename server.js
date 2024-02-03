@@ -978,6 +978,14 @@ app.prepare().then(() => {
                     distance: 7,
                     xWidth: 7,
                     yWidth: 7,
+                }, {
+                    name: "ice blast",
+                    attackBonus: 5,
+                    damage: "2d6",
+                    type: "spell",
+                    distance: 28,
+                    xWidth: 14,
+                    yWidth: 14,
                 }],
                 initiative: 5,
                 armorClass: 14,
@@ -1245,7 +1253,7 @@ app.prepare().then(() => {
 
     };
 
-    setInterval(checkPlayersState, 20000);
+    setInterval(checkPlayersState, 5000);
 
     setInterval(() => {
         responseSent.clear();

@@ -149,6 +149,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('Skills');
   const [selectedRow, setSelectedRow] = useState(null);
   const latestUserServer = useRef();
+  const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -500,6 +501,13 @@ export default function Home() {
       }
 
     } else if (players[userName]?.mode == "initiative" && players[userName]?.battleMode?.initiativeRoll < 1) {
+
+      // load player images
+      Object.values(players)
+        .filter(player => player.userImageUrl)
+        .forEach((_, index) => {
+          setLoadBattlePlayerImages(prev => ({ ...prev, [index]: false }));
+        });
 
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(players[userName]); // Save the data for later
@@ -1442,6 +1450,14 @@ export default function Home() {
     `;
 
 
+  // Update the loadedplayerImages state when an image is loaded or fails to load
+  const handlePlayerImageLoaded = (index) => {
+    setLoadBattlePlayerImages((prev) => ({ ...prev, [index]: true }));
+  };
+
+  // Check if all player images are loaded
+  const allPlayerImagesLoaded = Object.values(loadBattlePlayerImages).length === Object.values(players).filter(player => player.userImageUrl).length && Object.values(loadBattlePlayerImages).every(status => status);
+
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1542,7 +1558,7 @@ export default function Home() {
           )}
           {/* Row of Player Images in Battle Mode */}
           {players[userName]?.mode == "battle" && !floatingValue && (
-            <div className="flex justify-center mt-4 mr-8">
+            <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? 'invisible' : ''}`}>
               {Object.values(players)
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter(player => player.userImageUrl)
@@ -1551,10 +1567,12 @@ export default function Home() {
                     key={index}
                     src={player.userImageUrl}
                     alt={player.name}
+                    onLoad={() => handlePlayerImageLoaded(index)}
                     className={`w-10 h-10 rounded-full mx-1 ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`} // Add 'userpicture-effect' class conditionally
                     style={{
                       border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
-                        player.battleMode.yourTurn ? '2px solid white' : 'none'
+                        player.battleMode.yourTurn ? '2px solid white' : 'none',
+                      opacity: loadBattlePlayerImages[index] ? '1' : '0', // Only make image fully opaque when loaded
                     }}
                   />
                 ))

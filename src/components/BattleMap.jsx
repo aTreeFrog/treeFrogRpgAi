@@ -397,43 +397,57 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     }, [players]);
 
 
-    //figure out which cells contain the attack circle if its clicked
     const getCoveredCells = (circleCenter, radius, gridSpacing) => {
-        // Calculate the bounds of the circle in terms of grid coordinates
-        const left = circleCenter.x - radius;
-        const right = circleCenter.x + radius;
-        const top = circleCenter.y - radius;
-        const bottom = circleCenter.y + radius;
-
-        // Convert these bounds to grid indices
-        const leftIndex = Math.floor(left / gridSpacing);
-        const rightIndex = Math.floor(right / gridSpacing);
-        const topIndex = Math.floor(top / gridSpacing);
-        const bottomIndex = Math.floor(bottom / gridSpacing);
-
         const coveredCells = [];
 
-        // Check each cell within the bounds to see if it's at least half covered
+        // Calculate the effective bounds of the circle to include cells that are substantially covered
+        const effectiveBounds = {
+            left: circleCenter.x - radius,
+            right: circleCenter.x + radius,
+            top: circleCenter.y - radius,
+            bottom: circleCenter.y + radius,
+        };
+
+        // Determine grid indices for the bounding box
+        const leftIndex = Math.floor(effectiveBounds.left / gridSpacing);
+        const rightIndex = Math.ceil(effectiveBounds.right / gridSpacing) - 1; // Adjust to exclude barely touched cells on the right and bottom
+        const topIndex = Math.floor(effectiveBounds.top / gridSpacing);
+        const bottomIndex = Math.ceil(effectiveBounds.bottom / gridSpacing) - 1; // Adjust as above
+
         for (let i = leftIndex; i <= rightIndex; i++) {
             for (let j = topIndex; j <= bottomIndex; j++) {
-                // Calculate the center of the current cell
-                const cellCenter = {
-                    x: (i * gridSpacing) + (gridSpacing / 2),
-                    y: (j * gridSpacing) + (gridSpacing / 2),
+                // Determine if the circle's area substantively overlaps with the cell
+                // Check if the distance from the circle's center to the closest point of the cell is less than the radius
+                const closestPoint = {
+                    x: Math.max(i * gridSpacing, Math.min(circleCenter.x, (i + 1) * gridSpacing)),
+                    y: Math.max(j * gridSpacing, Math.min(circleCenter.y, (j + 1) * gridSpacing)),
                 };
+                const distanceToClosestPoint = Math.sqrt(
+                    (closestPoint.x - circleCenter.x) ** 2 +
+                    (closestPoint.y - circleCenter.y) ** 2
+                );
 
-                // Calculate distance from the cell center to the circle center
-                const distance = Math.sqrt(Math.pow(cellCenter.x - circleCenter.x, 2) + Math.pow(cellCenter.y - circleCenter.y, 2));
+                if (distanceToClosestPoint < radius) {
+                    // Additionally, check if the cell's center is within the circle to ensure substantial overlap
+                    const cellCenter = {
+                        x: i * gridSpacing + gridSpacing / 2,
+                        y: j * gridSpacing + gridSpacing / 2,
+                    };
+                    const distanceToCellCenter = Math.sqrt(
+                        (cellCenter.x - circleCenter.x) ** 2 +
+                        (cellCenter.y - circleCenter.y) ** 2
+                    );
 
-                // If the distance is less than or equal to radius - gridSpacing/2, the cell is at least half covered
-                if (distance <= radius - (gridSpacing / 2)) {
-                    coveredCells.push({ x: i, y: j });
+                    if (distanceToCellCenter <= radius) {
+                        coveredCells.push({ x: i, y: j });
+                    }
                 }
             }
         }
 
         return coveredCells;
     };
+
 
     // Function to check if a player's position exists in the coordinates array
     function checkPlayerPositions(players, coordinates) {
