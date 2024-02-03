@@ -3,7 +3,6 @@ import { Stage, Layer, Image, Line, Circle } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
-import { log } from 'tone/build/esm/core/util/Debug';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -448,9 +447,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         return coveredCells;
     };
-
-
-
 
 
     // Function to check if a player's position exists in the coordinates array
