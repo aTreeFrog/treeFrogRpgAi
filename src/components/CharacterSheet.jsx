@@ -21,6 +21,14 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
         }
     }, [race, characterClass]); // Recalculate when race or class changes
 
+    useEffect(() => {
+
+        if (activeTab != "Attacks/Spells") {
+            setSelectedRow(false);
+        }
+
+    }, [activeTab]);
+
     return (
         <div className="mt-4 ml-4 text-left " > {/* Removed flex from this div */}
             {/* Container for both left and right sections */}
