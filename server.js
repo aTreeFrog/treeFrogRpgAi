@@ -993,6 +993,7 @@ app.prepare().then(() => {
                 currentHealth: 30,
                 xPosition: 0,
                 yPosition: 0,
+                xScale: 1,
                 diceStates: defaultDiceStates,
                 mode: "story",
                 timers: {
