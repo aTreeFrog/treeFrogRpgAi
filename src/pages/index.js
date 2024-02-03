@@ -365,6 +365,8 @@ export default function Home() {
         latestUserServer.current = data[userName];
       }
 
+
+      console.log("playersMsgActIds", playersMsgActIds);
       //ToDo: SEE IF WE CAN PREVENT UPDATING THE USESTATE OF PLAYERS IF ITS NOT UPDATED INFORMATION
 
       setPlayers(prevPlayers => {
@@ -377,9 +379,13 @@ export default function Home() {
           }
 
           // For other players, always update
-          if (playerName !== userName && (playersMsgActIds.current[playerName]?.activityId != playerData?.activityId)) {
-            updatedPlayers[playerName] = cloneDeep(playerData); // Deep copy playerData
+          if (playerName !== userName) {
+            console.log(`Updating player: ${playerName}`); // Debugging: Confirm this runs
+            updatedPlayers[playerName] = cloneDeep(playerData);
             playersMsgActIds.current[playerName].activityId = playerData?.activityId;
+
+            // Debugging: Check the copied data
+            console.log("clonedeep: ", updatedPlayers[playerName]);
           }
 
           // if user is in story mode, delete any enemy players in the players object

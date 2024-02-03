@@ -26,6 +26,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const attackSelection = useRef();
 
 
+    console.log("battlemap players", players);
+
 
     const handleMouseMove = (e) => {
 

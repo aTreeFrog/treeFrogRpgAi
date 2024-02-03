@@ -5,6 +5,8 @@ import { Layer, Image, Circle, Rect } from 'react-konva';
 const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, selectedRow }) => {
     const [image] = useImage(playerData.figureIcon);
 
+    console.log("playericon playerData", playerData);
+
     // takes into account amount a player moved during their turn
     let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
 
