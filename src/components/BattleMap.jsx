@@ -148,13 +148,15 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             },
                         }
                     }));
-                } else {
-                    setCircleStop(false); //no players to mark so dont' stop circle position
                 }
 
                 //ToDo: handle heal spells here 
 
             });
+
+            if (enemiesToMark.length < 1) {
+                setCircleStop(false); //no players to mark so dont' stop circle position
+            }
 
 
 
