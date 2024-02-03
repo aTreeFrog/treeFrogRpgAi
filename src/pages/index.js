@@ -21,7 +21,7 @@ import { io } from "socket.io-client";
 import { CountdownCircleTimer } from 'react-countdown-circle-timer';
 import KnifeCutText from '../components/KnifeCutText'
 import player from '../../lib/objects/player'
-
+import { cloneDeep } from 'lodash';
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -368,12 +368,9 @@ export default function Home() {
       //ToDo: SEE IF WE CAN PREVENT UPDATING THE USESTATE OF PLAYERS IF ITS NOT UPDATED INFORMATION
 
       setPlayers(prevPlayers => {
-        const updatedPlayers = { ...prevPlayers };
-
-        //console.log("playersMsgActIds", playersMsgActIds);
+        const updatedPlayers = cloneDeep(prevPlayers); // Deep copy the entire players object
 
         Object.entries(data).forEach(([playerName, playerData]) => {
-
           if (!playersMsgActIds.current[playerName]) {
             playersMsgActIds.current[playerName] = {};
             playersMsgActIds.current[playerName].activityId = "";
@@ -381,19 +378,18 @@ export default function Home() {
 
           // For other players, always update
           if (playerName !== userName && (playersMsgActIds.current[playerName]?.activityId != playerData?.activityId)) {
-            updatedPlayers[playerName] = playerData;
+            updatedPlayers[playerName] = cloneDeep(playerData); // Deep copy playerData
             playersMsgActIds.current[playerName].activityId = playerData?.activityId;
           }
 
-          // if user is in story mode, delete any enemy players in the players object so it doesn't stay for next battle
+          // if user is in story mode, delete any enemy players in the players object
           if (updatedPlayers[userName]?.mode == "story" && updatedPlayers[playerName]?.type == "enemy") {
             delete updatedPlayers[playerName];
           }
           // For the current user, update only if the activityId is new
-          // don't update the userName activity Id yet do it after the use effect
           else if ((playersMsgActIds.current[playerName]?.activityId != playerData?.activityId) && playerName === userName) {
             console.log("updated myself");
-            updatedPlayers[playerName] = playerData;
+            updatedPlayers[playerName] = cloneDeep(playerData); // Deep copy playerData
           }
         });
 
@@ -533,16 +529,22 @@ export default function Home() {
   }, [players[userName]?.xPosition, players[userName]?.yPosition]);
 
   useEffect(() => {
+    const serverUserNameTargeted = latestUserServer.current?.battleMode?.usersTargeted;
+    const userNameTargeted = players[userName]?.battleMode?.usersTargeted;
 
-    if (latestUserServer.current?.battleMode?.usersTargeted != players[userName]?.battleMode?.usersTargeted) {
+    // Check if both are arrays
+    if (Array.isArray(serverUserNameTargeted) && Array.isArray(userNameTargeted)) {
+      // Check if the lengths are different or any element is different
+      const arraysDiffer = serverUserNameTargeted.length !== userNameTargeted.length ||
+        serverUserNameTargeted.some((user, index) => user !== userNameTargeted[index]);
 
-      console.log("users targeted: ", players[userName]?.battleMode?.usersTargeted);
-
-      chatSocket.emit('users targeted', players[userName]);
-
+      if (arraysDiffer) {
+        console.log("users targeted: ", userNameTargeted);
+        chatSocket.emit('users targeted', players[userName]);
+      }
     }
-
   }, [players[userName]?.battleMode?.usersTargeted]);
+
 
   //makes the your turn text appear over the battle map for a little bit
   useEffect(() => {
