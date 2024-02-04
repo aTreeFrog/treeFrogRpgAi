@@ -89,21 +89,37 @@ body,
     animation: diceGlowAnimation 1.5s ease-in-out infinite;
 }
 
+
+
 @keyframes playerGlowAnimation {
 
     0%,
     100% {
-        filter: drop-shadow(0 0 5px rgba(204, 85, 0, 0.3));
+        filter: drop-shadow(0 0 7px rgba(149, 19, 4, 0.6));
     }
 
     50% {
-        filter: drop-shadow(0 0 10px rgba(204, 85, 0, 0.6));
+        filter: drop-shadow(0 0 10px rgba(199, 13, 13, 0.8));
     }
 }
 
 .player-glow-active {
     animation: playerGlowAnimation 1.5s ease-in-out infinite;
 }
+
+.targeted-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 0, 0, 0.5);
+    /* Red overlay with 50% opacity */
+    border-radius: 9999px;
+    /* Ensures the overlay is also rounded */
+}
+
 
 
 .hexagon-active::before {
