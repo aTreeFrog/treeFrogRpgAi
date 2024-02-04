@@ -1563,30 +1563,36 @@ export default function Home() {
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter(player => player.userImageUrl)
                 .map((player, index) => (
-                  <div key={index} className={`relative w-10 h-10 rounded-full mx-1 overflow-hidden ${player.battleMode.targeted ? 'player-glow-active' : ''}`}>
-                    <img
-                      src={player.userImageUrl}
-                      alt={player.name}
-                      onLoad={() => handlePlayerImageLoaded(index)}
-                      className={`w-full h-full object-cover rounded-full ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`}
-                      style={{
-                        border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
-                          player.battleMode.yourTurn ? '2px solid white' : 'none',
-                        opacity: loadBattlePlayerImages[index] ? '1' : '0',
-                      }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%', // Ensures the overlay covers the full width
-                      height: '100%', // Ensures the overlay covers the full height
-                      backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
-                      zIndex: 2, // Ensures the overlay is above the image
-                    }}></div>
+                  <div key={index} className="player-container relative flex flex-col items-center mx-1"> {/* Adjusted line */}
+                    <div className={`w-10 h-10 rounded-full overflow-hidden ${player.battleMode.targeted ? 'player-glow-active' : ''}`}>
+                      <img
+                        src={player.userImageUrl}
+                        alt={player.name}
+                        onLoad={() => handlePlayerImageLoaded(index)}
+                        className={`w-full h-full object-cover rounded-full ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`}
+                        style={{
+                          border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
+                            player.battleMode.yourTurn ? '2px solid white' : 'none',
+                          opacity: loadBattlePlayerImages[index] ? '1' : '0',
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
+                        zIndex: 2,
+                      }}></div>
+                    </div>
+                    <div
+                      className="player-name-tooltip absolute bottom-full mb-2"
+                      style={{ backgroundColor: player.type === "enemy" ? 'red' : 'green' }} > {/* Adjusted line for tooltip */}
+                      {player.name}
+                    </div>
                   </div>
-                ))
-              }
+                ))}
             </div>
           )}
         </div>

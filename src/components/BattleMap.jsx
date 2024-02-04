@@ -492,7 +492,9 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     return (
 
-        <div className={className}>
+        <div className={className} style={{
+            cursor: 'pointer'
+        }}>
             {imageLoaded && (
                 <Stage
                     width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
