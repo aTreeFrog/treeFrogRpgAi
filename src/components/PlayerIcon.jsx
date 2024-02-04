@@ -1,9 +1,11 @@
 // components/PlayerIcon.jsx
 import React, { useState } from 'react';
 import useImage from 'use-image';
-import { Layer, Image, Circle, Rect } from 'react-konva';
+import { Layer, Image, Circle, Rect, Text, Group } from 'react-konva';
 const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, selectedRow }) => {
     const [image] = useImage(playerData.figureIcon);
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
     console.log("playericon playerData", playerData);
 
@@ -23,6 +25,16 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const circleX = gridX * gridSpacing + gridSpacing / 2;
     const circleY = gridY * gridSpacing + gridSpacing / 2;
+
+    const tooltipPadding = 1;
+    const tooltipFontSize = 14;
+    const tooltipFontFamily = 'Arial';
+    const tooltipTextColor = 'white';
+
+    // Calculate tooltip background size based on text
+    const tooltipTextWidth = playerData.name.length * (tooltipFontSize / 2); // Approximation
+    const tooltipWidth = tooltipTextWidth;
+    const tooltipHeight = tooltipFontSize;
 
     const handleDragEnd = (e) => {
         // Get the position of the dragged icon
@@ -67,6 +79,16 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
         }
     };
 
+    const handleMouseOver = (e) => {
+        const { x, y } = e.target.position();
+        setTooltipPosition({ x: x - tooltipWidth / 2, y: y - tooltipHeight - 20 }); // Adjust for placement above the element
+        setShowTooltip(true);
+    };
+
+    const handleMouseOut = () => {
+        setShowTooltip(false);
+    };
+
     return (
         <>
             {playerData.type !== 'enemy' && clickable && (
@@ -100,7 +122,29 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 scaleY={playerScale}
                 draggable={clickable}
                 onDragEnd={(e) => clickable && handleDragEnd(e)}
+                onMouseOver={handleMouseOver}
+                onMouseOut={handleMouseOut}
             />
+            {showTooltip && (
+                <Group>
+                    <Rect
+                        x={tooltipPosition.x + (15 * playerData.xScale)}
+                        y={tooltipPosition.y + 20}
+                        width={tooltipWidth + 2}
+                        height={tooltipHeight + 2}
+                        fill={playerData.type === 'enemy' ? 'red' : 'green'}
+                        cornerRadius={4} // Rounded corners
+                    />
+                    <Text
+                        x={tooltipPosition.x + tooltipPadding + (15 * playerData.xScale)}
+                        y={tooltipPosition.y + tooltipPadding + 20}
+                        text={playerData.name}
+                        fontSize={tooltipFontSize}
+                        fontFamily={tooltipFontFamily}
+                        fill={tooltipTextColor}
+                    />
+                </Group>
+            )}
         </>
     );
 };
