@@ -113,7 +113,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     ...prevPlayers,
                     [userName]: { // userName is the name/key of the user you want to update
                         ...prevPlayers[userName],
-                        xScale: 1,
                         battleMode: {
                             ...prevPlayers[userName].battleMode,
                             usersTargeted: [], // Set usersTargeted to new array
@@ -341,6 +340,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             ...prevPlayers,
             [playerName]: { // Corrected this line
                 ...prevPlayers[playerName],
+                xScale: 1,
                 xPosition: newX,
                 yPosition: newY,
             }

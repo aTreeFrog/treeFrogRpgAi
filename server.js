@@ -1107,6 +1107,7 @@ app.prepare().then(() => {
                 players[data.name].battleMode.distanceMoved += distanceMoved;
                 players[data.name].xPosition = data.xPosition;
                 players[data.name].yPosition = data.yPosition;
+                players[data.name].xScale = data.xScale;
                 players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
                 activityCount++;
 
@@ -1122,6 +1123,7 @@ app.prepare().then(() => {
             if (players.hasOwnProperty(data?.name)) {
 
                 players[data.name].battleMode.usersTargeted = data.battleMode.usersTargeted;
+                players[data.name].xScale = data.xScale;
 
                 Object.entries(players).forEach(([userName, playerData]) => {
 

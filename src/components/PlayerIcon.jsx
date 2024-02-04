@@ -19,7 +19,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const playerSize = image.width * playerScale;
     const gridX = playerData.xPosition;
     const gridY = playerData.yPosition;
-    const pixelX = gridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
+    const pixelX = gridX * gridSpacing + gridSpacing / 2 - playerSize / 2 * playerData.xScale;
     const pixelY = gridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
     const circleX = gridX * gridSpacing + gridSpacing / 2;
     const circleY = gridY * gridSpacing + gridSpacing / 2;
@@ -96,7 +96,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 image={image}
                 x={pixelX}
                 y={pixelY}
-                scaleX={playerScale}
+                scaleX={playerScale * playerData.xScale}
                 scaleY={playerScale}
                 draggable={clickable}
                 onDragEnd={(e) => clickable && handleDragEnd(e)}
