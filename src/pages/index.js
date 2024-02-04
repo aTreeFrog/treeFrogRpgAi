@@ -1563,18 +1563,28 @@ export default function Home() {
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter(player => player.userImageUrl)
                 .map((player, index) => (
-                  <img
-                    key={index}
-                    src={player.userImageUrl}
-                    alt={player.name}
-                    onLoad={() => handlePlayerImageLoaded(index)}
-                    className={`w-10 h-10 rounded-full mx-1 ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`} // Add 'userpicture-effect' class conditionally
-                    style={{
-                      border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
-                        player.battleMode.yourTurn ? '2px solid white' : 'none',
-                      opacity: loadBattlePlayerImages[index] ? '1' : '0', // Only make image fully opaque when loaded
-                    }}
-                  />
+                  <div key={index} className={`relative w-10 h-10 rounded-full mx-1 overflow-hidden ${player.battleMode.targeted ? 'player-glow-active' : ''}`}>
+                    <img
+                      src={player.userImageUrl}
+                      alt={player.name}
+                      onLoad={() => handlePlayerImageLoaded(index)}
+                      className={`w-full h-full object-cover rounded-full ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`}
+                      style={{
+                        border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
+                          player.battleMode.yourTurn ? '2px solid white' : 'none',
+                        opacity: loadBattlePlayerImages[index] ? '1' : '0',
+                      }}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%', // Ensures the overlay covers the full width
+                      height: '100%', // Ensures the overlay covers the full height
+                      backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
+                      zIndex: 2, // Ensures the overlay is above the image
+                    }}></div>
+                  </div>
                 ))
               }
             </div>

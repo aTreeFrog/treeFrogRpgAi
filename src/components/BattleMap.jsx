@@ -129,6 +129,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             console.log("Covered players: ", coveredPlayers);
 
             let enemiesToMark = [];
+            let toMyLeft = 0;
+            let scaleXValue = 1;
             coveredPlayers.forEach(figure => {
                 const attackData = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
                 console.log("attackData: ", attackData);
@@ -137,30 +139,37 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     console.log("cell stuff: ", figure);
                     enemiesToMark.push(figure.name);
 
-                }
+                    if (figure.position.x < players[userName].xPosition) {
+                        toMyLeft++;
+                    }
 
-                if (enemiesToMark.length > 0) {
-                    setPlayers(prevPlayers => ({
-                        ...prevPlayers,
-                        [userName]: { // userName is the name/key of the user you want to update
-                            ...prevPlayers[userName],
-                            battleMode: {
-                                ...prevPlayers[userName].battleMode,
-                                usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
-                            },
-                        }
-                    }));
                 }
 
                 //ToDo: handle heal spells here 
 
             });
 
-            if (enemiesToMark.length < 1) {
+            if (enemiesToMark.length > 0) {
+
+                //if enemies are to the left, scale the icon to look left
+                if (toMyLeft > 0 && toMyLeft == enemiesToMark.length) {
+                    scaleXValue = -1;
+                }
+
+                setPlayers(prevPlayers => ({
+                    ...prevPlayers,
+                    [userName]: { // userName is the name/key of the user you want to update
+                        ...prevPlayers[userName],
+                        xScale: scaleXValue,
+                        battleMode: {
+                            ...prevPlayers[userName].battleMode,
+                            usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
+                        },
+                    }
+                }));
+            } else {
                 setCircleStop(false); //no players to mark so dont' stop circle position
             }
-
-
 
         }
 
@@ -178,6 +187,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             console.log("Covered players: ", coveredPlayers);
 
             let enemiesToMark = [];
+            let toMyLeft = 0;
+            let scaleXValue = 1;
             coveredPlayers.forEach(figure => {
                 const attackData = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
                 console.log("attackData: ", attackData);
@@ -186,26 +197,35 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     console.log("cell stuff: ", figure);
                     enemiesToMark.push(figure.name);
 
-                }
+                    if (figure.position.x < players[userName].xPosition) {
+                        toMyLeft++;
+                    }
 
-                if (enemiesToMark.length > 0) {
-                    setPlayers(prevPlayers => ({
-                        ...prevPlayers,
-                        [userName]: { // userName is the name/key of the user you want to update
-                            ...prevPlayers[userName],
-                            battleMode: {
-                                ...prevPlayers[userName].battleMode,
-                                usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
-                            },
-                        }
-                    }));
                 }
 
                 //ToDo: handle heal spells here 
 
             });
 
-            if (enemiesToMark.length < 1) {
+            if (enemiesToMark.length > 0) {
+
+                //if enemies are to the left, scale the icon to look left
+                if (toMyLeft > 0 && toMyLeft == enemiesToMark.length) {
+                    scaleXValue = -1;
+                }
+
+                setPlayers(prevPlayers => ({
+                    ...prevPlayers,
+                    [userName]: { // userName is the name/key of the user you want to update
+                        ...prevPlayers[userName],
+                        xScale: scaleXValue,
+                        battleMode: {
+                            ...prevPlayers[userName].battleMode,
+                            usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
+                        },
+                    }
+                }));
+            } else {
                 setCircleStop(false); //no players to mark so dont' stop circle position
             }
 
@@ -320,6 +340,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             ...prevPlayers,
             [playerName]: { // Corrected this line
                 ...prevPlayers[playerName],
+                xScale: 1,
                 xPosition: newX,
                 yPosition: newY,
             }
