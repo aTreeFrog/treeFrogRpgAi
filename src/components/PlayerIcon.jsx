@@ -7,8 +7,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-    console.log("playericon playerData", playerData);
-
     // takes into account amount a player moved during their turn
     let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
 
@@ -35,6 +33,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const tooltipTextWidth = playerData.name.length * (tooltipFontSize / 2); // Approximation
     const tooltipWidth = tooltipTextWidth;
     const tooltipHeight = tooltipFontSize;
+
 
     const handleDragEnd = (e) => {
         // Get the position of the dragged icon
@@ -128,16 +127,16 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
             {showTooltip && (
                 <Group>
                     <Rect
-                        x={tooltipPosition.x + (15 * playerData.xScale)}
-                        y={tooltipPosition.y + 20}
+                        x={circleX - (tooltipWidth / 2 * playerData.xScale)}
+                        y={circleY - gridSpacing / 1.2}
                         width={tooltipWidth + 2}
                         height={tooltipHeight + 2}
                         fill={playerData.type === 'enemy' ? 'red' : 'green'}
                         cornerRadius={4} // Rounded corners
                     />
                     <Text
-                        x={tooltipPosition.x + tooltipPadding + (15 * playerData.xScale)}
-                        y={tooltipPosition.y + tooltipPadding + 20}
+                        x={circleX + tooltipPadding - (tooltipWidth / 2 * playerData.xScale)}
+                        y={circleY + tooltipPadding - gridSpacing / 1.2}
                         text={playerData.name}
                         fontSize={tooltipFontSize}
                         fontFamily={tooltipFontFamily}
