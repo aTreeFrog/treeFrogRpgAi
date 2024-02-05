@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle, Rect, Text, Group } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, selectedRow }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, showPlayerName, setShowPlayerName }) => {
     const [image] = useImage(playerData.figureIcon);
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -79,13 +79,17 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     };
 
     const handleMouseOver = (e) => {
-        const { x, y } = e.target.position();
-        setTooltipPosition({ x: x - tooltipWidth / 2, y: y - tooltipHeight - 20 }); // Adjust for placement above the element
-        setShowTooltip(true);
+        setShowPlayerName(prevState => ({
+            ...prevState,
+            [playerData.name]: true
+        }));
     };
 
     const handleMouseOut = () => {
-        setShowTooltip(false);
+        setShowPlayerName(prevState => ({
+            ...prevState,
+            [playerData.name]: false
+        }));
     };
 
     return (
@@ -124,7 +128,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 onMouseOver={handleMouseOver}
                 onMouseOut={handleMouseOut}
             />
-            {showTooltip && (
+            {showPlayerName[playerName] === true && (
                 <Group>
                     <Rect
                         x={circleX - (tooltipWidth / 2 * playerData.xScale)}

@@ -150,6 +150,7 @@ export default function Home() {
   const [selectedRow, setSelectedRow] = useState(null);
   const latestUserServer = useRef();
   const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
+  const [showPlayerName, setShowPlayerName] = useState({});
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1458,6 +1459,22 @@ export default function Home() {
   // Check if all player images are loaded
   const allPlayerImagesLoaded = Object.values(loadBattlePlayerImages).length === Object.values(players).filter(player => player.userImageUrl).length && Object.values(loadBattlePlayerImages).every(status => status);
 
+  const handleMouseOver = (player) => {
+    console.log("handleMouseOver ", player);
+    setShowPlayerName(prevState => ({
+      ...prevState,
+      [player.name]: true
+    }));
+  };
+
+  const handleMouseOut = (player) => {
+    setShowPlayerName(prevState => ({
+      ...prevState,
+      [player.name]: false
+    }));
+  };
+
+  console.log("showPlayerName", showPlayerName);
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1546,7 +1563,7 @@ export default function Home() {
           {players[userName]?.mode == "battle" && (
             <>
               <BattleMap
-                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow}
+                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow} showPlayerName={showPlayerName} setShowPlayerName={setShowPlayerName}
                 className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
               />
               {showOverlayText && (
@@ -1584,13 +1601,17 @@ export default function Home() {
                         height: '100%',
                         backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
                         zIndex: 2,
-                      }}></div>
+                      }}
+                        onMouseOver={() => handleMouseOver(player)}
+                        onMouseOut={() => handleMouseOut(player)}></div>
                     </div>
-                    <div
-                      className="player-name-tooltip absolute bottom-full mb-2"
-                      style={{ backgroundColor: player.type === "enemy" ? 'red' : 'green' }} > {/* Adjusted line for tooltip */}
-                      {player.name}
-                    </div>
+                    {showPlayerName[player.name] === true && (
+                      <div
+                        className="player-name-tooltip absolute bottom-full mb-2"
+                        style={{ backgroundColor: player.type === "enemy" ? 'red' : 'green' }} > {/* Adjusted line for tooltip */}
+                        {player.name}
+                      </div>
+                    )}
                   </div>
                 ))}
             </div>
