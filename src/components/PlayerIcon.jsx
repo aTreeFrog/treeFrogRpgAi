@@ -141,7 +141,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
             {showPlayerName[playerName] === true && (
                 <Group>
                     <Rect
-                        x={circleX - (tooltipWidth / 2 * playerData.xScale)}
+                        x={circleX - ((tooltipWidth / 2))}
                         y={circleY - gridSpacing / 1.2}
                         width={tooltipWidth + 2}
                         height={tooltipHeight + 2}
@@ -149,7 +149,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                         cornerRadius={4} // Rounded corners
                     />
                     <Text
-                        x={circleX + tooltipPadding - (tooltipWidth / 2 * playerData.xScale)}
+                        x={circleX + tooltipPadding - ((tooltipWidth / 2))}
                         y={circleY + tooltipPadding - gridSpacing / 1.2}
                         text={playerData.name}
                         fontSize={tooltipFontSize}
