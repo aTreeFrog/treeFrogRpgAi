@@ -4,7 +4,7 @@ import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
 
-const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow }) => {
+const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, showPlayerName, setShowPlayerName }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
     const [scale, setScale] = useState(1); // Default scale is 1
     //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
@@ -492,7 +492,9 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     return (
 
-        <div className={className}>
+        <div className={className} style={{
+            cursor: 'pointer'
+        }}>
             {imageLoaded && (
                 <Stage
                     width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}
@@ -548,7 +550,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                     travelZoneRadius={travelZoneRadius}
                                     clickable={clickable}
                                     unavailCoord={unavailCoord}
-                                    selectedRow={selectedRow}
+                                    showPlayerName={showPlayerName}
+                                    setShowPlayerName={setShowPlayerName}
                                 />
                                 {playerData?.battleMode?.targeted && (
                                     <BlurredLineEffect

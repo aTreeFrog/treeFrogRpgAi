@@ -150,6 +150,7 @@ export default function Home() {
   const [selectedRow, setSelectedRow] = useState(null);
   const latestUserServer = useRef();
   const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
+  const [showPlayerName, setShowPlayerName] = useState({});
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1458,6 +1459,22 @@ export default function Home() {
   // Check if all player images are loaded
   const allPlayerImagesLoaded = Object.values(loadBattlePlayerImages).length === Object.values(players).filter(player => player.userImageUrl).length && Object.values(loadBattlePlayerImages).every(status => status);
 
+  const handleMouseOver = (player) => {
+    console.log("handleMouseOver ", player);
+    setShowPlayerName(prevState => ({
+      ...prevState,
+      [player.name]: true
+    }));
+  };
+
+  const handleMouseOut = (player) => {
+    setShowPlayerName(prevState => ({
+      ...prevState,
+      [player.name]: false
+    }));
+  };
+
+  console.log("showPlayerName", showPlayerName);
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1546,7 +1563,7 @@ export default function Home() {
           {players[userName]?.mode == "battle" && (
             <>
               <BattleMap
-                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow}
+                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow} showPlayerName={showPlayerName} setShowPlayerName={setShowPlayerName}
                 className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
               />
               {showOverlayText && (
@@ -1563,30 +1580,40 @@ export default function Home() {
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter(player => player.userImageUrl)
                 .map((player, index) => (
-                  <div key={index} className={`relative w-10 h-10 rounded-full mx-1 overflow-hidden ${player.battleMode.targeted ? 'player-glow-active' : ''}`}>
-                    <img
-                      src={player.userImageUrl}
-                      alt={player.name}
-                      onLoad={() => handlePlayerImageLoaded(index)}
-                      className={`w-full h-full object-cover rounded-full ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`}
-                      style={{
-                        border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
-                          player.battleMode.yourTurn ? '2px solid white' : 'none',
-                        opacity: loadBattlePlayerImages[index] ? '1' : '0',
+                  <div key={index} className="player-container relative flex flex-col items-center mx-1"> {/* Adjusted line */}
+                    <div className={`w-10 h-10 rounded-full overflow-hidden ${player.battleMode.targeted ? 'player-glow-active' : ''}`}>
+                      <img
+                        src={player.userImageUrl}
+                        alt={player.name}
+                        onLoad={() => handlePlayerImageLoaded(index)}
+                        className={`w-full h-full object-cover rounded-full ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`}
+                        style={{
+                          border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
+                            player.battleMode.yourTurn ? '2px solid white' : 'none',
+                          opacity: loadBattlePlayerImages[index] ? '1' : '0',
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
+                        zIndex: 2,
                       }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%', // Ensures the overlay covers the full width
-                      height: '100%', // Ensures the overlay covers the full height
-                      backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
-                      zIndex: 2, // Ensures the overlay is above the image
-                    }}></div>
+                        onMouseOver={() => handleMouseOver(player)}
+                        onMouseOut={() => handleMouseOut(player)}></div>
+                    </div>
+                    {showPlayerName[player.name] === true && (
+                      <div
+                        className="player-name-tooltip absolute bottom-full mb-2"
+                        style={{ backgroundColor: player.type === "enemy" ? 'red' : 'green' }} > {/* Adjusted line for tooltip */}
+                        {player.name}
+                      </div>
+                    )}
                   </div>
-                ))
-              }
+                ))}
             </div>
           )}
         </div>
