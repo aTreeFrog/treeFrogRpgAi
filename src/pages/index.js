@@ -1757,7 +1757,7 @@ export default function Home() {
                     options={options}
                     value={diceSelectionOption}
                     onChange={handleDropdownChange}
-
+                    submittingDice={diceStates.d20.isGlowActive}
                   />
 
                 </>
