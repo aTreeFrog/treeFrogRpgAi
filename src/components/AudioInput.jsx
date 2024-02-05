@@ -2,12 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { stopAi } from '../pages/index'
 
 
-export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, setLastAudioInputSequence, setShouldStopAi, isRecording, setIsRecording, diceRollsActive }) {
+export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, setLastAudioInputSequence, setShouldStopAi, isRecording, setIsRecording, diceRollsActive, mediaRecorder, setMediaRecorder, audioChunks }) {
     // Define constraints for the audio
     const constraints = { audio: true };
     const [recordText, setRecordText] = useState("Click to Start recording")
-    const [mediaRecorder, setMediaRecorder] = useState(null);
-    const audioChunks = useRef([]);
     const cancelled = useRef(false);
     const [isButtonEnabled, setIsButtonEnabled] = useState(true);
 
@@ -73,6 +71,14 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
 
 
     useEffect(() => {
+
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            cancelled.current = true;
+            mediaRecorder.stop();
+        }
+
+        setIsRecording(false);
+        setRecordText("Click to Start recording");
 
         // Request permissions to record audio
         navigator.mediaDevices.getUserMedia(constraints)
