@@ -151,6 +151,8 @@ export default function Home() {
   const latestUserServer = useRef();
   const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
   const [showPlayerName, setShowPlayerName] = useState({});
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const audioChunks = useRef([]);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1474,6 +1476,15 @@ export default function Home() {
     }));
   };
 
+  useEffect(() => {
+
+    if ((!isAudioOpen || isCustomTextOpen) && (mediaRecorder && mediaRecorder.state === "recording")) {
+      audioChunks.current = [];
+      mediaRecorder.stop();
+    }
+
+  }, [isAudioOpen, isCustomTextOpen]);
+
   console.log("showPlayerName", showPlayerName);
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
@@ -1830,10 +1841,11 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} mediaRecorder={mediaRecorder} setMediaRecorder={setMediaRecorder} audioChunks={audioChunks} />
             </div>
           )
         }
+
 
       </div >
     </div >
