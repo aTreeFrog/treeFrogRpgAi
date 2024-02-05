@@ -552,6 +552,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                     unavailCoord={unavailCoord}
                                     showPlayerName={showPlayerName}
                                     setShowPlayerName={setShowPlayerName}
+                                    selectedRow={selectedRow}
+                                    circleStop={circleStop}
                                 />
                                 {playerData?.battleMode?.targeted && (
                                     <BlurredLineEffect

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle, Rect, Text, Group } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, showPlayerName, setShowPlayerName }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, showPlayerName, setShowPlayerName, selectedRow, circleStop }) => {
     const [image] = useImage(playerData.figureIcon);
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -79,10 +79,20 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     };
 
     const handleMouseOver = (e) => {
-        setShowPlayerName(prevState => ({
-            ...prevState,
-            [playerData.name]: true
-        }));
+
+        // dont show player name when attack circle is moving, its distracting
+        if (selectedRow && !circleStop) {
+            setShowPlayerName(prevState => ({
+                ...prevState,
+                [playerData.name]: false
+            }));
+        } else {
+
+            setShowPlayerName(prevState => ({
+                ...prevState,
+                [playerData.name]: true
+            }));
+        }
     };
 
     const handleMouseOut = () => {
