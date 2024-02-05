@@ -139,17 +139,18 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 onMouseOut={handleMouseOut}
             />
             {showPlayerName[playerName] === true && (
-                <Group>
+                // moveToTop ensures proper zindex for this group since zindex itself did not work
+                <Group ref={node => node && node.moveToTop()}>
                     <Rect
-                        x={circleX - (tooltipWidth / 2 * playerData.xScale)}
+                        x={circleX - ((tooltipWidth / 2))}
                         y={circleY - gridSpacing / 1.2}
                         width={tooltipWidth + 2}
                         height={tooltipHeight + 2}
                         fill={playerData.type === 'enemy' ? 'red' : 'green'}
-                        cornerRadius={4} // Rounded corners
+                        cornerRadius={4}
                     />
                     <Text
-                        x={circleX + tooltipPadding - (tooltipWidth / 2 * playerData.xScale)}
+                        x={circleX + tooltipPadding - ((tooltipWidth / 2))}
                         y={circleY + tooltipPadding - gridSpacing / 1.2}
                         text={playerData.name}
                         fontSize={tooltipFontSize}
