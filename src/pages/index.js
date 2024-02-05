@@ -1603,7 +1603,9 @@ export default function Home() {
                         zIndex: 2,
                       }}
                         onMouseOver={() => handleMouseOver(player)}
-                        onMouseOut={() => handleMouseOut(player)}></div>
+                        onMouseOut={() => handleMouseOut(player)}>
+
+                      </div>
                     </div>
                     {showPlayerName[player.name] === true && (
                       <div
