@@ -1498,7 +1498,6 @@ export default function Home() {
 
   }, [isAudioOpen, isCustomTextOpen]);
 
-  console.log("showPlayerName", showPlayerName);
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
@@ -1819,9 +1818,7 @@ export default function Home() {
         {players[userName]?.mode == "battle" && (
           <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
             <div className="grid grid-cols-3 gap-2">
-              <button
-                className="bg-amber-700 hover:bg-amber-800 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
-              >
+              <button className="endturn-gradient">
                 End Turn
               </button>
               <button

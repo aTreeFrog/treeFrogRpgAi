@@ -236,6 +236,20 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
         const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
+        if (!players[userName].battleMode.yourTurn && (clickedGridX == players[userName].pingXPosition)) {
+            console.log("himadeithere");
+            setPingStop(false);
+            setPingReady(false);
+            setPlayers(prevPlayers => ({
+                ...prevPlayers,
+                [userName]: { // userName is the name/key of the user you want to update
+                    ...prevPlayers[userName],
+                    pingXPosition: null,
+                    pingYPosition: null,
+                }
+            }));
+        }
+
         //set attack bubble if attack/spell selected
         if (selectedRow && !circleStop) {
 
@@ -483,6 +497,14 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         <Image image={image} scaleX={scale} scaleY={scale}
                             className={animationClass} />
                         {drawGrid()}
+                        <Circle
+                            x={players[userName].xPosition * gridSpacing + gridSpacing / 2}
+                            y={players[userName].yPosition * gridSpacing + gridSpacing / 2}
+                            radius={travelZoneRadius * (players[userName]?.distance - players[userName]?.battleMode?.distanceMoved)} // Larger radius for the travel zone
+                            fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
+                            className={animationClass}
+                            visible={clickable}
+                        />
                         <Circle
                             x={pingStop ? -50 : cursorPos.x}
                             y={pingStop ? -50 : cursorPos.y}

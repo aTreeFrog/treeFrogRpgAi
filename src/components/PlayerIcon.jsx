@@ -4,8 +4,6 @@ import useImage from 'use-image';
 import { Layer, Image, Circle, Rect, Text, Group } from 'react-konva';
 const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, showPlayerName, setShowPlayerName, selectedRow, circleStop }) => {
     const [image] = useImage(playerData.figureIcon);
-    const [showTooltip, setShowTooltip] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
     // takes into account amount a player moved during their turn
     let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
@@ -104,15 +102,6 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            {playerData?.type !== 'enemy' && clickable && playerData?.name == userName && (
-                <Circle
-                    x={circleX}
-                    y={circleY}
-                    radius={travelZone} // Larger radius for the travel zone
-                    fill="rgba(255, 255, 0, 0.3)" // Semi-transparent yellow
-                    className={animationClass}
-                />
-            )}
             {playerData.battleMode.targeted && (
                 <Rect
                     x={circleX - 22}
