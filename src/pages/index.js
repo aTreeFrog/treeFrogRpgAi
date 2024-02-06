@@ -153,6 +153,7 @@ export default function Home() {
   const [showPlayerName, setShowPlayerName] = useState({});
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const audioChunks = useRef([]);
+  const [pingReady, setPingReady] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -544,6 +545,18 @@ export default function Home() {
     }
 
   }, [players[userName]?.xPosition, players[userName]?.yPosition]);
+
+  useEffect(() => {
+
+    if (latestUserServer.current?.pingXPosition != players[userName]?.pingXPosition || latestUserServer.current?.pingYPosition != players[userName]?.pingYPosition) {
+
+      console.log('ping moved', players[userName]);
+
+      chatSocket.emit('ping moved', players[userName]);
+
+    }
+
+  }, [players[userName]?.pingXPosition, players[userName]?.pingYPosition]);
 
   useEffect(() => {
     const serverUserNameTargeted = latestUserServer.current?.battleMode?.usersTargeted;
@@ -1574,7 +1587,7 @@ export default function Home() {
           {players[userName]?.mode == "battle" && (
             <>
               <BattleMap
-                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow} showPlayerName={showPlayerName} setShowPlayerName={setShowPlayerName}
+                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow} showPlayerName={showPlayerName} setShowPlayerName={setShowPlayerName} pingReady={pingReady} setPingReady={setPingReady}
                 className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
               />
               {showOverlayText && (
@@ -1803,6 +1816,25 @@ export default function Home() {
             <div className="w-1 bg-white h-2.5"></div>
           </button>
         </form>
+        {players[userName]?.mode == "battle" && (
+          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                className="bg-amber-700 hover:bg-amber-800 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+              >
+                End Turn
+              </button>
+              <button
+                className={`${pingReady ? 'bg-red-500 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded`}
+                onClick={() => {
+                  setPingReady(prevState => !prevState);
+                }}
+              >
+                {pingReady ? 'Stop Ping' : 'Ping'}
+              </button>
+            </div>
+          </div>
+        )}
         {
           isCustomTextOpen && (
             <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">

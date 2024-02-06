@@ -27,6 +27,7 @@ const TeamOrGmSelect = ({ options, onChange, value }) => {
                 '&:hover': {
                     borderColor: 'rgba(91, 145, 60, 0.5)'
                 },
+                cursor: 'pointer'
             };
 
             if (state.getValue()[0].value === 'Team') { // Assuming 'team' is the value for "Teams"

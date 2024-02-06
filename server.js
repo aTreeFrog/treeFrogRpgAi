@@ -191,6 +191,8 @@ app.prepare().then(() => {
                     players[user].xPosition = initGridData[mapName].Players[i][0];
                     players[user].yPosition = initGridData[mapName].Players[i][1];
                     i++;
+                    players[user].pingXPosition = null;
+                    players[user].pingYPosition = null;
 
                     players[user].diceStates = defaultDiceStates;
                     players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
@@ -993,6 +995,8 @@ app.prepare().then(() => {
                 currentHealth: 30,
                 xPosition: 0,
                 yPosition: 0,
+                pingXPosition: null,
+                pingYPosition: null,
                 xScale: 1,
                 diceStates: defaultDiceStates,
                 mode: "story",
@@ -1108,6 +1112,21 @@ app.prepare().then(() => {
                 players[data.name].xPosition = data.xPosition;
                 players[data.name].yPosition = data.yPosition;
                 players[data.name].xScale = data.xScale;
+                players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
+                activityCount++;
+
+                io.to(serverRoomName).emit('players objects', players);
+            };
+
+        });
+
+        socket.on('ping moved', (data) => {
+
+            if (players.hasOwnProperty(data.name)) {
+
+                // Add the distance moved and new x,y position
+                players[data.name].pingXPosition = data.pingXPosition;
+                players[data.name].pingYPosition = data.pingYPosition;
                 players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
                 activityCount++;
 
