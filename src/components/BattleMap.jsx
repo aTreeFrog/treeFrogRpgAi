@@ -3,6 +3,7 @@ import { Stage, Layer, Image, Line, Circle, Rect, Group } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
+import FlickeringRect from '../components/FlickeringRect'
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow, showPlayerName, setShowPlayerName, pingReady, setPingReady }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -25,10 +26,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [circleStopPosition, setCircleStopPosition] = useState({ x: 0, y: 0 });
     const attackSelection = useRef();
     const [pingStop, setPingStop] = useState(false);
-
-
-    console.log("battlemap players", players);
-
 
     const handleMouseMove = (e) => {
 
@@ -96,7 +93,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     useEffect(() => {
         if (status === 'loaded') {
             setImageLoaded(true);
-            console.log("image battlemap: ", image);
         }
 
     }, [status]);
@@ -109,8 +105,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         if (!selectedRow || attackSelection.current != selectedRow.name) {
             setCircleStop(false);
-
-            console.log("update targeted");
 
             //ToDo: if no attack made, clear out any attacked enemies array for this player
             if (!players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.usersTargeted?.length > 0) {
@@ -472,8 +466,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         return results;
     }
 
-
-
     return (
 
         <div className={className} style={{
@@ -495,9 +487,18 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             x={pingStop ? -50 : cursorPos.x}
                             y={pingStop ? -50 : cursorPos.y}
                             radius={travelZoneRadius * 3.5}
-                            fill="purple" // Example styling
-                            visible={!!pingReady && !pingStop} // Only visible if attackRadius is set
+                            fill="purple"
+                            opacity={0.6}
+                            visible={
+                                !!pingReady &&
+                                !pingStop &&
+                                cursorPos.x >= 0 && // Ensure cursor is within the stage bounds
+                                cursorPos.y >= 0 && // Ensure cursor is within the stage bounds
+                                cursorPos.x < (0.57 * (image ? image.width : 0)) && // Cursor within scaled image width
+                                cursorPos.y < (0.57 * (image ? image.height : 0)) // Cursor within scaled image height
+                            }
                         />
+
                         {enableLines && (
                             <>
                                 <Line
@@ -532,17 +533,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         {Object.entries(players).map(([playerName, playerData]) => (
                             <>
                                 {playerData?.pingXPosition && (
-                                    <Rect
-                                        x={playerData?.pingXPosition * gridSpacing}
-                                        y={playerData?.pingYPosition * gridSpacing}
-                                        width={gridSpacing}
-                                        height={gridSpacing}
-                                        fill="pink"
-                                        shadowColor="pink"
-                                        shadowBlur={10}
-                                        shadowOpacity={1}
-                                        opacity={0.9}
-                                        cornerRadius={10}
+                                    <FlickeringRect playerData={playerData} gridSpacing={gridSpacing}
                                     />
                                 )}
                                 <Group ref={node => node && node.moveToTop()}>
