@@ -37,7 +37,7 @@ const FlickeringRect = ({ playerData, gridSpacing }) => {
             shadowColor="purple"
             shadowBlur={10} // Initial shadowBlur value
             shadowOpacity={2} // Adjust for desired glow intensity
-            cornerRadius={4}
+            cornerRadius={5}
         />
     );
 };
