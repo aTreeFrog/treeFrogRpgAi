@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Image, Line, Circle } from 'react-konva';
+import { Stage, Layer, Image, Line, Circle, Rect, Group } from 'react-konva';
 import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
 
-const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, showPlayerName, setShowPlayerName }) => {
+const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow, showPlayerName, setShowPlayerName, pingReady, setPingReady }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
     const [scale, setScale] = useState(1); // Default scale is 1
     //const [wizardIcImage] = useImage('/icons/wizard.svg'); //13 by 13 grid
@@ -24,6 +24,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [circleStop, setCircleStop] = useState(false);
     const [circleStopPosition, setCircleStopPosition] = useState({ x: 0, y: 0 });
     const attackSelection = useRef();
+    const [pingStop, setPingStop] = useState(false);
 
 
     console.log("battlemap players", players);
@@ -102,6 +103,10 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     useEffect(() => {
 
+        if (selectedRow) {
+            setPingReady(false);
+        }
+
         if (!selectedRow || attackSelection.current != selectedRow.name) {
             setCircleStop(false);
 
@@ -121,65 +126,35 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 }));
             }
 
-        } else if (circleStop) {
-            const coveredCells = getCoveredCells(circleStopPosition, attackRadius, gridSpacing);
-            console.log("Covered Cells: ", coveredCells);
-
-            const coveredPlayers = checkPlayerPositions(players, coveredCells);
-            console.log("Covered players: ", coveredPlayers);
-
-            let enemiesToMark = [];
-            let toMyLeft = 0;
-            let scaleXValue = 1;
-            coveredPlayers.forEach(figure => {
-                const attackData = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
-                console.log("attackData: ", attackData);
-
-                if ((attackData.type == "spell" || attackData.type == "melee") && figure.type == "enemy") {
-                    console.log("cell stuff: ", figure);
-                    enemiesToMark.push(figure.name);
-
-                    if (figure.position.x < players[userName].xPosition) {
-                        toMyLeft++;
-                    }
-
-                }
-
-                //ToDo: handle heal spells here 
-
-            });
-
-            if (enemiesToMark.length > 0) {
-
-                //if enemies are to the left, scale the icon to look left
-                if (toMyLeft > 0 && toMyLeft == enemiesToMark.length) {
-                    scaleXValue = -1;
-                }
-
-                setPlayers(prevPlayers => ({
-                    ...prevPlayers,
-                    [userName]: { // userName is the name/key of the user you want to update
-                        ...prevPlayers[userName],
-                        xScale: scaleXValue,
-                        battleMode: {
-                            ...prevPlayers[userName].battleMode,
-                            usersTargeted: enemiesToMark, // Set usersTargeted to enemiesToMark directly
-                        },
-                    }
-                }));
-            } else {
-                setCircleStop(false); //no players to mark so dont' stop circle position
-            }
-
         }
 
         attackSelection.current = selectedRow?.name;
 
     }, [selectedRow]);
 
+    useEffect(() => {
+
+        if (pingReady) {
+            setSelectedRow(false);
+            setPingStop(false);
+        } else {
+            //reset ping location if turned off
+            setPlayers(prevPlayers => ({
+                ...prevPlayers,
+                [userName]: { // userName is the name/key of the user you want to update
+                    ...prevPlayers[userName],
+                    pingXPosition: null,
+                    pingYPosition: null,
+                }
+            }));
+        }
+
+    }, [pingReady]);
+
 
     useEffect(() => {
-        if (circleStop) {
+
+        if (circleStop && players[userName].battleMode.yourTurn) {
             const coveredCells = getCoveredCells(circleStopPosition, attackRadius, gridSpacing);
             console.log("Covered Cells: ", coveredCells);
 
@@ -260,7 +235,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     const handleMapClick = (e) => {
 
-
         const stage = e.target.getStage();
         const pointerPosition = stage.getPointerPosition();
 
@@ -294,7 +268,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             }
 
             // move icon to new clicked position. 
-        } else if (!selectedRow) {
+        } else if (!selectedRow && !pingReady) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
@@ -327,6 +301,16 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 updatePlayerData(userName, clickedGridX, clickedGridY);
             }
 
+        } else if (pingReady) {
+            setPingStop(true);
+            setPlayers(prevPlayers => ({
+                ...prevPlayers,
+                [userName]: { // userName is the name/key of the user you want to update
+                    ...prevPlayers[userName],
+                    pingXPosition: clickedGridX,
+                    pingYPosition: clickedGridY,
+                }
+            }));
         }
 
     };
@@ -345,8 +329,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 yPosition: newY,
             }
         }));
-
-
 
     };
 
@@ -490,6 +472,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         return results;
     }
 
+
+
     return (
 
         <div className={className} style={{
@@ -507,6 +491,13 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         <Image image={image} scaleX={scale} scaleY={scale}
                             className={animationClass} />
                         {drawGrid()}
+                        <Circle
+                            x={pingStop ? -50 : cursorPos.x}
+                            y={pingStop ? -50 : cursorPos.y}
+                            radius={travelZoneRadius * 3.5}
+                            fill="purple" // Example styling
+                            visible={!!pingReady && !pingStop} // Only visible if attackRadius is set
+                        />
                         {enableLines && (
                             <>
                                 <Line
@@ -540,27 +531,44 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         />
                         {Object.entries(players).map(([playerName, playerData]) => (
                             <>
-                                <PlayerIcon key={playerName}
-                                    playerName={playerName}
-                                    playerData={playerData}
-                                    gridSpacing={gridSpacing}
-                                    userName={userName}
-                                    imageLoaded={imageLoaded}
-                                    updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
-                                    travelZoneRadius={travelZoneRadius}
-                                    clickable={clickable}
-                                    unavailCoord={unavailCoord}
-                                    showPlayerName={showPlayerName}
-                                    setShowPlayerName={setShowPlayerName}
-                                    selectedRow={selectedRow}
-                                    circleStop={circleStop}
-                                />
-                                {playerData?.battleMode?.targeted && (
-                                    <BlurredLineEffect
-                                        playerData={playerData}
-                                        gridSpacing={gridSpacing}
+                                {playerData?.pingXPosition && (
+                                    <Rect
+                                        x={playerData?.pingXPosition * gridSpacing}
+                                        y={playerData?.pingYPosition * gridSpacing}
+                                        width={gridSpacing}
+                                        height={gridSpacing}
+                                        fill="pink"
+                                        shadowColor="pink"
+                                        shadowBlur={10}
+                                        shadowOpacity={1}
+                                        opacity={0.9}
+                                        cornerRadius={10}
                                     />
                                 )}
+                                <Group ref={node => node && node.moveToTop()}>
+                                    <PlayerIcon
+                                        key={playerName}
+                                        playerName={playerName}
+                                        playerData={playerData}
+                                        gridSpacing={gridSpacing}
+                                        userName={userName}
+                                        imageLoaded={imageLoaded}
+                                        updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
+                                        travelZoneRadius={travelZoneRadius}
+                                        clickable={clickable}
+                                        unavailCoord={unavailCoord}
+                                        showPlayerName={showPlayerName}
+                                        setShowPlayerName={setShowPlayerName}
+                                        selectedRow={selectedRow}
+                                        circleStop={circleStop}
+                                    />
+                                    {playerData?.battleMode?.targeted && (
+                                        <BlurredLineEffect
+                                            playerData={playerData}
+                                            gridSpacing={gridSpacing}
+                                        />
+                                    )}
+                                </Group>
                             </>
                         ))}
                     </Layer>

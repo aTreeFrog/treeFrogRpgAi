@@ -104,7 +104,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            {playerData.type !== 'enemy' && clickable && (
+            {playerData?.type !== 'enemy' && clickable && playerData?.name == userName && (
                 <Circle
                     x={circleX}
                     y={circleY}
@@ -117,8 +117,8 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 <Rect
                     x={circleX - 22}
                     y={circleY - 22}
-                    width={44} // Width of the rectangle, twice the radius to mimic a square with the same diameter as the circle
-                    height={44} // Height of the rectangle, same as width for a square
+                    width={gridSpacing} // Width of the rectangle, twice the radius to mimic a square with the same diameter as the circle
+                    height={gridSpacing} // Height of the rectangle, same as width for a square
                     fill="rgba(235, 48, 67, 0.7)" // Semi-transparent yellow
                     shadowColor="rgba(235, 48, 67, 0.5)"
                     shadowBlur={10}
