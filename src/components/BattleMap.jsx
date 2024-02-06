@@ -99,8 +99,13 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     useEffect(() => {
 
+        //if attack selected, ping already set, leave it there 
+        //but make sure no ping button is floating around.
         if (selectedRow) {
-            setPingReady(false);
+            setPingStop(true);
+            if (!players[userName].pingXPosition) {
+                setPingReady(false);
+            }
         }
 
         if (!selectedRow || attackSelection.current != selectedRow.name) {
