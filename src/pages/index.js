@@ -1803,6 +1803,22 @@ export default function Home() {
             <div className="w-1 bg-white h-2.5"></div>
           </button>
         </form>
+        {players[userName]?.mode == "battle" && (
+          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                className="bg-amber-700 hover:bg-amber-800 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+              >
+                End Turn
+              </button>
+              <button
+                className="bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+              >
+                Ping
+              </button>
+            </div>
+          </div>
+        )}
         {
           isCustomTextOpen && (
             <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">

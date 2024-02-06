@@ -31,6 +31,7 @@ const CustomSelect = ({ options, onChange, value }) => {
             '&:hover': {
                 borderColor: 'gray',
             },
+            cursor: 'pointer'
         }),
         valueContainer: provided => ({
             ...provided,
@@ -72,6 +73,7 @@ const CustomSelect = ({ options, onChange, value }) => {
             '&:hover': {
                 backgroundColor: 'rgba(40, 0, 70, 1)',
             },
+            cursor: 'pointer',
         }),
         singleValue: provided => ({
             ...provided,
