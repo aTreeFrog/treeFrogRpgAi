@@ -530,6 +530,32 @@ export default function Home() {
 
     }
 
+    Object.entries(players).forEach(([playerName, playerData]) => {
+
+      //if any player made a new ping position, set ping audio. 
+      if ((playerData?.pingXPosition != null && playerData?.pingXPosition != prevPlayerData.current[playerName]?.pingXPosition)
+        || (playerData?.pingYPosition != null && playerData.pingYPosition != prevPlayerData.current[playerName]?.pingYPosition)) {
+
+        const pingTone = new Tone.Player({
+          url: "/audio/player_ping.wav",
+        }).toDestination();
+
+        pingTone.autostart = true;
+
+        pingTone.onended = () => {
+          console.log('ping playback ended');
+          pingTone.disconnect(); // Disconnect the player
+        };
+
+        pingTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
+
+      }
+
+    });
+
+
     prevPlayerData.current = players[userName]; //not using this, and not sure i need it
 
   }, [players]);
