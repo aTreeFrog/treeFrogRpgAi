@@ -65,7 +65,8 @@ export default function Home() {
       isGlowActive: false,
       rolls: 0,
       displayedValue: null,
-      inhibit: false
+      inhibit: false,
+      advantage: false,
     },
     d10: {
       value: [10],
@@ -73,7 +74,8 @@ export default function Home() {
       isGlowActive: false,
       rolls: 0,
       displayedValue: 10,
-      inhibit: false
+      inhibit: false,
+      advantage: false,
     },
     d8: {
       value: [8],
@@ -81,7 +83,8 @@ export default function Home() {
       isGlowActive: false,
       rolls: 0,
       displayedValue: 8,
-      inhibit: false
+      inhibit: false,
+      advantage: false,
     },
     d6: {
       value: [6],
@@ -89,7 +92,8 @@ export default function Home() {
       isGlowActive: false,
       rolls: 0,
       displayedValue: 6,
-      inhibit: false
+      inhibit: false,
+      advantage: false,
     },
     d4: {
       value: [4],
@@ -97,7 +101,55 @@ export default function Home() {
       isGlowActive: false,
       rolls: 0,
       displayedValue: 4,
-      inhibit: false
+      inhibit: false,
+      advantage: false,
+    }
+  };
+  const attackRollDiceStates = {
+    d20: {
+      value: [],
+      isActive: true,
+      isGlowActive: true,
+      rolls: 0,
+      displayedValue: null,
+      inhibit: false,
+      advantage: false,
+    },
+    d10: {
+      value: [10],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 10,
+      inhibit: false,
+      advantage: false,
+    },
+    d8: {
+      value: [8],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 8,
+      inhibit: false,
+      advantage: false,
+    },
+    d6: {
+      value: [6],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 6,
+      inhibit: false,
+      advantage: false,
+    },
+    d4: {
+      value: [4],
+      isActive: false,
+      isGlowActive: false,
+      rolls: 0,
+      displayedValue: 4,
+      inhibit: false,
+      advantage: false,
     }
   };
   const [diceStates, setDiceStates] = useState(defaultDiceStates);
@@ -526,6 +578,16 @@ export default function Home() {
         const img = new window.Image();
         img.src = players[userName].battleMode.initiativeImageUrl;
         img.onload = () => setIsInitiativeImageLoaded(true);
+      }
+
+    } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn && players[userName]?.battleMode.usersTargeted.length > 0) {
+
+      //roll attackRoll or attack amount dice if its your turn and you selected targets.
+      if (players[userName]?.battleMode?.attackRoll < 1 || (players[userName]?.battleMode?.attackRollSucceeded && !players[userName]?.battleMode?.actionAttempted)) {
+
+        console.log("battle dice ready");
+        latestDiceMsg.current = players[userName];
+        updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
 
     }

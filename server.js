@@ -84,6 +84,7 @@ let awayPlayerCount = 1
 let settingUpNewScene = false;
 let msgActivityCount = 1;
 let processingMessage = false;
+let activePlayers = 0;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -158,7 +159,7 @@ app.prepare().then(() => {
             game.image = mapUrl;
             game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`
 
-            let activePlayers = 0;
+            activePlayers = 0;
             //update players state for init battle mode
             let i = 0;
             for (let user in players) {
@@ -201,6 +202,8 @@ app.prepare().then(() => {
 
                     players[user].battleMode.yourTurn = false;
                     players[user].battleMode.distanceMoved = null;
+                    players[user].battleMode.attackRoll = 0;
+                    players[user].battleMode.attackRollSucceeded = null;
                     players[user].battleMode.actionAttempted = false;
                     players[user].battleMode.damageDelt = null;
                     players[user].battleMode.usersTargeted = [];
@@ -1143,6 +1146,26 @@ app.prepare().then(() => {
 
                 players[data.name].battleMode.usersTargeted = data.battleMode.usersTargeted;
                 players[data.name].xScale = data.xScale;
+
+                //if players targeted and its this players turn and the player hasn't done any action attempt
+                // ask to roll d20 for attack
+                if (!players[data.name].battleMode.actionAttempted && players[data.name].battleMode.yourTurn
+                    && players[data.name].battleMode.usersTargeted.length > 0) {
+
+                    players[data.name].diceStates.D20 = {
+                        value: [],
+                        isActive: true,
+                        isGlowActive: true,
+                        rolls: 0,
+                        displayedValue: null,
+                        inhibit: false,
+                        advantage: false,
+                    }
+
+                    //keep this inhibited for now until you handle the entire sequence of actions
+                    //waitingForRolls = true;
+
+                }
 
                 Object.entries(players).forEach(([userName, playerData]) => {
 

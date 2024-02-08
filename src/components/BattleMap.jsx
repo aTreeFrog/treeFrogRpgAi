@@ -256,7 +256,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         }
 
         //set attack bubble if attack/spell selected
-        if (selectedRow && !circleStop) {
+        if (selectedRow && !circleStop && !players[userName]?.battleMode?.actionAttempted) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
@@ -372,7 +372,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             } else {
                 setClickable(false);
                 //if the attack circle is selected at a spot, dont keep showing the lines
-                if (!circleStop) {
+                if (!circleStop && !players[userName]?.battleMode?.actionAttempted) {
                     setEnableLines(true);
                 } else {
                     setEnableLines(false);
@@ -385,7 +385,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             setEnableLines(false);
         }
 
-        if (players[userName]?.battleMode?.yourTurn && selectedRow) {
+        if (players[userName]?.battleMode?.yourTurn && selectedRow && !players[userName]?.battleMode?.actionAttempted) {
             const attack = players[userName].attacks.find(attack => attack.name === selectedRow?.name);
             console.log("attack", attack);
             if (attack) {
