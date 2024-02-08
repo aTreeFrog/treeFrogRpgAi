@@ -192,7 +192,7 @@ export default function Home() {
   const [isInitiativeImageLoaded, setIsInitiativeImageLoaded] = useState(false);
   const [shadowDomColor, setShadowDomColor] = useState();
   const [gameObject, setGameObject] = useState();
-  const prevPlayerData = useRef();
+  const prevPlayersData = useRef();
   const speechAudioId = useRef({ messageId: null });
   const waitingForComplete = useRef(false);
   const [floatingValue, setFloatingValue] = useState(null);
@@ -206,6 +206,7 @@ export default function Home() {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const audioChunks = useRef([]);
   const [pingReady, setPingReady] = useState(false);
+  const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning state
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -583,11 +584,15 @@ export default function Home() {
     } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn && players[userName]?.battleMode.usersTargeted.length > 0) {
 
       //roll attackRoll or attack amount dice if its your turn and you selected targets.
-      if (players[userName]?.battleMode?.attackRoll < 1 || (players[userName]?.battleMode?.attackRollSucceeded && !players[userName]?.battleMode?.actionAttempted)) {
+      if (players[userName]?.battleMode?.attackRoll < 1 && !players[userName]?.battleMode?.actionAttempted) {
 
         console.log("battle dice ready");
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
+
+        // attack dice rolls now
+      } else if (players[userName]?.battleMode?.attackRollSucceeded && players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.damageDelt < 1) {
+
       }
 
     }
@@ -595,8 +600,8 @@ export default function Home() {
     Object.entries(players).forEach(([playerName, playerData]) => {
 
       //if any player made a new ping position, set ping audio. 
-      if ((playerData?.pingXPosition != null && playerData?.pingXPosition != prevPlayerData.current[playerName]?.pingXPosition)
-        || (playerData?.pingYPosition != null && playerData.pingYPosition != prevPlayerData.current[playerName]?.pingYPosition)) {
+      if ((playerData?.pingXPosition != null && playerData?.pingXPosition != prevPlayersData.current[playerName]?.pingXPosition)
+        || (playerData?.pingYPosition != null && playerData.pingYPosition != prevPlayersData.current[playerName]?.pingYPosition)) {
 
         const pingTone = new Tone.Player({
           url: "/audio/player_ping.wav",
@@ -618,7 +623,7 @@ export default function Home() {
     });
 
 
-    prevPlayerData.current = players[userName]; //not using this, and not sure i need it
+    prevPlayersData.current = players;
 
   }, [players]);
 
@@ -1607,7 +1612,7 @@ export default function Home() {
             <div>
               <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
               <div>
-                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} player={players[userName]} selectedRow={selectedRow} setSelectedRow={setSelectedRow} />
+                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} player={players[userName]} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
               </div>
             </div>
             {/* Toggle Meeting Panel Button */}
@@ -1752,7 +1757,7 @@ export default function Home() {
               </div>
             )}
             <div className="text-white text-2xl font-semibold  ml-[-35px]">
-              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} />
+              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} isD20Spinning={isD20Spinning} setIsD20Spinning={setIsD20Spinning} />
             </div>
           </div>
         </div>
@@ -1915,7 +1920,7 @@ export default function Home() {
           <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
             <div className="grid grid-cols-3 gap-2">
               <button
-                className={`${!players[userName]?.battleMode?.yourTurn ? "endturn-gradient" : "bg-gray-900 font-semibold rounded py-2 px-4 text-white"
+                className={`${players[userName]?.battleMode?.yourTurn ? "endturn-gradient" : "bg-gray-900 font-semibold rounded py-2 px-4 text-white"
                   } disabled:opacity-50`}
                 disabled={!players[userName]?.battleMode?.yourTurn}
               >

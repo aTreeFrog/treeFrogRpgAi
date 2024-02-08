@@ -12,7 +12,7 @@ const yourDataArray = [
     // Add more mock data as needed
 ];
 
-export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
+export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20Spinning }) {
     const [hoveredRow, setHoveredRow] = useState(null);
     const [headerGlow, setHeaderGlow] = useState(false);
 
@@ -42,6 +42,18 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
         return "";
     };
 
+    // Function to handle row selection, respecting the actionAttempted condition
+    const handleSelectRow = (item) => {
+        // Check if action has been attempted; if so, do not allow changing the selected row
+        if (player?.battleMode?.actionAttempted || isD20Spinning) {
+            console.log("Action has already been attempted. Cannot change selection.");
+            return; // Early return to prevent changing the selection
+        }
+
+        // If action has not been attempted, allow changing the selected row
+        setSelectedRow(selectedRow === item ? null : item);
+    };
+
     return (
         <div className="relative block p-3 "
             style={{
@@ -58,27 +70,27 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow }) {
         >
             <div className="absolute top-1/2 left-1/2 overflow-auto scrollable-container transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-opacity-20">
                 <div className="grid grid-cols-3 text-white font-semibold text-center whitespace-nowrap">
-                    <button onClick={() => setSelectedRow(null)} className={`p-3 text-sm attack-header-border`}>Name</button>
-                    <button onClick={() => setSelectedRow(null)} className={`p-3 text-sm attack-header-border`} style={{ paddingLeft: '5px' }}>ATK Bonus</button>
-                    <button onClick={() => setSelectedRow(null)} className={`p-3 text-sm attack-header-border`}>Damage</button>
+                    <button onClick={() => handleSelectRow(null)} className={`p-3 text-sm attack-header-border`}>Name</button>
+                    <button onClick={() => handleSelectRow(null)} className={`p-3 text-sm attack-header-border`} style={{ paddingLeft: '5px' }}>ATK Bonus</button>
+                    <button onClick={() => handleSelectRow(null)} className={`p-3 text-sm attack-header-border`}>Damage</button>
                     {/* Dynamic data cells */}
                     {/* Use a mapping function to generate the data cells dynamically */}
                     {yourDataArray.map((item, index) => (
                         <React.Fragment key={index}>
                             <button
-                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
+                                onClick={() => handleSelectRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Left')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}>
                                 {item.name}
                             </button>
                             <button
-                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
+                                onClick={() => handleSelectRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, '')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}
                             > {item.atkBonus}
                             </button>
                             <button
-                                onClick={() => setSelectedRow(selectedRow === item ? null : item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
+                                onClick={() => handleSelectRow(item)} className={`p-3 text-base mt-1 ${getClassName(item, 'Right')}`}
                                 onMouseEnter={() => setHoveredRow(item)}
                                 onMouseLeave={() => setHoveredRow(null)}
                             >{item.type}
