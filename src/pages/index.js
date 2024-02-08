@@ -1147,7 +1147,7 @@ export default function Home() {
     console.log("about to send message: ", message);
 
     const uniqueId = `user${'aTreeFrog'}-activity${activityCount.current}-${new Date().toISOString()}`;
-    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": teamGmOption.value };
+    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": teamGmOption.value, "player": userName };
     activityCount.current++;
     chatSocket.emit('my user message', serverData);
     console.log("sent my user message", serverData);
@@ -1785,130 +1785,143 @@ export default function Home() {
           </div>
         </div>
         {/* Fixed Send Message Form or other bottom content */}
-        <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
-          <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }}
-            className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold "
-            onClick={() => {
-              setIsCustomTextOpen(prevState => !prevState);
-              setIsAudioOpen(false); {/* probably have some audio clean up to do too */ }
-              {
-                isCustomTextOpen && (
-                  <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
-                    <div className="grid grid-cols-3 gap-2">
-                      {/* Render cells */}
-                      {customTextCells.map((content, index) => (
-                        content ?
-                          // Cell with text and cancel area
-                          <div key={index} className="flex items-center gap-1">
-                            {/* Cell with text */}
-                            <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                              disabled={diceStates.d20.isGlowActive}
-                              onClick={() => handleCellClick(content)}
-                            >
-                              {content}
-                            </button>
-                            {/* Cancel button */}
-                            <button className="text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
-                          </div>
-                          :
-                          // Input cell
-                          <input
-                            key={index}
-                            type="text"
-                            placeholder="Type here..."
-                            onKeyDown={newTextEnterKeyDown}
-                            onBlur={(e) => handleBlur(index, e.target.value)}
-                            className="p-2 bg-gray-700 rounded text-white maxWidth:10px"
-
-                          />
-                      ))}
-                    </div>
-                  </div>
-                )
-              }
-            }}>
-            <span style={{ paddingBottom: '4px' }}>+</span>
-          </button>
-          <div className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
-            {/* Arrow Button at the Bottom Middle, initially hidden */}
-            <button
-              type="button"
-              id="scrollArrow"
-              className={`${isAtBottom ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
-              style={{ bottom: `${inputTextHeight + 35}px` }}
-              onClick={scrollToBottom}
-            >
-              ↓
-            </button>
-            {/* Make sure the input container can grow and the button stays aligned */}
-            <div className="flex items-center" style={{ position: 'relative', zIndex: 2, flexGrow: 1 }}>
-              {diceStates.d20.isGlowActive ?
-                <>
-                  <textarea
-                    className="bg-transparent text-white focus:outline-none"
-                    placeholder=""
-                    value={"I rolled a"}
-                    readOnly
-                    style={{ maxWidth: '70px', minHeight: '10px', marginRight: '1px', marginLeft: '15px' }} // Set a fixed width
-                    rows={1}
-                    ref={textareaRef}
-                  ></textarea>
-                  <CustomSelect
-                    options={options}
-                    value={diceSelectionOption}
-                    onChange={handleDropdownChange}
-                    submittingDice={diceStates.d20.isGlowActive}
-                  />
-
-                </>
-                :
-                <>
-                  <TeamOrGmSelect
-                    options={teamGmOptionsList}
-                    value={teamGmOption}
-                    onChange={handleTeamGmChange}
-                  />
-                  <textarea
-                    className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
-                    placeholder="Type your message..."
-                    value={inputValue}
-                    onKeyDown={handleKeyDown}
-                    onChange={(e) => handleInputChange(e)}
-                    style={{ minHeight: '10px' }}
-                    rows={1}
-                    ref={textareaRef}
-                    disabled={pendingDiceUpdate}
-                  ></textarea>
-                </>
-              }
+        <div>
+          {players[userName]?.mode == "battle" && !players[userName]?.battleMode?.yourTurn && (
+            <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
+              Not your turn, only team sees your message
             </div>
-            <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-              className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption))
-                ? 'bg-purple-600 hover:bg-purple-700'
-                : 'bg-grey-700 hover:bg-grey-700'
-                } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-              disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
-              {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
+          )}
+
+          <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
+            <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }}
+              className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold "
+              onClick={() => {
+                setIsCustomTextOpen(prevState => !prevState);
+                setIsAudioOpen(false); {/* probably have some audio clean up to do too */ }
+                {
+                  isCustomTextOpen && (
+                    <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* Render cells */}
+                        {customTextCells.map((content, index) => (
+                          content ?
+                            // Cell with text and cancel area
+                            <div key={index} className="flex items-center gap-1">
+                              {/* Cell with text */}
+                              <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                                disabled={diceStates.d20.isGlowActive}
+                                onClick={() => handleCellClick(content)}
+                              >
+                                {content}
+                              </button>
+                              {/* Cancel button */}
+                              <button className="text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
+                            </div>
+                            :
+                            // Input cell
+                            <input
+                              key={index}
+                              type="text"
+                              placeholder="Type here..."
+                              onKeyDown={newTextEnterKeyDown}
+                              onBlur={(e) => handleBlur(index, e.target.value)}
+                              className="p-2 bg-gray-700 rounded text-white maxWidth:10px"
+
+                            />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+              }}>
+              <span style={{ paddingBottom: '4px' }}>+</span>
             </button>
-          </div>
-          <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
-            className="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
-            onClick={() => {
-              setIsAudioOpen(prevState => !prevState);
-              setIsCustomTextOpen(false);
-            }}
-          >
-            <div className="w-1 bg-white h-2"></div>
-            <div className="w-1 bg-white h-3 mx-0.5"></div>
-            <div className="w-1 bg-white h-2.5"></div>
-          </button>
-        </form>
+            <div className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
+              {/* Arrow Button at the Bottom Middle, initially hidden */}
+              <button
+                type="button"
+                id="scrollArrow"
+                className={`${isAtBottom ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
+                style={{ bottom: `${inputTextHeight + 35}px` }}
+                onClick={scrollToBottom}
+              >
+                ↓
+              </button>
+              {/* Make sure the input container can grow and the button stays aligned */}
+              <div className="flex items-center" style={{ position: 'relative', zIndex: 2, flexGrow: 1 }}>
+                {diceStates.d20.isGlowActive ?
+                  <>
+                    <textarea
+                      className="bg-transparent text-white focus:outline-none"
+                      placeholder=""
+                      value={"I rolled a"}
+                      readOnly
+                      style={{ maxWidth: '70px', minHeight: '10px', marginRight: '1px', marginLeft: '15px' }} // Set a fixed width
+                      rows={1}
+                      ref={textareaRef}
+                    ></textarea>
+                    <CustomSelect
+                      options={options}
+                      value={diceSelectionOption}
+                      onChange={handleDropdownChange}
+                      submittingDice={diceStates.d20.isGlowActive}
+                    />
+
+                  </>
+                  :
+                  <>
+                    <TeamOrGmSelect
+                      options={teamGmOptionsList}
+                      value={teamGmOption}
+                      onChange={handleTeamGmChange}
+                    />
+                    <textarea
+                      className="w-full px-4 py-2 bg-transparent text-white focus:outline-none"
+                      placeholder="Type your message..."
+                      value={inputValue}
+                      onKeyDown={handleKeyDown}
+                      onChange={(e) => handleInputChange(e)}
+                      style={{ minHeight: '10px' }}
+                      rows={1}
+                      ref={textareaRef}
+                      disabled={pendingDiceUpdate}
+                    ></textarea>
+                  </>
+                }
+              </div>
+              <button type="submit" style={{ position: 'relative', zIndex: 1 }}
+                className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption))
+                  ? 'bg-purple-600 hover:bg-purple-700'
+                  : 'bg-grey-700 hover:bg-grey-700'
+                  } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
+                disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
+                {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
+              </button>
+            </div>
+            <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
+              className="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
+              onClick={() => {
+                setIsAudioOpen(prevState => !prevState);
+                setIsCustomTextOpen(false);
+              }}
+            >
+              <div className="w-1 bg-white h-2"></div>
+              <div className="w-1 bg-white h-3 mx-0.5"></div>
+              <div className="w-1 bg-white h-2.5"></div>
+            </button>
+          </form>
+        </div>
         {players[userName]?.mode == "battle" && (
           <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
             <div className="grid grid-cols-3 gap-2">
-              <button className="endturn-gradient">
+              <button
+                className={`${!players[userName]?.battleMode?.yourTurn ? "endturn-gradient" : "bg-gray-900 font-semibold rounded py-2 px-4 text-white"
+                  } disabled:opacity-50`}
+                disabled={!players[userName]?.battleMode?.yourTurn}
+              >
                 End Turn
               </button>
+
               <button
                 className={`${pingReady ? 'bg-red-500 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded`}
                 onClick={() => {
