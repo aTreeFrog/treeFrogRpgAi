@@ -1048,15 +1048,45 @@ app.prepare().then(() => {
 
         socket.on('D20 Dice Roll Complete', (diceData) => {
 
+            players[diceData.User].diceStates = defaultDiceStates; //re-default dice after roll completes
+
             if (players[diceData.User].mode == "initiative") {
                 players[diceData.User].battleMode.initiativeRoll = diceData.Total;
 
             } else if (players[diceData.User].mode == "dice") {
                 players[diceData.User].mode = "story";
+            } else if (players[diceData.User].mode == "battle" && players[diceData.User].battleMode.attackRoll < 1) {
+                players[diceData.User].battleMode.attackRoll = diceData.Total;
+                players[diceData.User].battleMode.actionAttempted = true;
+
+                //ToDo: need to account for heal spells. Shouldnt use armor class for that
+                players[diceData.User].battleMode.attackRollSucceeded = false; //init, will change if any are true
+
+                // Initially mark all targets for removal, assuming none of them meet the attack roll condition
+                let targetsToRemove = new Set(players[diceData.User].battleMode.usersTargeted);
+
+                for (const target of players[diceData.User].battleMode.usersTargeted) {
+                    console.log("target", target);
+                    let enemyArmor = players[target]?.armorClass;
+                    if (players.hasOwnProperty(target) && players[diceData.User].battleMode.attackRoll >= enemyArmor) {
+                        players[diceData.User].battleMode.attackRollSucceeded = true;
+                        targetsToRemove.delete(target);
+                        console.log("target stay", target);
+                    } else {
+                        players[target].battleMode.targeted = false;
+                        console.log("target remove", target); //that player is no longer targeted
+                    }
+                }
+
+                // Filter out the targets marked for removal
+                players[diceData.User].battleMode.usersTargeted = players[diceData.User].battleMode.usersTargeted.filter(player => !targetsToRemove.has(player));
+
             }
 
+
+
             //set a bunch of default states for the player
-            defaultPlayersBattleInitMode(diceData.User);
+            //defaultPlayersBattleInitMode(diceData.User);
 
             players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
