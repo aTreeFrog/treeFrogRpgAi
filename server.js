@@ -844,9 +844,21 @@ app.prepare().then(() => {
 
                 //means ai is supposed to see and respond to this message
                 if (msg.mode.toLowerCase() == "all") {
-                    chatMessages.push(msg);
+                    // dont send ai roll data if in battle or initiative mode cause thats handled by the d20 complete socket message
+                    if (!((players[msg.player]?.mode == "battle" || players[msg.player]?.mode == "initiative") && msg.content.toLowerCase().includes("i rolled a"))) {
+
+                        // dont send ai message if in battle mode and user typing is not there turn
+                        if (!(players[msg.player]?.mode == "battle" && !players[msg.player]?.battleMode.yourTurn)) {
+
+                            chatMessages.push(msg);
+                            console.log("chatMessages: ", chatMessages);
+
+                            // auto set message to teams mode so it shows up as different color blob on front end
+                        } else {
+                            msg.mode = "Team";
+                        }
+                    }
                 }
-                console.log("chatMessages: ", chatMessages);
                 console.log("received my user message, ", msg);
                 io.to(serverRoomName).emit('latest user message', msg);
                 responseSent.set(msg.id, true);
