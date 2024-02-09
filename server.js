@@ -29,6 +29,7 @@ const defaultDiceStates = {
         isActive: true,
         isGlowActive: false,
         rolls: 0,
+        rollsNeeded: 0,
         displayedValue: null,
         inhibit: false,
         advantage: false,
@@ -38,6 +39,7 @@ const defaultDiceStates = {
         isActive: false,
         isGlowActive: false,
         rolls: 0,
+        rollsNeeded: 0,
         displayedValue: 10,
         inhibit: false,
         advantage: false,
@@ -47,6 +49,7 @@ const defaultDiceStates = {
         isActive: false,
         isGlowActive: false,
         rolls: 0,
+        rollsNeeded: 0,
         displayedValue: 8,
         inhibit: false,
         advantage: false,
@@ -56,6 +59,7 @@ const defaultDiceStates = {
         isActive: false,
         isGlowActive: false,
         rolls: 0,
+        rollsNeeded: 0,
         displayedValue: 6,
         inhibit: false,
         advantage: false,
@@ -65,6 +69,7 @@ const defaultDiceStates = {
         isActive: false,
         isGlowActive: false,
         rolls: 0,
+        rollsNeeded: 0,
         displayedValue: 4,
         inhibit: false,
         advantage: false,
@@ -1058,6 +1063,7 @@ app.prepare().then(() => {
             } else if (players[diceData.User].mode == "battle" && players[diceData.User].battleMode.attackRoll < 1) {
                 players[diceData.User].battleMode.attackRoll = diceData.Total;
                 players[diceData.User].battleMode.actionAttempted = true;
+                players[diceData.User].battleMode.attackUsed = diceData?.Attack;
 
                 //ToDo: need to account for heal spells. Shouldnt use armor class for that
                 players[diceData.User].battleMode.attackRollSucceeded = false; //init, will change if any are true
@@ -1081,9 +1087,21 @@ app.prepare().then(() => {
                 // Filter out the targets marked for removal
                 players[diceData.User].battleMode.usersTargeted = players[diceData.User].battleMode.usersTargeted.filter(player => !targetsToRemove.has(player));
 
+                if (players[diceData.User].battleMode.attackRollSucceeded) {
+
+                    //remove default d20 color since other dice needs to roll. 
+                    players[diceData.User].diceStates.d20.isActive = false;
+                    players[diceData.User].diceStates.d20.value = [];
+                    players[diceData.User].diceStates.d10.value = [];
+                    players[diceData.User].diceStates.d8.value = [];
+                    players[diceData.User].diceStates.d6.value = [];
+                    players[diceData.User].diceStates.d4.value = [];
+
+                    findAndUpdatePlayerDiceStates(players[diceData.User]);
+
+                }
+
             }
-
-
 
             //set a bunch of default states for the player
             //defaultPlayersBattleInitMode(diceData.User);
@@ -1095,6 +1113,70 @@ app.prepare().then(() => {
             io.emit('players objects', players);
 
         });
+
+        //can handle needing to roll multiple dice types in the attack
+        function parseDamageValue(damageValue) {
+            // Extended regex to match additional dice roll in the bonus part
+            const regex = /(\d+)d(\d+)(\+\d+|\+\d+d\d+)?/;
+            const match = damageValue.match(regex);
+
+            if (match) {
+                const a = parseInt(match[1], 10); // Number of primary dice
+                const b = parseInt(match[2], 10); // Type of primary dice
+                const diceData = [{ a, b }]; // Initialize array with primary dice data
+
+                // Check if there's a bonus part and determine its type (fixed bonus or additional dice roll)
+                if (match[3]) {
+                    const bonus = match[3];
+                    if (bonus.includes('d')) {
+                        // Additional dice roll bonus
+                        const bonusParts = bonus.match(/(\d+)d(\d+)/);
+                        if (bonusParts) {
+                            const aBonus = parseInt(bonusParts[1], 10);
+                            const bBonus = parseInt(bonusParts[2], 10);
+                            diceData.push({ a: aBonus, b: bBonus }); // Add additional dice roll to the array
+                        }
+                    } else {
+                        // Fixed bonus
+                        const fixedBonus = parseInt(bonus.replace('+', ''), 10);
+                        diceData.push({ c: fixedBonus }); // Add fixed bonus as part of the array
+                    }
+                }
+
+                return diceData; // Return array containing primary and any additional dice data or fixed bonus
+            } else {
+                return null; // Return null if the pattern does not match
+            }
+        }
+
+        function findAndUpdatePlayerDiceStates(player) {
+            // Find the attack in player.attacks array
+            const attack = player.attacks.find(attack => attack.name === player.battleMode.attackUsed);
+
+            if (attack) {
+                const parts = parseDamageValue(attack.damage);
+                if (parts && parts.length) {
+                    parts.forEach(part => {
+                        if ('a' in part && 'b' in part) {
+                            const diceType = `d${part.b}`;
+                            if (player.diceStates[diceType]) {
+                                player.diceStates[diceType].rollsNeeded = part.a;
+                                player.diceStates[diceType].isActive = true;
+                                player.diceStates[diceType].isGlowActive = true;
+                                console.log(`Updated ${diceType} with rollsNeeded = ${part.a}`);
+                            } else {
+                                console.log(`${diceType} does not exist in player's diceStates.`);
+                            }
+                        }
+                        // Handle fixed bonus or additional dice logic here if necessary
+                    });
+                } else {
+                    console.log("Damage value format is incorrect or no rolls needed.");
+                }
+            } else {
+                console.log("Attack not found.");
+            }
+        }
 
         socket.on('playing again', (userName) => {
 
@@ -1243,6 +1325,7 @@ app.prepare().then(() => {
         players[userName].battleMode.usersTargeted = [];
         players[userName].battleMode.turnCompleted = false;
         players[userName].battleMode.targeted = false;
+        players[userName].battleMode.attackUsed = null;
         players[userName].skill = "";
         players[userName].activeSkill = false;
         players[userName].timers.enabled = false;
