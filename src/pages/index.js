@@ -603,7 +603,9 @@ export default function Home() {
         // attack dice rolls now
       } else if (players[userName]?.battleMode?.attackRollSucceeded && players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.damageDelt < 1) {
 
-
+        console.log("action dice ready");
+        latestDiceMsg.current = players[userName];
+        updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
 
       }
 
@@ -1189,11 +1191,11 @@ export default function Home() {
         ...diceStates.d20,
         value: [],
         displayedValue: null,
-        isActive: data.diceStates.D20.isActive,
-        isGlowActive: data.diceStates.D20.isGlowActive,
+        isActive: data.diceStates.d20.isActive,
+        isGlowActive: data.diceStates.d20.isGlowActive,
         rolls: 0,
-        inhibit: data.diceStates.D20.inhibit,
-        advantage: data.diceStates.D20.advantage
+        inhibit: data.diceStates.d20.inhibit,
+        advantage: data.diceStates.d20.advantage
       },
       d10: {
         ...diceStates.d10,
@@ -1267,13 +1269,13 @@ export default function Home() {
       console.log("dice use effect d20 data: ", diceStates.d20);
 
       //if d20 dice is active, check and see if actions completed
-      if (latestDiceMsg.current.diceStates.D20.isActive) {
-        if (latestDiceMsg.current.diceStates.D20.Advantage) {
+      if (latestDiceMsg.current.diceStates.d20.isActive) {
+        if (latestDiceMsg.current.diceStates.d20.Advantage) {
           if (diceStates.d20.rolls > 1) {
             d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
             actionsComplete = true;
           }
-        } else if (latestDiceMsg.current.diceStates.D20.Disadvantage) {
+        } else if (latestDiceMsg.current.diceStates.d20.Disadvantage) {
           if (diceStates.d20.rolls > 1) {
             d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
             actionsComplete = true;
@@ -1284,6 +1286,10 @@ export default function Home() {
         }
 
       }
+
+
+
+
     }
     if (actionsComplete) {
 
