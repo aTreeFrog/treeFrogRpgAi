@@ -225,6 +225,7 @@ app.prepare().then(() => {
                         isActive: true,
                         isGlowActive: true,
                         rolls: 0,
+                        rollsNeeded: 1, //alter based on advantage
                         displayedValue: null,
                         inhibit: false,
                         advantage: false,
@@ -455,6 +456,7 @@ app.prepare().then(() => {
                         isActive: true,
                         isGlowActive: true,
                         rolls: 0,
+                        rollsNeeded: 1, // alter based on advantage
                         displayedValue: null,
                         inhibit: false,
                         advantage: advantageValue,
@@ -1280,6 +1282,7 @@ app.prepare().then(() => {
                         isActive: true,
                         isGlowActive: true,
                         rolls: 0,
+                        rollsNeeded: 1, //alter this based on advantage 
                         displayedValue: null,
                         inhibit: false,
                         advantage: false,

@@ -1194,6 +1194,7 @@ export default function Home() {
         isActive: data.diceStates.d20.isActive,
         isGlowActive: data.diceStates.d20.isGlowActive,
         rolls: 0,
+        rollsNeeded: data.diceStates.d20.rollsNeeded,
         inhibit: data.diceStates.d20.inhibit,
         advantage: data.diceStates.d20.advantage
       },
@@ -1262,87 +1263,133 @@ export default function Home() {
       setMoveOnButtonText(storyModeMoveOnButton);
     }
 
-    let actionsComplete = false;
-    let d20Sum = 0
     if (!pendingDiceUpdate && latestDiceMsg.current) {
 
       console.log("dice use effect d20 data: ", diceStates.d20);
 
-      //if d20 dice is active, check and see if actions completed
-      if (latestDiceMsg.current.diceStates.d20.isActive) {
-        if (latestDiceMsg.current.diceStates.d20.Advantage) {
-          if (diceStates.d20.rolls > 1) {
-            d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
-            actionsComplete = true;
-          }
-        } else if (latestDiceMsg.current.diceStates.d20.Disadvantage) {
-          if (diceStates.d20.rolls > 1) {
-            d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
-            actionsComplete = true;
-          }
-        } else if (diceStates.d20.rolls > 0) {
-          d20Sum = diceStates.d20.value[0];
-          actionsComplete = true;
-        }
+      // //if d20 dice is active, check and see if actions completed
+      // if (latestDiceMsg.current.diceStates.d20.isActive) {
+      //   if (latestDiceMsg.current.diceStates.d20.Advantage) {
+      //     if (diceStates.d20.rolls > 1) {
+      //       d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
+      //       actionsComplete = true;
+      //     }
+      //   } else if (latestDiceMsg.current.diceStates.d20.Disadvantage) {
+      //     if (diceStates.d20.rolls > 1) {
+      //       d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
+      //       actionsComplete = true;
+      //     }
+      //   } else if (diceStates.d20.rolls > 0) {
+      //     d20Sum = diceStates.d20.value[0];
+      //     actionsComplete = true;
+      //   }
 
+      // }
+
+      let actionsComplete = false; // Do not assume completion initially
+      let totalDiceSum = 0; // Variable to store the total sum of all dice values
+      let activeDiceFound = false; // Flag to track if any dice is active
+
+      // Iterate through each dice state
+      for (const [diceType, playerDiceRequests] of Object.entries(latestDiceMsg.current.diceStates)) {
+        console.log("diceType: ", diceType);
+
+        if (playerDiceRequests.isGlowActive) {
+          activeDiceFound = true; // Mark that we have found at least one active dice
+          const currentDiceState = diceStates[diceType]; // Correctly access the dice state
+
+          console.log("currentDiceState ", currentDiceState);
+          // Check if the dice has rolled the needed amount
+          if (currentDiceState.rolls < playerDiceRequests.rollsNeeded) {
+            actionsComplete = false; // Not all actions are complete
+            break; // Exit the loop early since we found an incomplete action
+          } else {
+            // Calculate and add to the total sum of the dice values up to rollsNeeded
+            for (let i = 0; i < playerDiceRequests.rollsNeeded; i++) {
+              totalDiceSum += currentDiceState.value[i];
+            }
+          }
+        }
       }
 
+      // Only if active dice were found, check if all actions are completed
+      if (activeDiceFound && !actionsComplete) {
+        actionsComplete = true; // All active dice have completed their rolls
+      }
+
+      if (actionsComplete) {
+
+        // this was a d20 roll so check for high roll and play music
+        if (latestDiceMsg.current.diceStates.d20.rolls > 0 && totalDiceSum > 14) {
+
+          resumeAudioContext();
+          diceTone.current = new Tone.Player({
+            url: "/audio/level_up_sound_effect.mp3",
+          }).toDestination();
+
+          diceTone.current.autostart = true;
+
+          diceTone.current.onended = () => {
+            console.log('Playback ended');
+            diceTone.current.disconnect(); // Disconnect the player
+          };
 
 
+        }
 
-    }
-    if (actionsComplete) {
-
-      let d20sumTotal = d20Sum + 2//////////////////change this to whatever the skill check is
-
-      if (d20sumTotal > 14) {
-        resumeAudioContext();
-        diceTone.current = new Tone.Player({
-          url: "/audio/level_up_sound_effect.mp3",
-        }).toDestination();
-
-        diceTone.current.autostart = true;
-
-        diceTone.current.onended = () => {
-          console.log('Playback ended');
-          diceTone.current.disconnect(); // Disconnect the player
+        const rollCompleteData = {
+          User: userName,
+          Total: totalDiceSum,
+          Modifier: 2, /////put whatever the skill level is
+          Skill: latestDiceMsg.current.Skill,
+          Id: latestDiceMsg.current.activityId
         };
+        //send data to the server (not sure yet how to use, prob for logs and others can see)
+        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
+        //Need to send some kind of animation above the dice for being done showing values
+
+        //put outcome to chatbox
+        //delay some time to give people chance to see there stuff, and for visuals on UI
+        latestDiceMsg.current = null;
+        setDiceStates(prevState => ({
+          ...prevState,
+          d20: {
+            ...prevState.d20,
+            inhibit: false,
+            isGlowActive: false
+          },
+          d10: {
+            ...prevState.d10,
+            inhibit: false,
+            isGlowActive: false
+          },
+          d8: {
+            ...prevState.d8,
+            inhibit: false,
+            isGlowActive: false
+          },
+          d6: {
+            ...prevState.d6,
+            inhibit: false,
+            isGlowActive: false
+          },
+          d4: {
+            ...prevState.d4,
+            inhibit: false,
+            isGlowActive: false
+          }
+        }));
+        setTimeout(() => {
+          callSubmitFromDiceRolls.current = true;
+          setDiceRollsInputData(`I rolled a ${totalDiceSum} +2 modifier`);
+          setDiceStates(defaultDiceStates);
+          setActiveSkill("");
+          console.log("the end");
+        }, 3000);
 
       }
-
-      const rollCompleteData = {
-        User: userName,
-        Total: d20sumTotal,
-        D20Roll: d20Sum,
-        Modifier: 2, /////put whatever the skill level is
-        Skill: latestDiceMsg.current.Skill,
-        Id: latestDiceMsg.current.activityId
-      };
-      //send data to the server (not sure yet how to use, prob for logs and others can see)
-      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
-      //Need to send some kind of animation above the dice for being done showing values
-
-      //put outcome to chatbox
-      //delay some time to give people chance to see there stuff, and for visuals on UI
-      latestDiceMsg.current = null;
-      setDiceStates(prevState => ({
-        ...prevState,
-        d20: {
-          ...prevState.d20,
-          inhibit: false,
-          isGlowActive: false
-        }
-      }));
-      setTimeout(() => {
-        callSubmitFromDiceRolls.current = true;
-        setDiceRollsInputData(`I rolled a ${d20Sum} +2 modifier`);
-        setDiceStates(defaultDiceStates);
-        setActiveSkill("");
-        console.log("the end");
-      }, 3000);
-
     }
-  }, [diceStates.d20]);
+  }, [diceStates]);
 
   useEffect(() => {
     if (callSubmitFromDiceRolls.current && diceRollsInputData.length > 0) {

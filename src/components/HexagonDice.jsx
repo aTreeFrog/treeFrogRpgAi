@@ -69,7 +69,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                 }));
                 setIsD20Spinning(false);
                 // set floating number animation for d20
-                if (maxNumber == 20 && diceStates.d20.isGlowActive) {
+                if (diceStates.d20.isGlowActive) {
                     setFloatingValue(newValue); // Use newValue directly
                     setTimeout(() => {
                         setFloatingValue(null);
@@ -86,6 +86,12 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                     }
                 }));
                 setIsD4Spinning(false);
+                if (diceStates.d4.isGlowActive) {
+                    setFloatingValue(newValue); // Use newValue directly
+                    setTimeout(() => {
+                        setFloatingValue(null);
+                    }, 8000);
+                }
             } else if (maxNumber == 6) {
                 setDiceStates(prevState => ({
                     ...prevState,
@@ -97,6 +103,12 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                     }
                 }));
                 setIsD6Spinning(false);
+                if (diceStates.d6.isGlowActive) {
+                    setFloatingValue(newValue); // Use newValue directly
+                    setTimeout(() => {
+                        setFloatingValue(null);
+                    }, 8000);
+                }
             } else if (maxNumber == 8) {
                 setDiceStates(prevState => ({
                     ...prevState,
@@ -108,6 +120,12 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                     }
                 }));
                 setIsD8Spinning(false);
+                if (diceStates.d8.isGlowActive) {
+                    setFloatingValue(newValue); // Use newValue directly
+                    setTimeout(() => {
+                        setFloatingValue(null);
+                    }, 8000);
+                }
             } else if (maxNumber == 10) {
                 setDiceStates(prevState => ({
                     ...prevState,
@@ -119,6 +137,12 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                     }
                 }));
                 setIsD10Spinning(false);
+                if (diceStates.d10.isGlowActive) {
+                    setFloatingValue(newValue); // Use newValue directly
+                    setTimeout(() => {
+                        setFloatingValue(null);
+                    }, 8000);
+                }
             }
         }, 1600); // Duration to match CSS animation
     };
