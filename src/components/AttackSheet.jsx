@@ -29,6 +29,11 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
             setHeaderGlow(false);
         }
 
+        //if failed an attack or attacked and dealt damage, no longer highlight any selected attack slots
+        if (player?.battleMode?.yourTurn && player?.battleMode?.actionAttempted && (!player?.battleMode?.attackRollSucceeded || player?.battleMode.damageDelt > 0)) {
+            setSelectedRow(null);
+        }
+
         console.log("selectedRow", selectedRow);
 
     }, [player]);

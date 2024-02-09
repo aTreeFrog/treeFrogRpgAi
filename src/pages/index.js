@@ -64,6 +64,7 @@ export default function Home() {
       isActive: true,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: null,
       inhibit: false,
       advantage: false,
@@ -73,6 +74,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 10,
       inhibit: false,
       advantage: false,
@@ -82,6 +84,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 8,
       inhibit: false,
       advantage: false,
@@ -91,6 +94,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 6,
       inhibit: false,
       advantage: false,
@@ -100,6 +104,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 4,
       inhibit: false,
       advantage: false,
@@ -111,6 +116,7 @@ export default function Home() {
       isActive: true,
       isGlowActive: true,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: null,
       inhibit: false,
       advantage: false,
@@ -120,6 +126,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 10,
       inhibit: false,
       advantage: false,
@@ -129,6 +136,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 8,
       inhibit: false,
       advantage: false,
@@ -138,6 +146,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 6,
       inhibit: false,
       advantage: false,
@@ -147,6 +156,7 @@ export default function Home() {
       isActive: false,
       isGlowActive: false,
       rolls: 0,
+      rollsNeeded: 0,
       displayedValue: 4,
       inhibit: false,
       advantage: false,
@@ -593,6 +603,8 @@ export default function Home() {
         // attack dice rolls now
       } else if (players[userName]?.battleMode?.attackRollSucceeded && players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.damageDelt < 1) {
 
+
+
       }
 
     }
@@ -1029,7 +1041,9 @@ export default function Home() {
         D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
         Modifier: 2, /////put whatever the skill level is
         Skill: latestDiceMsg.current.Skill,
-        Id: latestDiceMsg.current.activityId
+        Id: latestDiceMsg.current.activityId,
+        Attack: selectedRow?.name,
+
       };
       //send data to the server (not sure yet how to use, prob for logs and others can see)
       chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
