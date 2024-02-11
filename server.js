@@ -1115,7 +1115,7 @@ app.prepare().then(() => {
             activityCount++;
 
             console.log("d20 completed");
-            console.log("dice udpate data", players[diceData.User].diceStates);
+            console.log("dice update data", players[diceData.User].diceStates);
             io.emit('players objects', players);
 
         });
@@ -1169,6 +1169,10 @@ app.prepare().then(() => {
                                 player.diceStates[diceType].rollsNeeded = part.a;
                                 player.diceStates[diceType].isActive = true;
                                 player.diceStates[diceType].isGlowActive = true;
+                                player.diceStates[diceType].value = [];
+                                player.diceStates[diceType].rolls = 0;
+                                player.diceStates[diceType].displayedValue = null;
+                                player.diceStates[diceType].inhibit = false;
                                 console.log(`Updated ${diceType} with rollsNeeded = ${part.a}`);
                             } else {
                                 console.log(`${diceType} does not exist in player's diceStates.`);
