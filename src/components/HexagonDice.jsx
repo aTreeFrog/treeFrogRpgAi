@@ -204,7 +204,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div className={`triangle-container`}>
                 <div className={`triangle-glow triangle  ${isD4Spinning ? 'spinning' : ''} ${isD4Spinning ? 'no-glow' : ''} ${diceStates.d4.isGlowActive ? 'glow-active' : ''} ${diceStates.d4.isActive ? 'triangle-active' : 'triangle-inactive'}`}
                     onClick={() => {
-                        if (!diceStates.d4.inhibit) {
+                        if (!diceStates.d4.inhibit && !isD4Spinning) {
                             rollDice(4);
                         }
                     }}
@@ -214,7 +214,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             </div >
             <div className={`hexagon-glow square ${isD6Spinning ? 'spinning no-glow' : ''} ${diceStates.d6.isGlowActive ? 'glow-active' : ''} ${diceStates.d6.isActive ? 'square-active' : 'square-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d6.inhibit) {
+                    if (!diceStates.d6.inhibit && !isD6Spinning) {
                         rollDice(6);
                     }
                 }}
@@ -224,7 +224,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div
                 className={`hexagon-glow hexagon ${isD20Spinning ? 'spinning' : ''} ${isD20Spinning ? 'no-glow' : ''} ${(diceStates.d20.isGlowActive) ? 'glow-active' : ''} ${(diceStates.d20.isActive) ? 'hexagon-active' : 'hexagon-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d20.inhibit) {
+                    if (!diceStates.d20.inhibit && !isD20Spinning) {
                         rollDice(20);
                     }
                 }}
@@ -234,7 +234,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div
                 className={`hexagon-glow d8 ${isD8Spinning ? 'spinning' : ''} ${isD8Spinning ? 'no-glow' : ''} ${diceStates.d8.isGlowActive ? 'glow-active' : ''} ${diceStates.d8.isActive ? 'd8-active' : 'd8-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d8.inhibit) {
+                    if (!diceStates.d8.inhibit && !isD8Spinning) {
                         rollDice(8);
                     }
                 }}
@@ -244,7 +244,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div
                 className={`hexagon-glow d10 ${isD10Spinning ? 'spinning' : ''} ${isD10Spinning ? 'no-glow' : ''} ${diceStates.d10.isGlowActive ? 'glow-active' : ''} ${diceStates.d10.isActive ? 'd10-active' : 'd10-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d10.inhibit) {
+                    if (!diceStates.d10.inhibit && !isD10Spinning) {
                         rollDice(10);
                     }
                 }}

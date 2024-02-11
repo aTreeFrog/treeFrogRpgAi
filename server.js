@@ -1007,7 +1007,7 @@ app.prepare().then(() => {
                 }, {
                     name: "ice blast",
                     attackBonus: 5,
-                    damage: "2d6",
+                    damage: "2d6+1d4",
                     type: "spell",
                     distance: 28,
                     xWidth: 14,
@@ -1120,10 +1120,9 @@ app.prepare().then(() => {
 
         });
 
-        //can handle needing to roll multiple dice types in the attack
         function parseDamageValue(damageValue) {
             // Extended regex to match additional dice roll in the bonus part
-            const regex = /(\d+)d(\d+)(\+\d+|\+\d+d\d+)?/;
+            const regex = /(\d+)d(\d+)(\+((\d+)d(\d+)|\d+))?/;
             const match = damageValue.match(regex);
 
             if (match) {
@@ -1136,15 +1135,13 @@ app.prepare().then(() => {
                     const bonus = match[3];
                     if (bonus.includes('d')) {
                         // Additional dice roll bonus
-                        const bonusParts = bonus.match(/(\d+)d(\d+)/);
-                        if (bonusParts) {
-                            const aBonus = parseInt(bonusParts[1], 10);
-                            const bBonus = parseInt(bonusParts[2], 10);
-                            diceData.push({ a: aBonus, b: bBonus }); // Add additional dice roll to the array
-                        }
+                        const aBonus = parseInt(match[5], 10);
+                        const bBonus = parseInt(match[6], 10);
+                        diceData.push({ a: aBonus, b: bBonus }); // Add additional dice roll to the array
                     } else {
                         // Fixed bonus
-                        const fixedBonus = parseInt(bonus.replace('+', ''), 10);
+                        // Directly use match[4] since it captures the numeric part of the fixed bonus
+                        const fixedBonus = parseInt(match[4], 10);
                         diceData.push({ c: fixedBonus }); // Add fixed bonus as part of the array
                     }
                 }
@@ -1154,6 +1151,8 @@ app.prepare().then(() => {
                 return null; // Return null if the pattern does not match
             }
         }
+
+
 
         function findAndUpdatePlayerDiceStates(player) {
             // Find the attack in player.attacks array

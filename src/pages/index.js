@@ -162,7 +162,7 @@ export default function Home() {
       advantage: false,
     }
   };
-  const [prevDiceStates, setDiceStates] = useState(defaultDiceStates);
+  const [diceStates, setDiceStates] = useState(defaultDiceStates);
   const [diceRollId, setDiceRollId] = useState();
   const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
@@ -690,11 +690,11 @@ export default function Home() {
       setActiveTab("Attacks/Spells");
       setTimeout(() => {
         setYourTurnText(true);
-      }, 2000);
+      }, 1000);
       setYourTurnText(true); // Use newValue directly
       setTimeout(() => {
         setYourTurnText(false);
-      }, 5000);
+      }, 3000);
 
     }
   }, [players[userName]?.battleMode?.yourTurn]);
@@ -712,7 +712,7 @@ export default function Home() {
       // Use a timeout to match the CSS transition duration
       setTimeout(() => {
         setShowOverlayText(false);
-      }, 2000); // 1000ms = 1s
+      }, 1500); // 1000ms = 1s
     }
   }, [yourTurnText]);
 
@@ -1047,12 +1047,13 @@ export default function Home() {
       //send data to the server (not sure yet how to use, prob for logs and others can see)
 
       chatMsgData = "I rolled a " + diceSelectionOption.value;
+      setDiceRollsInputData('');
+      setDiceSelectionOption(null);
       setTimeout(() => {
         chatSocket.emit('D20 Dice Roll Complete', rollCompleteData);
         cleanUpDiceStates();
         setDiceStates(defaultDiceStates);
-        setDiceRollsInputData('');
-      }, 2000);
+      }, 1500);
 
     } else if (audioInputData.length > 0) {
       chatMsgData = audioInputData;
@@ -1188,11 +1189,11 @@ export default function Home() {
     setDiceRollId(data.activityId);
 
     setDiceStates({
-      ...prevDiceStates, // Copy all existing dice states
+      ...diceStates, // Copy all existing dice states
       d20: {
-        ...prevDiceStates.d20,
+        ...diceStates.d20,
         value: [],
-        displayedValue: data.diceStates.d20.isGlowActive ? null : prevDiceStates.d20.displayedValue,
+        displayedValue: data.diceStates.d20.isGlowActive ? null : diceStates.d20.displayedValue,
         isActive: data.diceStates.d20.isActive,
         isGlowActive: data.diceStates.d20.isGlowActive,
         rolls: 0,
@@ -1201,9 +1202,9 @@ export default function Home() {
         advantage: data.diceStates.d20.advantage
       },
       d10: {
-        ...prevDiceStates.d10,
+        ...diceStates.d10,
         value: [],
-        displayedValue: data.diceStates.d10.isGlowActive ? null : prevDiceStates.d10.displayedValue,
+        displayedValue: data.diceStates.d10.isGlowActive ? null : diceStates.d10.displayedValue,
         isActive: data.diceStates.d10.isActive,
         isGlowActive: data.diceStates.d10.isGlowActive,
         rolls: 0,
@@ -1212,9 +1213,9 @@ export default function Home() {
         advantage: data.diceStates.d10.advantage
       },
       d8: {
-        ...prevDiceStates.d8,
+        ...diceStates.d8,
         value: [],
-        displayedValue: data.diceStates.d8.isGlowActive ? null : prevDiceStates.d8.displayedValue,
+        displayedValue: data.diceStates.d8.isGlowActive ? null : diceStates.d8.displayedValue,
         isActive: data.diceStates.d8.isActive,
         isGlowActive: data.diceStates.d8.isGlowActive,
         rolls: 0,
@@ -1223,9 +1224,9 @@ export default function Home() {
         advantage: data.diceStates.d8.advantage
       },
       d6: {
-        ...prevDiceStates.d6,
+        ...diceStates.d6,
         value: [],
-        displayedValue: data.diceStates.d6.isGlowActive ? null : prevDiceStates.d6.displayedValue,
+        displayedValue: data.diceStates.d6.isGlowActive ? null : diceStates.d6.displayedValue,
         isActive: data.diceStates.d6.isActive,
         isGlowActive: data.diceStates.d6.isGlowActive,
         rolls: 0,
@@ -1234,9 +1235,9 @@ export default function Home() {
         advantage: data.diceStates.d6.advantage
       },
       d4: {
-        ...prevDiceStates.d4,
+        ...diceStates.d4,
         value: [],
-        displayedValue: data.diceStates.d4.isGlowActive ? null : prevDiceStates.d4.displayedValue,
+        displayedValue: data.diceStates.d4.isGlowActive ? null : diceStates.d4.displayedValue,
         isActive: data.diceStates.d4.isActive,
         isGlowActive: data.diceStates.d4.isGlowActive,
         rolls: 0,
@@ -1260,7 +1261,7 @@ export default function Home() {
   useEffect(() => {
 
     //control move on button text.  Use is glow active until better state figured out
-    if (prevDiceStates.d20.isGlowActive) {
+    if (diceStates.d20.isGlowActive) {
       setPopupText(diceModePopupWarning);
       setMoveOnButtonText(diceModeMoveOnButton);
     } else {
@@ -1270,7 +1271,7 @@ export default function Home() {
 
     if (!pendingDiceUpdate && latestDiceMsg.current) {
 
-      console.log("dice use effect d20 data: ", prevDiceStates.d20);
+      console.log("dice use effect d20 data: ", diceStates.d20);
 
       let totalDiceSum = 0; // Variable to store the total sum of all dice values
       let activeDiceFound = false; // Flag to check if at least one dice is active and needs to roll
@@ -1281,12 +1282,19 @@ export default function Home() {
         if (playerDiceRequests.isGlowActive) {
           activeDiceFound = true; // Found at least one active dice
 
-          const currentDiceState = prevDiceStates[diceType]; // Access the current dice state correctly
+          const currentDiceState = diceStates[diceType]; // Access the current dice state correctly
 
           if (currentDiceState.rolls < playerDiceRequests.rollsNeeded) {
             allRollsCompleted = false; // Found a dice that hasn't completed its rolls
-            break; // Exit loop early as we found incomplete rolls
           } else {
+            setDiceStates(prevState => ({
+              ...prevState,
+              [diceType]: {
+                ...prevState[diceType],
+                isGlowActive: false,
+              }
+            }));
+
             // Sum up the values for dice that have completed their rolls
             for (let i = 0; i < playerDiceRequests.rollsNeeded; i++) {
               totalDiceSum += currentDiceState.value[i];
@@ -1301,7 +1309,7 @@ export default function Home() {
       if (actionsComplete) {
 
         // this was a d20 roll so check for high roll and play music
-        if (latestDiceMsg.current.diceStates.d20.rolls > 0 && totalDiceSum > 14) {
+        if (latestDiceMsg.current.diceStates.d20.rollsNeeded > 0 && totalDiceSum > 14) {
 
           resumeAudioContext();
           diceTone.current = new Tone.Player({
@@ -1388,13 +1396,13 @@ export default function Home() {
           //setDiceStates(defaultDiceStates);
           chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
           console.log("the end");
-        }, 3000);
+        }, 2000);
         cleanUpDiceStates();
 
 
       }
     }
-  }, [prevDiceStates]);
+  }, [diceStates]);
 
   useEffect(() => {
     if (callSubmitFromDiceRolls.current && diceRollsInputData.length > 0) {
@@ -1829,7 +1837,7 @@ export default function Home() {
               </div>
             )}
             <div className="text-white text-2xl font-semibold  ml-[-35px]">
-              <HexagonDice diceStates={prevDiceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} isD20Spinning={isD20Spinning} setIsD20Spinning={setIsD20Spinning} />
+              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} isD20Spinning={isD20Spinning} setIsD20Spinning={setIsD20Spinning} />
             </div>
           </div>
         </div>
@@ -1886,7 +1894,7 @@ export default function Home() {
                             <div key={index} className="flex items-center gap-1">
                               {/* Cell with text */}
                               <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                                disabled={prevDiceStates.d20.isGlowActive}
+                                disabled={diceStates.d20.isGlowActive}
                                 onClick={() => handleCellClick(content)}
                               >
                                 {content}
@@ -1926,7 +1934,7 @@ export default function Home() {
               </button>
               {/* Make sure the input container can grow and the button stays aligned */}
               <div className="flex items-center" style={{ position: 'relative', zIndex: 2, flexGrow: 1 }}>
-                {prevDiceStates.d20.isGlowActive ?
+                {diceStates.d20.isGlowActive ?
                   <>
                     <textarea
                       className="bg-transparent text-white focus:outline-none"
@@ -1941,7 +1949,7 @@ export default function Home() {
                       options={options}
                       value={diceSelectionOption}
                       onChange={handleDropdownChange}
-                      submittingDice={prevDiceStates.d20.isGlowActive}
+                      submittingDice={diceStates.d20.isGlowActive}
                     />
 
                   </>
@@ -1967,11 +1975,11 @@ export default function Home() {
                 }
               </div>
               <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-                className={`${(!prevDiceStates.d20.isGlowActive || (prevDiceStates.d20.isGlowActive && diceSelectionOption))
+                className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption))
                   ? 'bg-purple-600 hover:bg-purple-700'
                   : 'bg-grey-700 hover:bg-grey-700'
                   } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-                disabled={(prevDiceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
+                disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
                 {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
               </button>
             </div>
@@ -2021,7 +2029,7 @@ export default function Home() {
                     <div key={index} className="flex items-center gap-1">
                       {/* Cell with text */}
                       <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                        disabled={prevDiceStates.d20.isGlowActive}
+                        disabled={diceStates.d20.isGlowActive}
                         onClick={() => handleCellClick(content)}
                       >
                         {content}
@@ -2048,7 +2056,7 @@ export default function Home() {
         {
           isAudioOpen && (
             <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={prevDiceStates.d20.isGlowActive} mediaRecorder={mediaRecorder} setMediaRecorder={setMediaRecorder} audioChunks={audioChunks} />
+              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} mediaRecorder={mediaRecorder} setMediaRecorder={setMediaRecorder} audioChunks={audioChunks} />
             </div>
           )
         }
