@@ -48,15 +48,6 @@ const BlurredLineEffect = ({ playerData, gridSpacing }) => {
                 shadowBlur={10} // Blur effect
                 shadowColor="white"
             />
-            {/* Thinner, more opaque line on top */}
-            {/* <Line
-                points={linePoints}
-                stroke="white"
-                strokeWidth={2} // Actual line
-                opacity={1}
-                lineCap="butt"
-                lineJoin="round"
-            /> */}
         </>
     );
 };

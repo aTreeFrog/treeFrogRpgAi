@@ -26,6 +26,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [circleStopPosition, setCircleStopPosition] = useState({ x: 0, y: 0 });
     const attackSelection = useRef();
     const [pingStop, setPingStop] = useState(false);
+    const [showEnemyResult, setShowEnemyResult] = useState({});
+    const prevPlayersBattleData = useRef();
 
     const handleMouseMove = (e) => {
 
@@ -410,7 +412,38 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         setUnavailCoord(newUnavailCoord);
 
+
+        Object.entries(players).forEach(([playerName, playerData]) => {
+            // set attack succeed or failed above players after attack roll made 
+            if (playerData?.battleMode?.enemyAttackAttempt == "SUCCESS" && prevPlayersBattleData.current[playerName]?.battleMode?.enemyAttackAttempt == "INIT") {
+                setShowEnemyResult(prevState => ({
+                    ...prevState,
+                    [playerName]: "SUCCESS"
+                }));
+                setTimeout(() => {
+                    setShowEnemyResult(prevState => ({
+                        ...prevState,
+                        [playerName]: "INIT"
+                    }));
+                }, 5000);
+            } else if (playerData?.battleMode?.enemyAttackAttempt == "FAIL" && prevPlayersBattleData.current[playerName]?.battleMode?.enemyAttackAttempt == "INIT") {
+                setShowEnemyResult(prevState => ({
+                    ...prevState,
+                    [playerName]: "FAIL"
+                }));
+                setTimeout(() => {
+                    setShowEnemyResult(prevState => ({
+                        ...prevState,
+                        [playerName]: "INIT"
+                    }));
+                }, 5000);
+            }
+        });
+
+        prevPlayersBattleData.current = players;
+
     }, [players]);
+
 
 
     const getCoveredCells = (circleCenter, radius, gridSpacing) => {
@@ -577,10 +610,11 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                         unavailCoord={unavailCoord}
                                         showPlayerName={showPlayerName}
                                         setShowPlayerName={setShowPlayerName}
+                                        showEnemyResult={showEnemyResult}
                                         selectedRow={selectedRow}
                                         circleStop={circleStop}
                                     />
-                                    {playerData?.battleMode?.targeted && (
+                                    {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
                                         <BlurredLineEffect
                                             playerData={playerData}
                                             gridSpacing={gridSpacing}

@@ -19,9 +19,8 @@ const handle = app.getRequestHandler();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const speechFile = path.resolve("./speech.mp3");
 const ColorThief = require('colorthief');
-
-
-
+const cloneDeep = require('lodash/cloneDeep');
+const { AttackAttempt } = require('./lib/enums/AttackAttempt');
 
 const defaultDiceStates = {
     d20: {
@@ -200,7 +199,7 @@ app.prepare().then(() => {
                     players[user].pingXPosition = null;
                     players[user].pingYPosition = null;
 
-                    players[user].diceStates = defaultDiceStates;
+                    players[user].diceStates = cloneDeep(defaultDiceStates);
                     players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
                     players[user].activeSkill = false;
                     players[user].skill = "";
@@ -217,19 +216,23 @@ app.prepare().then(() => {
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
                     players[user].battleMode.initiativeImageShadow = shadowColor;
+                    players[user].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
                     players[user].battleMode.targeted = false;
                     players[user].backgroundAudio = backgroundSong;
 
 
-                    players[user].diceStates.D20 = {
+                    players[user].diceStates.d20 = {
                         value: [],
                         isActive: true,
                         isGlowActive: true,
                         rolls: 0,
+                        rollsNeeded: 1, //alter based on advantage
                         displayedValue: null,
                         inhibit: false,
                         advantage: false,
                     }
+
+                    console.log("user roll", players[user].diceStates.d20);
 
                     waitingForRolls = true;
 
@@ -272,6 +275,8 @@ app.prepare().then(() => {
 
             console.log("enter battle mode");
 
+
+
             io.to(serverRoomName).emit('enter battle mode', game); //not sure i need game object at all yet
             io.to(serverRoomName).emit('players objects', players);
 
@@ -286,7 +291,7 @@ app.prepare().then(() => {
                     players[userName].active = false;
                     players[userName].active = false;
                     players[userName].currentHealth = players[userName].maxHealth;
-                    players[userName].diceStates = defaultDiceStates;
+                    players[userName].diceStates = cloneDeep(defaultDiceStates);
                     players[userName].mode = "story"
 
                 }
@@ -451,11 +456,12 @@ app.prepare().then(() => {
                     players[user].skill = skillValue;
                     players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
 
-                    players[user].diceStates.D20 = {
+                    players[user].diceStates.d20 = {
                         value: [],
                         isActive: true,
                         isGlowActive: true,
                         rolls: 0,
+                        rollsNeeded: 1, // alter based on advantage
                         displayedValue: null,
                         inhibit: false,
                         advantage: advantageValue,
@@ -541,7 +547,7 @@ app.prepare().then(() => {
             player.active = false;
             player.away = true;
             player.mode = "story";
-            player.diceStates = defaultDiceStates;
+            player.diceStates = cloneDeep(defaultDiceStates);;
             player.skill = "";
             player.activeSkill = false;
             player.timers.enabled = false;
@@ -872,13 +878,11 @@ app.prepare().then(() => {
             }
         });
 
-
         socket.on('received user message', (msg) => {
             console.log("all done waiting");
             waitingForUser = false;
 
         });
-
 
         socket.on('cancel processing', () => {
             shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket
@@ -1018,7 +1022,7 @@ app.prepare().then(() => {
                 pingXPosition: null,
                 pingYPosition: null,
                 xScale: 1,
-                diceStates: defaultDiceStates,
+                diceStates: cloneDeep(defaultDiceStates),
                 mode: "story",
                 timers: {
                     duration: 30, //seconds
@@ -1050,10 +1054,9 @@ app.prepare().then(() => {
 
         });
 
-
         socket.on('D20 Dice Roll Complete', (diceData) => {
 
-            players[diceData.User].diceStates = defaultDiceStates; //re-default dice after roll completes
+            players[diceData.User].diceStates = cloneDeep(defaultDiceStates); //re-default dice after roll completes
 
             if (players[diceData.User].mode == "initiative") {
                 players[diceData.User].battleMode.initiativeRoll = diceData.Total;
@@ -1078,9 +1081,11 @@ app.prepare().then(() => {
                         players[diceData.User].battleMode.attackRollSucceeded = true;
                         targetsToRemove.delete(target);
                         console.log("target stay", target);
+                        players[target].battleMode.enemyAttackAttempt = AttackAttempt.SUCCESS;
                     } else {
                         players[target].battleMode.targeted = false;
                         console.log("target remove", target); //that player is no longer targeted
+                        players[target].battleMode.enemyAttackAttempt = AttackAttempt.FAIL;;
                     }
                 }
 
@@ -1110,6 +1115,7 @@ app.prepare().then(() => {
             activityCount++;
 
             console.log("d20 completed");
+            console.log("dice udpate data", players[diceData.User].diceStates);
             io.emit('players objects', players);
 
         });
@@ -1191,7 +1197,7 @@ app.prepare().then(() => {
 
             players[userName].active = true;
             players[userName].away = false;
-            players[userName].diceStates = defaultDiceStates;
+            players[userName].diceStates = cloneDeep(defaultDiceStates);
             players[userName].activeSkill = false;
             players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
             activityCount++;
@@ -1276,11 +1282,12 @@ app.prepare().then(() => {
                 if (!players[data.name].battleMode.actionAttempted && players[data.name].battleMode.yourTurn
                     && players[data.name].battleMode.usersTargeted.length > 0) {
 
-                    players[data.name].diceStates.D20 = {
+                    players[data.name].diceStates.d20 = {
                         value: [],
                         isActive: true,
                         isGlowActive: true,
                         rolls: 0,
+                        rollsNeeded: 1, //alter this based on advantage 
                         displayedValue: null,
                         inhibit: false,
                         advantage: false,
@@ -1298,6 +1305,7 @@ app.prepare().then(() => {
                     } else {
                         players[userName].battleMode.targeted = false;
                     }
+                    players[userName].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
                     players[userName].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
                 });
 
@@ -1317,7 +1325,7 @@ app.prepare().then(() => {
     function defaultPlayersBattleInitMode(userName) {
         players[userName].active = false;
         players[userName].away = false;
-        players[userName].diceStates = defaultDiceStates;
+        players[userName].diceStates = cloneDeep(defaultDiceStates);
         players[userName].battleMode.yourTurn = false;
         players[userName].battleMode.distanceMoved = null;
         players[userName].battleMode.actionAttempted = false;
@@ -1326,6 +1334,7 @@ app.prepare().then(() => {
         players[userName].battleMode.turnCompleted = false;
         players[userName].battleMode.targeted = false;
         players[userName].battleMode.attackUsed = null;
+        players[userName].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
         players[userName].skill = "";
         players[userName].activeSkill = false;
         players[userName].timers.enabled = false;
