@@ -1029,7 +1029,7 @@ export default function Home() {
       chatMsgData = "Game master, I am back in the game. Please continue to include me in the story again."
     } else if (diceRollsInputData.length > 0) {
       chatMsgData = diceRollsInputData;
-      cleanUpDiceStates();
+      //cleanUpDiceStates();
       setDiceRollsInputData('');
       setDiceSelectionOption(null);
     } else if (diceSelectionOption) {
@@ -1049,6 +1049,8 @@ export default function Home() {
       chatMsgData = "I rolled a " + diceSelectionOption.value;
       // clean up all dice states
       cleanUpDiceStates();
+      setDiceStates(defaultDiceStates);
+      setDiceRollsInputData('');
     } else if (audioInputData.length > 0) {
       chatMsgData = audioInputData;
     } else if (customCellValue.length > 0) {
@@ -1091,8 +1093,8 @@ export default function Home() {
     latestDiceMsg.current = null;
     setPendingDiceUpdate(null);
     setDiceSelectionOption(null);
-    setDiceRollsInputData('');
-    setDiceStates(defaultDiceStates);
+    //setDiceRollsInputData('');
+    //setDiceStates(defaultDiceStates);
     setActiveSkill("");
   }
 
@@ -1187,7 +1189,7 @@ export default function Home() {
       d20: {
         ...diceStates.d20,
         value: [],
-        displayedValue: null,
+        displayedValue: data.diceStates.d20.isGlowActive ? null : 20,
         isActive: data.diceStates.d20.isActive,
         isGlowActive: data.diceStates.d20.isGlowActive,
         rolls: 0,
@@ -1198,7 +1200,7 @@ export default function Home() {
       d10: {
         ...diceStates.d10,
         value: [],
-        displayedValue: null,
+        displayedValue: data.diceStates.d10.isGlowActive ? null : 10,
         isActive: data.diceStates.d10.isActive,
         isGlowActive: data.diceStates.d10.isGlowActive,
         rolls: 0,
@@ -1208,7 +1210,7 @@ export default function Home() {
       d8: {
         ...diceStates.d8,
         value: [],
-        displayedValue: null,
+        displayedValue: data.diceStates.d8.isGlowActive ? null : 8,
         isActive: data.diceStates.d8.isActive,
         isGlowActive: data.diceStates.d8.isGlowActive,
         rolls: 0,
@@ -1218,7 +1220,7 @@ export default function Home() {
       d6: {
         ...diceStates.d6,
         value: [],
-        displayedValue: null,
+        displayedValue: data.diceStates.d6.isGlowActive ? null : 6,
         isActive: data.diceStates.d6.isActive,
         isGlowActive: data.diceStates.d6.isGlowActive,
         rolls: 0,
@@ -1228,7 +1230,7 @@ export default function Home() {
       d4: {
         ...diceStates.d4,
         value: [],
-        displayedValue: null,
+        displayedValue: data.diceStates.d4.isGlowActive ? null : 4,
         isActive: data.diceStates.d4.isActive,
         isGlowActive: data.diceStates.d4.isGlowActive,
         rolls: 0,
@@ -1327,27 +1329,47 @@ export default function Home() {
           d20: {
             ...prevState.d20,
             inhibit: false,
-            isGlowActive: false
+            isGlowActive: false,
+            rolls: 0,
+            rollsNeeded: 0,
+            inhibit: false,
+            advantage: false,
           },
           d10: {
             ...prevState.d10,
             inhibit: false,
-            isGlowActive: false
+            isGlowActive: false,
+            rolls: 0,
+            rollsNeeded: 0,
+            inhibit: false,
+            advantage: false,
           },
           d8: {
             ...prevState.d8,
             inhibit: false,
-            isGlowActive: false
+            isGlowActive: false,
+            rolls: 0,
+            rollsNeeded: 0,
+            inhibit: false,
+            advantage: false,
           },
           d6: {
             ...prevState.d6,
             inhibit: false,
-            isGlowActive: false
+            isGlowActive: false,
+            rolls: 0,
+            rollsNeeded: 0,
+            inhibit: false,
+            advantage: false,
           },
           d4: {
             ...prevState.d4,
             inhibit: false,
-            isGlowActive: false
+            isGlowActive: false,
+            rolls: 0,
+            rollsNeeded: 0,
+            inhibit: false,
+            advantage: false,
           }
         }));
         latestDiceMsg.current = null;
@@ -1355,10 +1377,11 @@ export default function Home() {
           callSubmitFromDiceRolls.current = true;
           setDiceRollsInputData(`I rolled a ${totalDiceSum} +2 modifier`);
           setActiveSkill("");
-          cleanUpDiceStates();
+          //cleanUpDiceStates();
           //setDiceStates(defaultDiceStates);
           console.log("the end");
         }, 3000);
+        cleanUpDiceStates();
 
         chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
 

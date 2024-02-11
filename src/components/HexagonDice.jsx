@@ -151,7 +151,15 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
         <div className="inline-flex relative">
             {floatingValue !== null && (
                 <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 whitespace-nowrap text-orange-500 font-bold shiny-text blur-text">
-                    {floatingValue} + 2 Deception  :  {floatingValue + 2}
+                    {Object.values(diceStates).some(dice => dice.rolls < dice.rollsNeeded) ? (
+                        <>
+                            {floatingValue} Roll Again
+                        </>
+                    ) : (
+                        <>
+                            {floatingValue} + 2 Deception : {floatingValue + 2}
+                        </>
+                    )}
                 </div>
             )}
             <div className={`triangle-container`}>
