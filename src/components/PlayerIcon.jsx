@@ -152,7 +152,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                     />
                 </Group>
             )}
-            {showEnemyResult[playerName] && (showEnemyResult[playerName] == "SUCCESS" || showEnemyResult[playerName] == "FAIL") && (
+            {/* {showEnemyResult[playerName] && (showEnemyResult[playerName] == "SUCCESS" || showEnemyResult[playerName] == "FAIL") && (
                 // moveToTop ensures proper zindex for this group since zindex itself did not work
                 <Group ref={node => node && node.moveToTop()}>
                     <Rect
@@ -182,7 +182,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                         shadowOpacity={0.7}
                     />
                 </Group>
-            )}
+            )} */}
         </>
     );
 };

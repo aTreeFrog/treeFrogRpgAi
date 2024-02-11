@@ -4,6 +4,7 @@ import useImage from 'use-image';
 import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
 import FlickeringRect from '../components/FlickeringRect'
+import DriftingTextEffect from '../components/DriftingTextEffect';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow, showPlayerName, setShowPlayerName, pingReady, setPingReady }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -616,6 +617,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                     />
                                     {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
                                         <BlurredLineEffect
+                                            playerData={playerData}
+                                            gridSpacing={gridSpacing}
+                                        />
+                                    )}
+                                    {playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT" && (
+                                        <DriftingTextEffect
                                             playerData={playerData}
                                             gridSpacing={gridSpacing}
                                         />
