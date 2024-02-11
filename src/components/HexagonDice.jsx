@@ -1,11 +1,40 @@
 // HexagonDice.js
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValue, isD20Spinning, setIsD20Spinning }) => {
     const [isD10Spinning, setIsD10Spinning] = useState(false);
     const [isD8Spinning, setIsD8Spinning] = useState(false);
     const [isD6Spinning, setIsD6Spinning] = useState(false);
     const [isD4Spinning, setIsD4Spinning] = useState(false);
+    const [totalValue, setTotalValue] = useState(null);
+
+    //create a sum total for the dice rolls only if its not a d20 roll and theres rolls needed
+    useEffect(() => {
+
+        console.log("diceStates sum: ", diceStates);
+        let sum = 0;
+        let shouldUpdateTotalValue = false; // Flag to determine if totalValue should be updated
+
+        Object.entries(diceStates).forEach(([key, dice]) => {
+            if (key !== 'd20' && dice.rollsNeeded > 0) {
+                shouldUpdateTotalValue = true;
+                // Step 2: Ignore d20
+                const valuesToSum = dice.value.slice(0, dice.rollsNeeded); // Take up to rollsNeeded values
+                sum += valuesToSum.reduce((acc, curr) => acc + (curr || 0), 0); // Sum them up, defaulting to 0 if undefined
+            }
+        });
+
+        if (shouldUpdateTotalValue) {
+            console.log("dice sum ", sum);
+            setTotalValue(sum);
+        } else if (totalValue > 0) {
+            setTimeout(() => {
+                setTotalValue(null);
+            }, 6000);
+
+        }
+
+    }, [diceStates]);
 
     const rollDice = (maxNumber) => {
 
@@ -162,20 +191,30 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                     )}
                 </div>
             )}
+            {totalValue != null && (
+                <div className="absolute -top-20 left-full ml-60 whitespace-nowrap text-purple-400 font-bold"
+                    style={{
+                        fontSize: '1.35rem',
+                        transform: `translateX(${totalValue >= 10 ? '-43%' : '-33.3333%'})`
+                    }}>
+                    sum: {totalValue}
+                </div>
+            )
+            }
             <div className={`triangle-container`}>
                 <div className={`triangle-glow triangle  ${isD4Spinning ? 'spinning' : ''} ${isD4Spinning ? 'no-glow' : ''} ${diceStates.d4.isGlowActive ? 'glow-active' : ''} ${diceStates.d4.isActive ? 'triangle-active' : 'triangle-inactive'}`}
                     onClick={() => {
-                        if (!diceStates.d4.inhibit) {
+                        if (!diceStates.d4.inhibit && !isD4Spinning) {
                             rollDice(4);
                         }
                     }}
                 >
                     <span className="triangle-text"> {diceStates.d4.displayedValue}</span>
-                </div>
-            </div>
+                </div >
+            </div >
             <div className={`hexagon-glow square ${isD6Spinning ? 'spinning no-glow' : ''} ${diceStates.d6.isGlowActive ? 'glow-active' : ''} ${diceStates.d6.isActive ? 'square-active' : 'square-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d6.inhibit) {
+                    if (!diceStates.d6.inhibit && !isD6Spinning) {
                         rollDice(6);
                     }
                 }}
@@ -185,7 +224,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div
                 className={`hexagon-glow hexagon ${isD20Spinning ? 'spinning' : ''} ${isD20Spinning ? 'no-glow' : ''} ${(diceStates.d20.isGlowActive) ? 'glow-active' : ''} ${(diceStates.d20.isActive) ? 'hexagon-active' : 'hexagon-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d20.inhibit) {
+                    if (!diceStates.d20.inhibit && !isD20Spinning) {
                         rollDice(20);
                     }
                 }}
@@ -195,7 +234,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div
                 className={`hexagon-glow d8 ${isD8Spinning ? 'spinning' : ''} ${isD8Spinning ? 'no-glow' : ''} ${diceStates.d8.isGlowActive ? 'glow-active' : ''} ${diceStates.d8.isActive ? 'd8-active' : 'd8-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d8.inhibit) {
+                    if (!diceStates.d8.inhibit && !isD8Spinning) {
                         rollDice(8);
                     }
                 }}
@@ -205,7 +244,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
             <div
                 className={`hexagon-glow d10 ${isD10Spinning ? 'spinning' : ''} ${isD10Spinning ? 'no-glow' : ''} ${diceStates.d10.isGlowActive ? 'glow-active' : ''} ${diceStates.d10.isActive ? 'd10-active' : 'd10-inactive'}`}
                 onClick={() => {
-                    if (!diceStates.d10.inhibit) {
+                    if (!diceStates.d10.inhibit && !isD10Spinning) {
                         rollDice(10);
                     }
                 }}
@@ -213,7 +252,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
                 {diceStates.d10.displayedValue}
             </div>
 
-        </div>
+        </div >
 
     );
 };

@@ -1058,3 +1058,15 @@ textarea {
 .endturn-gradient:hover {
     background-image: linear-gradient(145deg, rgba(153, 116, 0, 1) 0%, rgba(102, 77, 0, 1) 50%, rgba(153, 116, 0, 1) 100%);
 }
+
+.dice-sum-total {
+    height: 30.84px;
+    width: 80px;
+    position: absolute;
+    margin-Left: 250px;
+    margin-Top: -60px;
+    border-radius: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
