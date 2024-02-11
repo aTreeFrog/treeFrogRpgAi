@@ -20,7 +20,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const speechFile = path.resolve("./speech.mp3");
 const ColorThief = require('colorthief');
 const cloneDeep = require('lodash/cloneDeep');
-
+const { AttackAttempt } = require('./lib/enums/AttackAttempt');
 
 const defaultDiceStates = {
     d20: {
@@ -216,6 +216,7 @@ app.prepare().then(() => {
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
                     players[user].battleMode.initiativeImageShadow = shadowColor;
+                    players[user].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
                     players[user].battleMode.targeted = false;
                     players[user].backgroundAudio = backgroundSong;
 
@@ -877,13 +878,11 @@ app.prepare().then(() => {
             }
         });
 
-
         socket.on('received user message', (msg) => {
             console.log("all done waiting");
             waitingForUser = false;
 
         });
-
 
         socket.on('cancel processing', () => {
             shouldContinue[socket.id] = false; // Set shouldContinue to false for this socket
@@ -1055,7 +1054,6 @@ app.prepare().then(() => {
 
         });
 
-
         socket.on('D20 Dice Roll Complete', (diceData) => {
 
             players[diceData.User].diceStates = cloneDeep(defaultDiceStates); //re-default dice after roll completes
@@ -1083,9 +1081,11 @@ app.prepare().then(() => {
                         players[diceData.User].battleMode.attackRollSucceeded = true;
                         targetsToRemove.delete(target);
                         console.log("target stay", target);
+                        players[target].battleMode.enemyAttackAttempt = AttackAttempt.SUCCESS;
                     } else {
                         players[target].battleMode.targeted = false;
                         console.log("target remove", target); //that player is no longer targeted
+                        players[target].battleMode.enemyAttackAttempt = AttackAttempt.FAIL;;
                     }
                 }
 
@@ -1305,6 +1305,7 @@ app.prepare().then(() => {
                     } else {
                         players[userName].battleMode.targeted = false;
                     }
+                    players[userName].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
                     players[userName].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
                 });
 
@@ -1333,6 +1334,7 @@ app.prepare().then(() => {
         players[userName].battleMode.turnCompleted = false;
         players[userName].battleMode.targeted = false;
         players[userName].battleMode.attackUsed = null;
+        players[userName].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
         players[userName].skill = "";
         players[userName].activeSkill = false;
         players[userName].timers.enabled = false;

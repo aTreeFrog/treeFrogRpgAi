@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import useImage from 'use-image';
 import { Layer, Image, Circle, Rect, Text, Group } from 'react-konva';
-const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, showPlayerName, setShowPlayerName, selectedRow, circleStop }) => {
+const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded, updatePlayerData, travelZoneRadius, clickable, unavailCoord, showPlayerName, setShowPlayerName, selectedRow, circleStop, showEnemyResult, setShowEnemyResult }) => {
     const [image] = useImage(playerData.figureIcon);
 
     // takes into account amount a player moved during their turn
@@ -31,6 +31,10 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
     const tooltipTextWidth = playerData.name.length * (tooltipFontSize / 2); // Approximation
     const tooltipWidth = tooltipTextWidth;
     const tooltipHeight = tooltipFontSize;
+
+    // calculate width of success and failed background
+    const hitWidth = ("hit".length * (tooltipFontSize / 2)) / 2;
+    const missedWidth = ("miss".length * (tooltipFontSize / 2)) / 2;
 
 
     const handleDragEnd = (e) => {
@@ -127,7 +131,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 onMouseOver={handleMouseOver}
                 onMouseOut={handleMouseOut}
             />
-            {showPlayerName[playerName] === true && (
+            {showPlayerName[playerName] === true && showEnemyResult[playerName] != "SUCCESS" && showEnemyResult[playerName] != "FAIL" && (
                 // moveToTop ensures proper zindex for this group since zindex itself did not work
                 <Group ref={node => node && node.moveToTop()}>
                     <Rect
@@ -145,6 +149,37 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                         fontSize={tooltipFontSize}
                         fontFamily={tooltipFontFamily}
                         fill={tooltipTextColor}
+                    />
+                </Group>
+            )}
+            {showEnemyResult[playerName] && (showEnemyResult[playerName] == "SUCCESS" || showEnemyResult[playerName] == "FAIL") && (
+                // moveToTop ensures proper zindex for this group since zindex itself did not work
+                <Group ref={node => node && node.moveToTop()}>
+                    <Rect
+                        x={circleX - ((showEnemyResult[playerName] === 'SUCCESS' ? hitWidth : missedWidth))}
+                        y={circleY - gridSpacing / 1.2}
+                        width={((showEnemyResult[playerName] === 'SUCCESS' ? hitWidth * 2 : missedWidth * 2)) + 2}
+                        height={tooltipHeight + 2}
+                        fill={showEnemyResult[playerName] === 'SUCCESS' ? 'green' : 'red'}
+                        cornerRadius={4}
+                        shadowBlur={10} // Adjust the glow effect's blur radius
+                        shadowColor={showEnemyResult[playerName] === 'SUCCESS' ? 'green' : 'red'} // Use the same color for the glow to match the fill
+                        shadowOffsetX={0} // No horizontal offset
+                        shadowOffsetY={0} // No vertical offset
+                        shadowOpacity={0.7} // Adjust the shadow (glow) opacity
+                    />
+                    <Text
+                        x={circleX + 1 + tooltipPadding - ((showEnemyResult[playerName] === 'SUCCESS' ? hitWidth : missedWidth))}
+                        y={circleY + tooltipPadding - gridSpacing / 1.2}
+                        text={showEnemyResult[playerName] === 'SUCCESS' ? 'hit' : 'miss'}
+                        fontSize={tooltipFontSize}
+                        fontFamily={tooltipFontFamily}
+                        fill={tooltipTextColor}
+                        shadowColor={'black'} // Choose a contrasting shadow color
+                        shadowBlur={5}
+                        shadowOffsetX={2}
+                        shadowOffsetY={2}
+                        shadowOpacity={0.7}
                     />
                 </Group>
             )}
