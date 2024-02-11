@@ -717,10 +717,6 @@ export default function Home() {
   }, [yourTurnText]);
 
 
-
-
-
-
   useEffect(() => {
     // Code to run when players[userName]?.backgroundAudio changes
     if (players[userName]?.backgroundAudio) {
@@ -1033,6 +1029,7 @@ export default function Home() {
       chatMsgData = "Game master, I am back in the game. Please continue to include me in the story again."
     } else if (diceRollsInputData.length > 0) {
       chatMsgData = diceRollsInputData;
+      cleanUpDiceStates();
       setDiceRollsInputData('');
       setDiceSelectionOption(null);
     } else if (diceSelectionOption) {
@@ -1253,7 +1250,6 @@ export default function Home() {
   //check if dice rolls are done, and send to server. then bring dice back to init state
   useEffect(() => {
 
-
     //control move on button text.  Use is glow active until better state figured out
     if (diceStates.d20.isGlowActive) {
       setPopupText(diceModePopupWarning);
@@ -1267,44 +1263,22 @@ export default function Home() {
 
       console.log("dice use effect d20 data: ", diceStates.d20);
 
-      // //if d20 dice is active, check and see if actions completed
-      // if (latestDiceMsg.current.diceStates.d20.isActive) {
-      //   if (latestDiceMsg.current.diceStates.d20.Advantage) {
-      //     if (diceStates.d20.rolls > 1) {
-      //       d20Sum = max(diceStates.d20.value[0], diceStates.d20.value[1]);
-      //       actionsComplete = true;
-      //     }
-      //   } else if (latestDiceMsg.current.diceStates.d20.Disadvantage) {
-      //     if (diceStates.d20.rolls > 1) {
-      //       d20Sum = min(diceStates.d20.value[0], diceStates.d20.value[1]);
-      //       actionsComplete = true;
-      //     }
-      //   } else if (diceStates.d20.rolls > 0) {
-      //     d20Sum = diceStates.d20.value[0];
-      //     actionsComplete = true;
-      //   }
-
-      // }
-
-      let actionsComplete = false; // Do not assume completion initially
       let totalDiceSum = 0; // Variable to store the total sum of all dice values
-      let activeDiceFound = false; // Flag to track if any dice is active
+      let activeDiceFound = false; // Flag to check if at least one dice is active and needs to roll
+      let allRollsCompleted = true; // Assume all rolls are completed, verify in loop
 
       // Iterate through each dice state
       for (const [diceType, playerDiceRequests] of Object.entries(latestDiceMsg.current.diceStates)) {
-        console.log("diceType: ", diceType);
-
         if (playerDiceRequests.isGlowActive) {
-          activeDiceFound = true; // Mark that we have found at least one active dice
-          const currentDiceState = diceStates[diceType]; // Correctly access the dice state
+          activeDiceFound = true; // Found at least one active dice
 
-          console.log("currentDiceState ", currentDiceState);
-          // Check if the dice has rolled the needed amount
+          const currentDiceState = diceStates[diceType]; // Access the current dice state correctly
+
           if (currentDiceState.rolls < playerDiceRequests.rollsNeeded) {
-            actionsComplete = false; // Not all actions are complete
-            break; // Exit the loop early since we found an incomplete action
+            allRollsCompleted = false; // Found a dice that hasn't completed its rolls
+            break; // Exit loop early as we found incomplete rolls
           } else {
-            // Calculate and add to the total sum of the dice values up to rollsNeeded
+            // Sum up the values for dice that have completed their rolls
             for (let i = 0; i < playerDiceRequests.rollsNeeded; i++) {
               totalDiceSum += currentDiceState.value[i];
             }
@@ -1312,10 +1286,8 @@ export default function Home() {
         }
       }
 
-      // Only if active dice were found, check if all actions are completed
-      if (activeDiceFound && !actionsComplete) {
-        actionsComplete = true; // All active dice have completed their rolls
-      }
+      // Determine if actions are complete: true only if there's at least one active dice and all have completed rolls
+      let actionsComplete = activeDiceFound && allRollsCompleted;
 
       if (actionsComplete) {
 
@@ -1345,12 +1317,11 @@ export default function Home() {
           Id: latestDiceMsg.current.activityId
         };
         //send data to the server (not sure yet how to use, prob for logs and others can see)
-        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
         //Need to send some kind of animation above the dice for being done showing values
 
         //put outcome to chatbox
         //delay some time to give people chance to see there stuff, and for visuals on UI
-        latestDiceMsg.current = null;
+
         setDiceStates(prevState => ({
           ...prevState,
           d20: {
@@ -1379,13 +1350,17 @@ export default function Home() {
             isGlowActive: false
           }
         }));
+        latestDiceMsg.current = null;
         setTimeout(() => {
           callSubmitFromDiceRolls.current = true;
           setDiceRollsInputData(`I rolled a ${totalDiceSum} +2 modifier`);
-          setDiceStates(defaultDiceStates);
           setActiveSkill("");
+          cleanUpDiceStates();
+          //setDiceStates(defaultDiceStates);
           console.log("the end");
         }, 3000);
+
+        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
 
       }
     }

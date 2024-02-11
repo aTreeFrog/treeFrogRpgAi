@@ -231,6 +231,8 @@ app.prepare().then(() => {
                         advantage: false,
                     }
 
+                    console.log("user roll", players[user].diceStates.d20);
+
                     waitingForRolls = true;
 
                     // set this to > 1 prob but for testing keeping it at 0
@@ -271,6 +273,8 @@ app.prepare().then(() => {
             activityCount++;
 
             console.log("enter battle mode");
+
+
 
             io.to(serverRoomName).emit('enter battle mode', game); //not sure i need game object at all yet
             io.to(serverRoomName).emit('players objects', players);
@@ -1111,6 +1115,7 @@ app.prepare().then(() => {
             activityCount++;
 
             console.log("d20 completed");
+            console.log("dice udpate data", players[diceData.User].diceStates);
             io.emit('players objects', players);
 
         });
