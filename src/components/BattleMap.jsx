@@ -28,7 +28,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const attackSelection = useRef();
     const [pingStop, setPingStop] = useState(false);
     const [showEnemyResult, setShowEnemyResult] = useState({});
-    const prevPlayersBattleData = useRef();
+    const prevPlayersBattleData = useRef(players);
+    const showHealthChange = useRef({});
 
     const handleMouseMove = (e) => {
 
@@ -244,7 +245,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
         const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
-        if (!players[userName].battleMode.yourTurn && (clickedGridX == players[userName].pingXPosition)) {
+        if (!players[userName].battleMode.yourTurn && (clickedGridX == players[userName].pingXPosition) && (clickedGridY == players[userName].pingYPosition)) {
             console.log("himadeithere");
             setPingStop(false);
             setPingReady(false);
@@ -259,7 +260,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         }
 
         //set attack bubble if attack/spell selected
-        if (selectedRow && !circleStop && !players[userName]?.battleMode?.actionAttempted) {
+        if (selectedRow && !circleStop && !players[userName]?.battleMode?.actionAttempted && players[userName].battleMode.yourTurn) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
@@ -284,7 +285,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             }
 
             // move icon to new clicked position. 
-        } else if (!selectedRow && !pingReady) {
+        } else if (!selectedRow && !pingReady && players[userName]?.battleMode?.yourTurn) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
@@ -317,7 +318,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 updatePlayerData(userName, clickedGridX, clickedGridY);
             }
 
-        } else if (pingReady) {
+        } else if (pingReady && !pingStop) {
             setPingStop(true);
             setPlayers(prevPlayers => ({
                 ...prevPlayers,
@@ -415,6 +416,11 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
 
         Object.entries(players).forEach(([playerName, playerData]) => {
+
+            if (!prevPlayersBattleData.current.hasOwnProperty(playerName)) {
+                return;
+            }
+
             // set attack succeed or failed above players after attack roll made 
             if (playerData?.battleMode?.enemyAttackAttempt == "SUCCESS" && prevPlayersBattleData.current[playerName]?.battleMode?.enemyAttackAttempt == "INIT") {
                 setShowEnemyResult(prevState => ({
@@ -439,6 +445,27 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     }));
                 }, 5000);
             }
+
+            // check if player health changed. 
+            if (playerData.currentHealth < prevPlayersBattleData.current[playerName]?.currentHealth) {
+
+                console.log("playerData.currentHealth ", playerData.currentHealth);
+                console.log("prevPlayersBattleData.current[playerName]?.currentHealth ", prevPlayersBattleData.current[playerName]?.currentHealth);
+                console.log("subtraction ", prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth);
+                showHealthChange.current[playerName] = {
+                    type: "DECREASE",
+                    amount: prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth,
+                }
+
+            } else if (playerData.currentHealth > prevPlayersBattleData.current[playerName]?.currentHealth) {
+
+                showHealthChange.current[playerName] = {
+                    type: "INCREASE",
+                    amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
+                }
+
+            }
+
         });
 
         prevPlayersBattleData.current = players;
@@ -592,43 +619,46 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             visible={!!attackRadius && !circleStop} // Only visible if attackRadius is set
                         />
                         {Object.entries(players).map(([playerName, playerData]) => (
-                            <>
-                                {playerData?.pingXPosition && (
-                                    <FlickeringRect playerData={playerData} gridSpacing={gridSpacing}
-                                    />
-                                )}
-                                <Group ref={node => node && node.moveToTop()}>
-                                    <PlayerIcon
-                                        key={playerName}
-                                        playerName={playerName}
-                                        playerData={playerData}
-                                        gridSpacing={gridSpacing}
-                                        userName={userName}
-                                        imageLoaded={imageLoaded}
-                                        updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
-                                        travelZoneRadius={travelZoneRadius}
-                                        clickable={clickable}
-                                        unavailCoord={unavailCoord}
-                                        showPlayerName={showPlayerName}
-                                        setShowPlayerName={setShowPlayerName}
-                                        showEnemyResult={showEnemyResult}
-                                        selectedRow={selectedRow}
-                                        circleStop={circleStop}
-                                    />
-                                    {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
-                                        <BlurredLineEffect
-                                            playerData={playerData}
-                                            gridSpacing={gridSpacing}
+                            <React.Fragment key={playerName}>
+                                <>
+                                    {playerData?.pingXPosition && (
+                                        <FlickeringRect playerData={playerData} gridSpacing={gridSpacing}
                                         />
                                     )}
-                                    {playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT" && (
-                                        <DriftingTextEffect
+                                    <Group ref={node => node && node.moveToTop()}>
+                                        <PlayerIcon
+                                            key={playerName}
+                                            playerName={playerName}
                                             playerData={playerData}
                                             gridSpacing={gridSpacing}
+                                            userName={userName}
+                                            imageLoaded={imageLoaded}
+                                            updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
+                                            travelZoneRadius={travelZoneRadius}
+                                            clickable={clickable}
+                                            unavailCoord={unavailCoord}
+                                            showPlayerName={showPlayerName}
+                                            setShowPlayerName={setShowPlayerName}
+                                            showEnemyResult={showEnemyResult}
+                                            selectedRow={selectedRow}
+                                            circleStop={circleStop}
                                         />
-                                    )}
-                                </Group>
-                            </>
+                                        {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
+                                            <BlurredLineEffect
+                                                playerData={playerData}
+                                                gridSpacing={gridSpacing}
+                                            />
+                                        )}
+                                        {playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT" && (
+                                            <DriftingTextEffect
+                                                playerData={playerData}
+                                                gridSpacing={gridSpacing}
+                                                showHealthChange={showHealthChange}
+                                            />
+                                        )}
+                                    </Group>
+                                </>
+                            </React.Fragment>
                         ))}
                     </Layer>
                 </Stage>

@@ -58,7 +58,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
         });
 
 
-        if (!isUnavailable && (distance <= travelZone && playerName == userName)) {
+        if (!isUnavailable && (distance <= travelZone && playerName == userName) && playerData.battleMode.yourTurn) {
             // Calculate the center of the nearest grid cell
             // We use Math.round here to snap to the nearest grid cell based on the icon's current position
 

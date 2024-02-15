@@ -191,7 +191,7 @@ export default function Home() {
   const [popupText, setPopupText] = useState(storyModePopupWarning);
   const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
   const [usersInServer, setUsersInServer] = useState([]);
-  const [players, setPlayers] = useState({ userName: player }); // init player dict
+  const [players, setPlayers] = useState({}); // init player dict
   const playersMsgActIds = useRef({});
   const [awayMode, setAwayMode] = useState(false);
   const iAmBack = useRef(false)
