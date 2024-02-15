@@ -995,7 +995,7 @@ app.prepare().then(() => {
                 away: false,
                 class: "Wizard",
                 race: "Elf",
-                distance: 30,
+                distance: 28,
                 attacks: [{
                     name: "staff",
                     attackBonus: 5,
@@ -1127,7 +1127,12 @@ app.prepare().then(() => {
 
                 // did attack and did max move, so auto move player to next turn
                 if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && players[diceData.User].battleMode.damageDelt > 0) {
-                    //nextInLine();
+
+                    //send emit to all players before moving to next player in queue so everyone has latest data quickly.
+                    players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+                    activityCount++;
+                    io.to(serverRoomName).emit('players objects', players);
+                    nextInLine();
                 }
 
             }
@@ -1140,7 +1145,7 @@ app.prepare().then(() => {
 
             console.log("d20 completed");
             console.log("dice update data", players[diceData.User].diceStates);
-            io.emit('players objects', players);
+            io.to(serverRoomName).emit('players objects', players);
 
         });
 
@@ -1230,7 +1235,7 @@ app.prepare().then(() => {
 
             console.log("playing again");
 
-            io.emit('players objects', players);
+            io.to(serverRoomName).emit('players objects', players);
 
         });
 
@@ -1278,7 +1283,7 @@ app.prepare().then(() => {
 
                 // player attacked and moved as much as they can so change to next person. 
                 if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.damageDelt > 0) {
-                    //nextInLine();
+                    nextInLine();
                 }
             };
 
@@ -1410,6 +1415,8 @@ app.prepare().then(() => {
         let minTurnOrder = Infinity;
         let maxTurnOrder = -Infinity;
 
+        const timeStamp = new Date().toISOString();
+
         // First, find the current player, min, and max turnOrder
         Object.values(players).forEach(player => {
             if (player.battleMode.yourTurn) {
@@ -1417,6 +1424,7 @@ app.prepare().then(() => {
 
                 player.battleMode.yourTurn = false; // End current player's turn
                 player.battleMode.turnCompleted = true; //say you completed a turn
+
                 player.activeSkill = false;
                 player.skill = "";
                 player.battleMode.distanceMoved = null;
@@ -1429,6 +1437,7 @@ app.prepare().then(() => {
                 player.battleMode.usersTargeted = [];
                 player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
                 player.battleMode.targeted = false;
+                player.activityId = `user${player.name}-game${serverRoomName}-activity${activityCount}-${timeStamp}`;
 
             }
             if (player.battleMode.turnOrder < minTurnOrder) {
@@ -1464,6 +1473,9 @@ app.prepare().then(() => {
 
             }
         });
+
+        activityCount++;
+        io.to(serverRoomName).emit('players objects', players);
     }
 
     async function checkPlayersState() {
@@ -1510,8 +1522,6 @@ app.prepare().then(() => {
 
             //create battle order
             assignBattleTurnOrder(players);
-
-
 
             console.log("battlemode players: ", players);
 

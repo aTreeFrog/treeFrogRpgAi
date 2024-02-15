@@ -245,7 +245,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         const clickedGridX = Math.floor(pointerPosition.x / gridSpacing);
         const clickedGridY = Math.floor(pointerPosition.y / gridSpacing);
 
-        if (!players[userName].battleMode.yourTurn && (clickedGridX == players[userName].pingXPosition)) {
+        if (!players[userName].battleMode.yourTurn && (clickedGridX == players[userName].pingXPosition) && (clickedGridY == players[userName].pingYPosition)) {
             console.log("himadeithere");
             setPingStop(false);
             setPingReady(false);
@@ -260,7 +260,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
         }
 
         //set attack bubble if attack/spell selected
-        if (selectedRow && !circleStop && !players[userName]?.battleMode?.actionAttempted) {
+        if (selectedRow && !circleStop && !players[userName]?.battleMode?.actionAttempted && players[userName].battleMode.yourTurn) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2;
@@ -285,7 +285,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             }
 
             // move icon to new clicked position. 
-        } else if (!selectedRow && !pingReady) {
+        } else if (!selectedRow && !pingReady && players[userName]?.battleMode?.yourTurn) {
 
             // Calculate the pixel position of the center of the clicked grid cell
             const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
@@ -318,7 +318,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                 updatePlayerData(userName, clickedGridX, clickedGridY);
             }
 
-        } else if (pingReady) {
+        } else if (pingReady && !pingStop) {
             setPingStop(true);
             setPlayers(prevPlayers => ({
                 ...prevPlayers,
