@@ -209,9 +209,11 @@ app.prepare().then(() => {
                     players[user].battleMode.attackRoll = 0;
                     players[user].battleMode.attackRollSucceeded = null;
                     players[user].battleMode.actionAttempted = false;
+                    players[user].battleMode.damageRollRequested = false;
                     players[user].battleMode.damageDelt = null;
                     players[user].battleMode.usersTargeted = [];
                     players[user].battleMode.turnCompleted = false;
+                    players[user].battleMode.attackUsed = null;
                     players[user].battleMode.mapUrl = mapUrl;
                     players[user].battleMode.gridDataUrl = gridDataUrl;
                     players[user].battleMode.initiativeImageUrl = initiativeUrl;
@@ -274,8 +276,6 @@ app.prepare().then(() => {
             activityCount++;
 
             console.log("enter battle mode");
-
-
 
             io.to(serverRoomName).emit('enter battle mode', game); //not sure i need game object at all yet
             io.to(serverRoomName).emit('players objects', players);
@@ -1104,6 +1104,30 @@ app.prepare().then(() => {
 
                     findAndUpdatePlayerDiceStates(players[diceData.User]);
 
+                    players[diceData.User].battleMode.damageRollRequested = true;
+
+                }
+
+                // player attacked targets with damage dice. Calculate damage done
+            } else if (players[diceData.User].mode == "battle" && players[diceData.User].battleMode.attackRollSucceeded && players[diceData.User].battleMode.damageRollRequested) {
+
+                players[diceData.User].battleMode.damageDelt = diceData.Total;
+
+                // ToDo: figure out healing spells
+
+                for (const target of players[diceData.User].battleMode.usersTargeted) {
+
+                    if (!players.hasOwnProperty(target)) {
+                        continue;
+                    }
+
+                    players[target].currentHealth = Math.max(0, players[target].currentHealth - players[diceData.User].battleMode.damageDelt);
+
+                }
+
+                // did attack and did max move, so auto move player to next turn
+                if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && players[diceData.User].battleMode.damageDelt > 0) {
+                    //nextInLine();
                 }
 
             }
@@ -1151,7 +1175,6 @@ app.prepare().then(() => {
                 return null; // Return null if the pattern does not match
             }
         }
-
 
 
         function findAndUpdatePlayerDiceStates(player) {
@@ -1252,6 +1275,11 @@ app.prepare().then(() => {
                 activityCount++;
 
                 io.to(serverRoomName).emit('players objects', players);
+
+                // player attacked and moved as much as they can so change to next person. 
+                if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.damageDelt > 0) {
+                    //nextInLine();
+                }
             };
 
         });
@@ -1332,6 +1360,7 @@ app.prepare().then(() => {
         players[userName].battleMode.yourTurn = false;
         players[userName].battleMode.distanceMoved = null;
         players[userName].battleMode.actionAttempted = false;
+        players[userName].battleMode.damageRollRequested = false;
         players[userName].battleMode.damageDelt = null;
         players[userName].battleMode.usersTargeted = [];
         players[userName].battleMode.turnCompleted = false;
@@ -1374,8 +1403,67 @@ app.prepare().then(() => {
 
         io.to(serverRoomName).emit('players objects', players);
 
+    }
 
+    function nextInLine() {
+        let currentPlayerTurnOrder = null;
+        let minTurnOrder = Infinity;
+        let maxTurnOrder = -Infinity;
 
+        // First, find the current player, min, and max turnOrder
+        Object.values(players).forEach(player => {
+            if (player.battleMode.yourTurn) {
+                currentPlayerTurnOrder = player.battleMode.turnOrder;
+
+                player.battleMode.yourTurn = false; // End current player's turn
+                player.battleMode.turnCompleted = true; //say you completed a turn
+                player.activeSkill = false;
+                player.skill = "";
+                player.battleMode.distanceMoved = null;
+                player.battleMode.attackRoll = 0;
+                player.battleMode.attackUsed = null;
+                player.battleMode.attackRollSucceeded = null;
+                player.battleMode.actionAttempted = false;
+                player.battleMode.damageRollRequested = false;
+                player.battleMode.damageDelt = null;
+                player.battleMode.usersTargeted = [];
+                player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
+                player.battleMode.targeted = false;
+
+            }
+            if (player.battleMode.turnOrder < minTurnOrder) {
+                minTurnOrder = player.battleMode.turnOrder;
+            }
+            if (player.battleMode.turnOrder > maxTurnOrder) {
+                maxTurnOrder = player.battleMode.turnOrder;
+            }
+
+        });
+
+        //ToDo: if all player turns completed, show a picture
+
+        // Determine the next player's turnOrder
+        let nextTurnOrder = currentPlayerTurnOrder === maxTurnOrder ? minTurnOrder : currentPlayerTurnOrder + 1;
+
+        // Set the next player's yourTurn to true
+        Object.values(players).forEach(player => {
+            if (player.battleMode.turnOrder === nextTurnOrder) {
+                player.battleMode.yourTurn = true;
+                player.activeSkill = false;
+                player.skill = "";
+                player.battleMode.distanceMoved = null;
+                player.battleMode.attackRoll = 0;
+                player.battleMode.attackUsed = null;
+                player.battleMode.attackRollSucceeded = null;
+                player.battleMode.actionAttempted = false;
+                player.battleMode.damageRollRequested = false;
+                player.battleMode.damageDelt = null;
+                player.battleMode.usersTargeted = [];
+                player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
+                player.battleMode.targeted = false;
+
+            }
+        });
     }
 
     async function checkPlayersState() {

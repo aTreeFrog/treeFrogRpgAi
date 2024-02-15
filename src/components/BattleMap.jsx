@@ -29,7 +29,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [pingStop, setPingStop] = useState(false);
     const [showEnemyResult, setShowEnemyResult] = useState({});
     const prevPlayersBattleData = useRef(players);
-    const [showHealthChange, setShowHealthChange] = useState({});
+    const showHealthChange = useRef({});
 
     const handleMouseMove = (e) => {
 
@@ -449,41 +449,20 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             // check if player health changed. 
             if (playerData.currentHealth < prevPlayersBattleData.current[playerName]?.currentHealth) {
 
-                setShowHealthChange(prevState => ({
-                    ...prevState,
-                    [playerName]: {
-                        type: "DECREASE",
-                        amount: prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth,
-                    }
-                }));
-                setTimeout(() => {
-                    setShowHealthChange(prevState => ({
-                        ...prevState,
-                        [playerName]: {
-                            type: "",
-                            amount: 0,
-                        }
-                    }));
-                }, 5000);
+                console.log("playerData.currentHealth ", playerData.currentHealth);
+                console.log("prevPlayersBattleData.current[playerName]?.currentHealth ", prevPlayersBattleData.current[playerName]?.currentHealth);
+                console.log("subtraction ", prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth);
+                showHealthChange.current[playerName] = {
+                    type: "DECREASE",
+                    amount: prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth,
+                }
 
             } else if (playerData.currentHealth > prevPlayersBattleData.current[playerName]?.currentHealth) {
 
-                setShowHealthChange(prevState => ({
-                    ...prevState,
-                    [playerName]: {
-                        type: "INCREASE",
-                        amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
-                    }
-                }));
-                setTimeout(() => {
-                    setShowHealthChange(prevState => ({
-                        ...prevState,
-                        [playerName]: {
-                            type: "",
-                            amount: 0,
-                        }
-                    }));
-                }, 5000);
+                showHealthChange.current[playerName] = {
+                    type: "INCREASE",
+                    amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
+                }
 
             }
 
@@ -640,44 +619,46 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                             visible={!!attackRadius && !circleStop} // Only visible if attackRadius is set
                         />
                         {Object.entries(players).map(([playerName, playerData]) => (
-                            <>
-                                {playerData?.pingXPosition && (
-                                    <FlickeringRect playerData={playerData} gridSpacing={gridSpacing}
-                                    />
-                                )}
-                                <Group ref={node => node && node.moveToTop()}>
-                                    <PlayerIcon
-                                        key={playerName}
-                                        playerName={playerName}
-                                        playerData={playerData}
-                                        gridSpacing={gridSpacing}
-                                        userName={userName}
-                                        imageLoaded={imageLoaded}
-                                        updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
-                                        travelZoneRadius={travelZoneRadius}
-                                        clickable={clickable}
-                                        unavailCoord={unavailCoord}
-                                        showPlayerName={showPlayerName}
-                                        setShowPlayerName={setShowPlayerName}
-                                        showEnemyResult={showEnemyResult}
-                                        selectedRow={selectedRow}
-                                        circleStop={circleStop}
-                                    />
-                                    {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
-                                        <BlurredLineEffect
-                                            playerData={playerData}
-                                            gridSpacing={gridSpacing}
+                            <React.Fragment key={playerName}>
+                                <>
+                                    {playerData?.pingXPosition && (
+                                        <FlickeringRect playerData={playerData} gridSpacing={gridSpacing}
                                         />
                                     )}
-                                    {playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT" && (
-                                        <DriftingTextEffect
+                                    <Group ref={node => node && node.moveToTop()}>
+                                        <PlayerIcon
+                                            key={playerName}
+                                            playerName={playerName}
                                             playerData={playerData}
                                             gridSpacing={gridSpacing}
-                                            showHealthChange={showHealthChange}
+                                            userName={userName}
+                                            imageLoaded={imageLoaded}
+                                            updatePlayerData={(newX, newY) => updatePlayerData(playerName, newX, newY)}
+                                            travelZoneRadius={travelZoneRadius}
+                                            clickable={clickable}
+                                            unavailCoord={unavailCoord}
+                                            showPlayerName={showPlayerName}
+                                            setShowPlayerName={setShowPlayerName}
+                                            showEnemyResult={showEnemyResult}
+                                            selectedRow={selectedRow}
+                                            circleStop={circleStop}
                                         />
-                                    )}
-                                </Group>
-                            </>
+                                        {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
+                                            <BlurredLineEffect
+                                                playerData={playerData}
+                                                gridSpacing={gridSpacing}
+                                            />
+                                        )}
+                                        {playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT" && (
+                                            <DriftingTextEffect
+                                                playerData={playerData}
+                                                gridSpacing={gridSpacing}
+                                                showHealthChange={showHealthChange}
+                                            />
+                                        )}
+                                    </Group>
+                                </>
+                            </React.Fragment>
                         ))}
                     </Layer>
                 </Stage>
