@@ -28,7 +28,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const attackSelection = useRef();
     const [pingStop, setPingStop] = useState(false);
     const [showEnemyResult, setShowEnemyResult] = useState({});
-    const prevPlayersBattleData = useRef();
+    const prevPlayersBattleData = useRef(players);
+    const [showHealthChange, setShowHealthChange] = useState({});
 
     const handleMouseMove = (e) => {
 
@@ -415,6 +416,11 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
 
         Object.entries(players).forEach(([playerName, playerData]) => {
+
+            if (!prevPlayersBattleData.current.hasOwnProperty(playerName)) {
+                return;
+            }
+
             // set attack succeed or failed above players after attack roll made 
             if (playerData?.battleMode?.enemyAttackAttempt == "SUCCESS" && prevPlayersBattleData.current[playerName]?.battleMode?.enemyAttackAttempt == "INIT") {
                 setShowEnemyResult(prevState => ({
@@ -439,6 +445,48 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     }));
                 }, 5000);
             }
+
+            // check if player health changed. 
+            if (playerData.currentHealth < prevPlayersBattleData.current[playerName]?.currentHealth) {
+
+                setShowHealthChange(prevState => ({
+                    ...prevState,
+                    [playerName]: {
+                        type: "DECREASE",
+                        amount: prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth,
+                    }
+                }));
+                setTimeout(() => {
+                    setShowHealthChange(prevState => ({
+                        ...prevState,
+                        [playerName]: {
+                            type: "",
+                            amount: 0,
+                        }
+                    }));
+                }, 5000);
+
+            } else if (playerData.currentHealth > prevPlayersBattleData.current[playerName]?.currentHealth) {
+
+                setShowHealthChange(prevState => ({
+                    ...prevState,
+                    [playerName]: {
+                        type: "INCREASE",
+                        amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
+                    }
+                }));
+                setTimeout(() => {
+                    setShowHealthChange(prevState => ({
+                        ...prevState,
+                        [playerName]: {
+                            type: "",
+                            amount: 0,
+                        }
+                    }));
+                }, 5000);
+
+            }
+
         });
 
         prevPlayersBattleData.current = players;
@@ -625,6 +673,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                         <DriftingTextEffect
                                             playerData={playerData}
                                             gridSpacing={gridSpacing}
+                                            showHealthChange={showHealthChange}
                                         />
                                     )}
                                 </Group>
