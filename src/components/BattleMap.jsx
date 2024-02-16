@@ -524,26 +524,93 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
     }, [players]);
 
+    const generateLightningPoints = (from, to) => {
+        // This function should generate points that zigzag between 'from' and 'to'
+        // For simplicity, this is a placeholder for the actual implementation
+        return [from.x, from.y, (from.x + to.x) / 2, from.y - 10, to.x, to.y];
+    };
 
     //animation for attack spells
     const animateSpell = (spell) => {
+        let line = new Konva.Line({
+            points: generateLightningPoints(spell.from, spell.to),
+            stroke: 'cyan',
+            strokeWidth: 3,
+            lineCap: 'round',
+            lineJoin: 'round',
+            opacity: 0.8,
+        });
 
-        console.log("animateSpell", spell);
+        layerRef.current.add(line);
+
         const anim = new Konva.Animation((frame) => {
-            if (!frame || !spell) return;
-            const progress = Math.min((frame.timeDiff / 1000) / 2, 1); // Complete the animation in 2 seconds
-            spell.progress += progress;
-
-            if (spell.progress >= 1) {
+            if (!frame) return;
+            const progress = Math.min(frame.time / 1000 / 0.5, 1); // Speed up the animation
+            if (progress < 1) {
+                line.points(generateLightningPoints(spell.from, spell.to));
+            } else {
                 anim.stop();
+                line.destroy(); // Remove the line after animation
+                spell.explosion = true; // Prepare for explosion effect
+
                 // Trigger explosion effect here
-                spell.explosion = true; // Mark this spell as exploded
-                // Optionally, remove the spell from animations list or keep it for the explosion effect to render
+                createExplosion(spell.to, layerRef.current);
             }
         }, layerRef.current);
 
         anim.start();
     };
+
+    const createExplosion = (target, layer) => {
+        // Main explosion effect
+        const explosionCircle = new Konva.Circle({
+            x: target.x,
+            y: target.y,
+            radius: 10,
+            fill: 'purple',
+            opacity: 0.8,
+        });
+
+        layer.add(explosionCircle);
+
+        new Konva.Tween({
+            node: explosionCircle,
+            duration: 3.5,
+            radius: 40, // Final size of the main explosion effect
+            opacity: 0,
+            easing: Konva.Easings.EaseOut,
+            onFinish: () => explosionCircle.destroy(),
+        }).play();
+
+        // Particles effect
+        for (let i = 0; i < 35; i++) { // Number of particles
+            const particle = new Konva.Circle({
+                x: target.x,
+                y: target.y,
+                radius: Math.random() * 2 + 1, // Random size
+                fill: 'blue',
+                opacity: 0.8,
+            });
+
+            layer.add(particle);
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 50 + Math.random() * 50; // Random distance from center
+
+            new Konva.Tween({
+                node: particle,
+                duration: 0.5 + Math.random() * 0.5, // Random duration for more dynamic effect
+                x: target.x + Math.cos(angle) * distance,
+                y: target.y + Math.sin(angle) * distance,
+                opacity: 0,
+                easing: Konva.Easings.EaseOut,
+                onFinish: () => particle.destroy(),
+            }).play();
+        }
+
+        layer.batchDraw();
+    };
+
 
 
 
@@ -735,32 +802,6 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         ))}
                     </Layer>
                     <Layer ref={layerRef}>
-                        {spells.current.map((animation, index) => (
-                            <Group key={animation.id}>
-                                <Line
-                                    points={[
-                                        animation.from.x,
-                                        animation.from.y,
-                                        animation.from.x + (animation.to.x - animation.from.x) * animation.progress,
-                                        animation.from.y + (animation.to.y - animation.from.y) * animation.progress,
-                                    ]}
-                                    stroke="cyan"
-                                    strokeWidth={5}
-                                    lineCap="round"
-                                    lineJoin="round"
-                                    opacity={0.75}
-                                />
-                                {animation.explosion && (
-                                    <Circle
-                                        x={animation.to.x}
-                                        y={animation.to.y}
-                                        radius={20} // Start with a small radius
-                                        fill="yellow"
-                                        opacity={0.75}
-                                    />
-                                )}
-                            </Group>
-                        ))}
                     </Layer>
                 </Stage>
             )}
