@@ -5,6 +5,7 @@ import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
 import FlickeringRect from '../components/FlickeringRect'
 import DriftingTextEffect from '../components/DriftingTextEffect';
+import { cloneDeep } from 'lodash';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow, showPlayerName, setShowPlayerName, pingReady, setPingReady }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -30,6 +31,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [showEnemyResult, setShowEnemyResult] = useState({});
     const prevPlayersBattleData = useRef(players);
     const showHealthChange = useRef({});
+    const spells = useRef([]);
+    const layerRef = useRef(null);
 
     const handleMouseMove = (e) => {
 
@@ -414,7 +417,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         setUnavailCoord(newUnavailCoord);
 
-
+        const newSpells = [];
         Object.entries(players).forEach(([playerName, playerData]) => {
 
             if (!prevPlayersBattleData.current.hasOwnProperty(playerName)) {
@@ -456,6 +459,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     type: "DECREASE",
                     amount: prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth,
                 }
+                setTimeout(() => {
+                    showHealthChange.current[playerName] = {
+                        type: "",
+                        amount: null,
+                    }
+                }, 5000);
 
             } else if (playerData.currentHealth > prevPlayersBattleData.current[playerName]?.currentHealth) {
 
@@ -463,14 +472,145 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     type: "INCREASE",
                     amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
                 }
+                setTimeout(() => {
+                    showHealthChange.current[playerName] = {
+                        type: "",
+                        amount: null,
+                    }
+                }, 5000);
+
+            }
+
+            // if player just attacked, set attacking effects
+            if (playerData.battleMode.damageDelt > 0 && (prevPlayersBattleData.current[playerName]?.battleMode.damageDelt < 1 || !prevPlayersBattleData.current[playerName]?.battleMode.damageDelt)) {
+                console.log("beginning of if");
+                console.log("prevPlayersBattleData.current[playerName]?.damageDelt ", prevPlayersBattleData.current[playerName]);
+                playerData.battleMode.usersTargeted.forEach((targetName) => {
+                    const target = players[targetName];
+                    if (target) {
+                        console.log("target", target);
+                        const spell = {
+                            from: {
+                                x: playerData.xPosition * gridSpacing + gridSpacing / 2,
+                                y: playerData.yPosition * gridSpacing + gridSpacing / 2,
+                            },
+                            to: {
+                                x: target.xPosition * gridSpacing + gridSpacing / 2,
+                                y: target.yPosition * gridSpacing + gridSpacing / 2,
+                            },
+                            player: playerName,
+                            target: targetName,
+                            progress: 0,
+                        };
+                        console.log("targetspellfrom", spell.from);
+                        newSpells.push(spell);
+                    }
+                });
 
             }
 
         });
 
-        prevPlayersBattleData.current = players;
+        if (newSpells.length > 0) {
+            spells.current = newSpells;
+            newSpells.forEach(animateSpell);
+            setTimeout(() => {
+                spells.current = [];
+            }, 5000);
+
+        }
+
+        prevPlayersBattleData.current = cloneDeep(players);
 
     }, [players]);
+
+    const generateLightningPoints = (from, to) => {
+        // This function should generate points that zigzag between 'from' and 'to'
+        // For simplicity, this is a placeholder for the actual implementation
+        return [from.x, from.y, (from.x + to.x) / 2, from.y - 10, to.x, to.y];
+    };
+
+    //animation for attack spells
+    const animateSpell = (spell) => {
+        let line = new Konva.Line({
+            points: generateLightningPoints(spell.from, spell.to),
+            stroke: 'cyan',
+            strokeWidth: 3,
+            lineCap: 'round',
+            lineJoin: 'round',
+            opacity: 0.8,
+        });
+
+        layerRef.current.add(line);
+
+        const anim = new Konva.Animation((frame) => {
+            if (!frame) return;
+            const progress = Math.min(frame.time / 1000 / 0.5, 1); // Speed up the animation
+            if (progress < 1) {
+                line.points(generateLightningPoints(spell.from, spell.to));
+            } else {
+                anim.stop();
+                line.destroy(); // Remove the line after animation
+                spell.explosion = true; // Prepare for explosion effect
+
+                // Trigger explosion effect here
+                createExplosion(spell.to, layerRef.current);
+            }
+        }, layerRef.current);
+
+        anim.start();
+    };
+
+    const createExplosion = (target, layer) => {
+        // Main explosion effect
+        const explosionCircle = new Konva.Circle({
+            x: target.x,
+            y: target.y,
+            radius: 10,
+            fill: 'purple',
+            opacity: 0.8,
+        });
+
+        layer.add(explosionCircle);
+
+        new Konva.Tween({
+            node: explosionCircle,
+            duration: 3.5,
+            radius: 40, // Final size of the main explosion effect
+            opacity: 0,
+            easing: Konva.Easings.EaseOut,
+            onFinish: () => explosionCircle.destroy(),
+        }).play();
+
+        // Particles effect
+        for (let i = 0; i < 35; i++) { // Number of particles
+            const particle = new Konva.Circle({
+                x: target.x,
+                y: target.y,
+                radius: Math.random() * 2 + 1, // Random size
+                fill: 'blue',
+                opacity: 0.8,
+            });
+
+            layer.add(particle);
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 50 + Math.random() * 50; // Random distance from center
+
+            new Konva.Tween({
+                node: particle,
+                duration: 0.5 + Math.random() * 0.5, // Random duration for more dynamic effect
+                x: target.x + Math.cos(angle) * distance,
+                y: target.y + Math.sin(angle) * distance,
+                opacity: 0,
+                easing: Konva.Easings.EaseOut,
+                onFinish: () => particle.destroy(),
+            }).play();
+        }
+
+        layer.batchDraw();
+    };
+
 
 
 
@@ -660,6 +800,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                 </>
                             </React.Fragment>
                         ))}
+                    </Layer>
+                    <Layer ref={layerRef}>
                     </Layer>
                 </Stage>
             )}

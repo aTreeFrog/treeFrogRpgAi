@@ -47,7 +47,7 @@ const DriftingTextEffect = ({ playerData, gridSpacing, showHealthChange }) => {
 
     useEffect(() => {
 
-        if (playerData?.battleMode?.enemyAttackAttempt === 'SUCCESS' && showHealthChange.current[playerData.name]) {
+        if (showHealthChange.current[playerData.name]) {
             startTimeRef.current = null; // Start timer again for attack numbers.
 
             if (showHealthChange.current[playerData.name]?.type === "DECREASE") {
