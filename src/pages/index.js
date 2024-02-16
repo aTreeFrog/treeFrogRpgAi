@@ -591,7 +591,7 @@ export default function Home() {
         img.onload = () => setIsInitiativeImageLoaded(true);
       }
 
-    } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn && players[userName]?.battleMode.usersTargeted.length > 0) {
+    } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn) {
 
       //roll attackRoll or attack amount dice if its your turn and you selected targets.
       if (players[userName]?.battleMode?.attackRoll < 1 && !players[userName]?.battleMode?.actionAttempted) {

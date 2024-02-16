@@ -1339,6 +1339,10 @@ app.prepare().then(() => {
                     //keep this inhibited for now until you handle the entire sequence of actions
                     //waitingForRolls = true;
 
+
+                    // if player removed all targets, reset any active dice rolls. 
+                } else if (players[data.name].battleMode.usersTargeted.length < 1) {
+                    players[data.name].diceStates = cloneDeep(defaultDiceStates);
                 }
 
                 Object.entries(players).forEach(([userName, playerData]) => {
