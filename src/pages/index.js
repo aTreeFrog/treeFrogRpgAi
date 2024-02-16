@@ -1795,6 +1795,7 @@ export default function Home() {
                         left: 0,
                         width: '100%',
                         height: '100%',
+                        borderRadius: '50%',
                         backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
                         zIndex: 2,
                       }}
