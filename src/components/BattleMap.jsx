@@ -5,6 +5,7 @@ import PlayerIcon from '../components/PlayerIcon';
 import BlurredLineEffect from '../components/BlurredLineEffect';
 import FlickeringRect from '../components/FlickeringRect'
 import DriftingTextEffect from '../components/DriftingTextEffect';
+import { cloneDeep } from 'lodash';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow, showPlayerName, setShowPlayerName, pingReady, setPingReady }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -30,6 +31,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
     const [showEnemyResult, setShowEnemyResult] = useState({});
     const prevPlayersBattleData = useRef(players);
     const showHealthChange = useRef({});
+    const spells = useRef([]);
+    const layerRef = useRef(null);
 
     const handleMouseMove = (e) => {
 
@@ -414,7 +417,7 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         setUnavailCoord(newUnavailCoord);
 
-
+        const newSpells = [];
         Object.entries(players).forEach(([playerName, playerData]) => {
 
             if (!prevPlayersBattleData.current.hasOwnProperty(playerName)) {
@@ -456,6 +459,12 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     type: "DECREASE",
                     amount: prevPlayersBattleData.current[playerName]?.currentHealth - playerData.currentHealth,
                 }
+                setTimeout(() => {
+                    showHealthChange.current[playerName] = {
+                        type: "",
+                        amount: null,
+                    }
+                }, 5000);
 
             } else if (playerData.currentHealth > prevPlayersBattleData.current[playerName]?.currentHealth) {
 
@@ -463,14 +472,78 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     type: "INCREASE",
                     amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
                 }
+                setTimeout(() => {
+                    showHealthChange.current[playerName] = {
+                        type: "",
+                        amount: null,
+                    }
+                }, 5000);
+
+            }
+
+            // if player just attacked, set attacking effects
+            if (playerData.battleMode.damageDelt > 0 && (prevPlayersBattleData.current[playerName]?.battleMode.damageDelt < 1 || !prevPlayersBattleData.current[playerName]?.battleMode.damageDelt)) {
+                console.log("beginning of if");
+                console.log("prevPlayersBattleData.current[playerName]?.damageDelt ", prevPlayersBattleData.current[playerName]);
+                playerData.battleMode.usersTargeted.forEach((targetName) => {
+                    const target = players[targetName];
+                    if (target) {
+                        console.log("target", target);
+                        const spell = {
+                            from: {
+                                x: playerData.xPosition * gridSpacing + gridSpacing / 2,
+                                y: playerData.yPosition * gridSpacing + gridSpacing / 2,
+                            },
+                            to: {
+                                x: target.xPosition * gridSpacing + gridSpacing / 2,
+                                y: target.yPosition * gridSpacing + gridSpacing / 2,
+                            },
+                            player: playerName,
+                            target: targetName,
+                            progress: 0,
+                        };
+                        console.log("targetspellfrom", spell.from);
+                        newSpells.push(spell);
+                    }
+                });
 
             }
 
         });
 
-        prevPlayersBattleData.current = players;
+        if (newSpells.length > 0) {
+            spells.current = newSpells;
+            newSpells.forEach(animateSpell);
+            setTimeout(() => {
+                spells.current = [];
+            }, 5000);
+
+        }
+
+        prevPlayersBattleData.current = cloneDeep(players);
 
     }, [players]);
+
+
+    //animation for attack spells
+    const animateSpell = (spell) => {
+
+        console.log("animateSpell", spell);
+        const anim = new Konva.Animation((frame) => {
+            if (!frame || !spell) return;
+            const progress = Math.min((frame.timeDiff / 1000) / 2, 1); // Complete the animation in 2 seconds
+            spell.progress += progress;
+
+            if (spell.progress >= 1) {
+                anim.stop();
+                // Trigger explosion effect here
+                spell.explosion = true; // Mark this spell as exploded
+                // Optionally, remove the spell from animations list or keep it for the explosion effect to render
+            }
+        }, layerRef.current);
+
+        anim.start();
+    };
 
 
 
@@ -659,6 +732,34 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                                     </Group>
                                 </>
                             </React.Fragment>
+                        ))}
+                    </Layer>
+                    <Layer ref={layerRef}>
+                        {spells.current.map((animation, index) => (
+                            <Group key={animation.id}>
+                                <Line
+                                    points={[
+                                        animation.from.x,
+                                        animation.from.y,
+                                        animation.from.x + (animation.to.x - animation.from.x) * animation.progress,
+                                        animation.from.y + (animation.to.y - animation.from.y) * animation.progress,
+                                    ]}
+                                    stroke="cyan"
+                                    strokeWidth={5}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    opacity={0.75}
+                                />
+                                {animation.explosion && (
+                                    <Circle
+                                        x={animation.to.x}
+                                        y={animation.to.y}
+                                        radius={20} // Start with a small radius
+                                        fill="yellow"
+                                        opacity={0.75}
+                                    />
+                                )}
+                            </Group>
                         ))}
                     </Layer>
                 </Stage>
