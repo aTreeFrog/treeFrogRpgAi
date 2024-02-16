@@ -1122,7 +1122,7 @@ app.prepare().then(() => {
                     }
 
                     players[target].currentHealth = Math.max(0, players[target].currentHealth - players[diceData.User].battleMode.damageDelt);
-
+                    players[target].battleMode.enemyAttackAttempt = AttackAttempt.COMPLETE;
                 }
 
                 // did attack and did max move, so auto move player to next turn
@@ -1310,8 +1310,15 @@ app.prepare().then(() => {
 
             if (players.hasOwnProperty(data?.name)) {
 
-                players[data.name].battleMode.usersTargeted = data.battleMode.usersTargeted;
-                players[data.name].xScale = data.xScale;
+                //race condition when we clear players usersTargeted (for next in line)
+                //front end sees diff and thinks client side made most recent update and tries
+                //to send to server. so server will ignore if not the players turn
+                if (players[data.name].battleMode.yourTurn) {
+
+                    players[data.name].battleMode.usersTargeted = data.battleMode.usersTargeted;
+                    players[data.name].xScale = data.xScale;
+
+                }
 
                 //if players targeted and its this players turn and the player hasn't done any action attempt
                 // ask to roll d20 for attack
@@ -1446,6 +1453,10 @@ app.prepare().then(() => {
             if (player.battleMode.turnOrder > maxTurnOrder) {
                 maxTurnOrder = player.battleMode.turnOrder;
             }
+
+            // no one should be targeted anymore.
+            player.battleMode.targeted = false;
+            player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
 
         });
 

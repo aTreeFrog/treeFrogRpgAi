@@ -106,7 +106,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
 
     return (
         <>
-            {playerData.battleMode.targeted && (
+            {playerData.battleMode.targeted && playerData.battleMode.enemyAttackAttempt != "COMPLETE" && (
                 <Rect
                     x={circleX - 22}
                     y={circleY - 22}
