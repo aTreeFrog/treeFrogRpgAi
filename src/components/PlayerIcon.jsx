@@ -131,7 +131,7 @@ const PlayerIcon = ({ playerName, playerData, gridSpacing, userName, imageLoaded
                 onMouseOver={handleMouseOver}
                 onMouseOut={handleMouseOut}
             />
-            {showPlayerName[playerName] === true && showEnemyResult[playerName] != "SUCCESS" && showEnemyResult[playerName] != "FAIL" && (
+            {((showPlayerName[playerName] === true && showEnemyResult[playerName] != "SUCCESS" && showEnemyResult[playerName] != "FAIL") || (playerData.battleMode.yourTurn)) && (
                 // moveToTop ensures proper zindex for this group since zindex itself did not work
                 <Group ref={node => node && node.moveToTop()}>
                     <Rect
