@@ -1500,11 +1500,15 @@ app.prepare().then(() => {
 
     // Find all players within melee attack distance
     function findPlayersWithinMeleeDistance(players, enemy) {
-        return players.filter(player => {
+        // Ensure players is treated as an array whether it's a single object or already an array
+        const playersArray = Array.isArray(players) ? players : [players];
+
+        return playersArray.filter(player => {
             const distance = calculateDistance(enemy.x, enemy.y, player.x, player.y);
             return distance === 7; // 7 feet away, adjacent on the grid
         });
     }
+
 
     function moveCloser(enemy, target, withinBowRange = false) {
         // Calculate the number of squares to move horizontally and vertically
