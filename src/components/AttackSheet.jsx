@@ -69,7 +69,7 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
                 left: '2.5%',
                 borderRadius: '5px',
                 backgroundColor: headerGlow ? 'rgba(204, 166, 96, 0.1)' : 'rgba(45, 55, 72, 0.2)',
-                boxShadow: headerGlow ? '0 0 5px rgb(204, 85, 0), 0 0 8px rgb(204, 85, 0)' : 'none',
+                boxShadow: headerGlow ? '0 0 5px rgb(0, 204, 215), 0 0 8px rgb(0, 204, 215)' : 'none',
                 //animation: headerGlow ? 'glowing 4s infinite' : 'none',
             }}
         >

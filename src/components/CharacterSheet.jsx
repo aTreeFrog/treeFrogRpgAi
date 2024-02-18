@@ -186,7 +186,7 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
                     transform: 'translate(-62%, -50%)',
                     width: '60px',
                     height: '100px',
-                    backgroundColor: 'rgba(88, 24, 69, 0.7)',
+                    backgroundColor: 'purple',
                     clipPath: 'polygon(50% 0%, 100% 0, 100% 75%, 50% 100%, 0 75%, 0 0)', /* Adjust this to refine shape */
                     display: 'flex',  // Added for inner text alignment
                     flexDirection: 'column',  // Added for inner text alignment
@@ -221,7 +221,7 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
                     left: 'calc(30% + 70px)',  // Positioned to the right of the shield
                     width: '80px',
                     height: '90px',
-                    backgroundColor: 'rgba(204, 108, 29, 0.2)',
+                    backgroundColor: 'rgba(200, 115, 45, 0.774)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',

@@ -601,7 +601,7 @@ export default function Home() {
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
 
         // attack dice rolls now
-      } else if (players[userName]?.battleMode?.attackRollSucceeded && players[userName]?.battleMode?.actionAttempted && players[userName]?.battleMode?.damageDelt < 1) {
+      } else if (players[userName]?.battleMode?.attackRollSucceeded && players[userName]?.battleMode?.actionAttempted && !players[userName]?.battleMode?.damageDelt) {
 
         console.log("action dice ready");
         latestDiceMsg.current = players[userName];
@@ -1331,7 +1331,8 @@ export default function Home() {
           Total: totalDiceSum,
           Modifier: 2, /////put whatever the skill level is
           Skill: latestDiceMsg.current.Skill,
-          Id: latestDiceMsg.current.activityId
+          Id: latestDiceMsg.current.activityId,
+          Attack: selectedRow?.name,
         };
         //send data to the server (not sure yet how to use, prob for logs and others can see)
         //Need to send some kind of animation above the dice for being done showing values
@@ -1394,9 +1395,10 @@ export default function Home() {
           setActiveSkill("");
           //cleanUpDiceStates();
           //setDiceStates(defaultDiceStates);
-          chatSocket.emit('D20 Dice Roll Complete', rollCompleteData)
+          chatSocket.emit('D20 Dice Roll Complete', rollCompleteData);
           console.log("the end");
         }, 2000);
+
         cleanUpDiceStates();
 
 

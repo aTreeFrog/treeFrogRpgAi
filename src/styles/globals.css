@@ -533,7 +533,7 @@ textarea {
 
 .heart {
     position: relative;
-    background: rgb(123, 23, 19);
+    background: rgb(239, 44, 37);
     height: 35px;
     width: 35px;
     transform: rotate(-45deg);
@@ -550,7 +550,7 @@ textarea {
 .heart:after {
     content: "";
     position: absolute;
-    background-color: rgb(123, 23, 19);
+    background-color: rgb(239, 44, 37);
     border-radius: 50%;
     height: 100%;
     width: 100%;

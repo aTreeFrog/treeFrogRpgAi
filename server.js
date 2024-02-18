@@ -1126,7 +1126,7 @@ app.prepare().then(() => {
                 }
 
                 // did attack and did max move, so auto move player to next turn
-                if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && players[diceData.User].battleMode.damageDelt > 0) {
+                if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && (players[diceData.User].battleMode.damageDelt > 0 || !players[diceData.User].battleMode.attackRollSucceeded)) {
 
                     //send emit to all players before moving to next player in queue so everyone has latest data quickly.
                     players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
@@ -1282,7 +1282,7 @@ app.prepare().then(() => {
                 io.to(serverRoomName).emit('players objects', players);
 
                 // player attacked and moved as much as they can so change to next person. 
-                if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.damageDelt > 0) {
+                if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.actionAttempted) {
                     nextInLine();
                 }
             };
@@ -1493,7 +1493,94 @@ app.prepare().then(() => {
         io.to(serverRoomName).emit('players objects', players);
     }
 
-    async function handleEnemyTurn() {
+    // calculate distance between enemy and selected player
+    function calculateDistance(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)) * 7; // Convert grid distance to feet
+    }
+
+    // Find all players within melee attack distance
+    function findPlayersWithinMeleeDistance(players, enemy) {
+        // Ensure players is treated as an array whether it's a single object or already an array
+        const playersArray = Array.isArray(players) ? players : [players];
+
+        return playersArray.filter(player => {
+            const distance = calculateDistance(enemy.x, enemy.y, player.x, player.y);
+            return distance === 7; // 7 feet away, adjacent on the grid
+        });
+    }
+
+
+    function moveCloser(enemy, target, withinBowRange = false) {
+        // Calculate the number of squares to move horizontally and vertically
+        const squaresToMoveX = Math.min(Math.abs(target.x - enemy.x), withinBowRange ? 2 : 4) * (target.x > enemy.x ? 1 : -1);
+        const squaresToMoveY = Math.min(Math.abs(target.y - enemy.y), withinBowRange ? 2 : 4) * (target.y > enemy.y ? 1 : -1);
+
+        // If within bow range, randomly decide whether to move closer or stay in place
+        if (withinBowRange && Math.random() < 0.5) {
+            // Randomly choose to not move (stay in place)
+            return { x: enemy.x, y: enemy.y };
+        }
+
+        // Calculate new position
+        let newX = enemy.x + squaresToMoveX;
+        let newY = enemy.y + squaresToMoveY;
+
+        // Adjust for maximum movement within 28 feet (4 squares) or 14 feet (2 squares)
+        const distance = calculateDistance(enemy.x, enemy.y, newX, newY);
+        if (distance > 28) { // If trying to move more than 28 feet, adjust to max 28 feet
+            newX = enemy.x + (squaresToMoveX > 0 ? 4 : -4);
+            newY = enemy.y + (squaresToMoveY > 0 ? 4 : -4);
+        } else if (withinBowRange && distance > 14) { // Within bow range and trying to move more than 14 feet, adjust to 14 feet
+            newX = enemy.x + (squaresToMoveX > 0 ? 2 : -2);
+            newY = enemy.y + (squaresToMoveY > 0 ? 2 : -2);
+        }
+
+        // Ensure newX and newY are calculated based on desired logic above
+        return { x: newX, y: newY };
+    }
+
+    // Decide on action
+    function decideAction(players, enemy) {
+
+        const playersWithinMeleeDistance = findPlayersWithinMeleeDistance(players, enemy);
+
+        if (playersWithinMeleeDistance.length > 0) {
+            // If one or more players are within sword distance, randomly select one and attack
+            const target = playersWithinMeleeDistance[Math.floor(Math.random() * playersWithinMeleeDistance.length)];
+            return { action: "meleeAttack", target };
+        } else {
+            // Select a random player to target for potential bow attack or movement
+            const target = players[Math.floor(Math.random() * players.length)];
+            const distance = calculateDistance(enemy.x, enemy.y, target.x, target.y);
+
+            // When deciding to move closer within bow range, pass true for withinBowRange
+            if (distance <= 60 && distance > 7) {
+                // Within bow range but not adjacent, randomly decide to move closer or stay
+                return { action: "rangeAttack", target, moveTo: moveCloser(enemy, target, true) };
+            } else if (distance > 60) {
+                // Too far for either attack, move closer up to 28 feet
+                const moveTo = moveCloser(enemy, target);
+                return { action: "move", moveTo };
+            }
+
+        }
+    }
+
+    function handleEnemyTurn(playerData) {
+
+        const nonEnemies = Object.entries(players).reduce((acc, [key, value]) => {
+            if (value.type !== "enemy") {
+                acc[key] = value;
+            }
+            return acc;
+        }, {});
+
+        console.log("nonEnemies", nonEnemies);
+
+        const enemyDecision = decideAction(nonEnemies, playerData);
+
+        console.log("enemyDecision", enemyDecision);
+
 
     }
 
@@ -1518,9 +1605,9 @@ app.prepare().then(() => {
                 anyPlayerInitiativeRoll = true;
             }
 
-            if (playerData.type == "enemy" && playerData.battleMode.yourTurn && playerData.battleMode.attackRoll < 0 && !playerData.battleMode.distanceMoved) {
+            if (playerData.type == "enemy" && playerData.battleMode.yourTurn && playerData.battleMode.attackRoll < 1 && !playerData.battleMode.distanceMoved) {
 
-                handleEnemyTurn(); // call async function without awaiting so its non blocking.
+                handleEnemyTurn(playerData); // call async function without awaiting so its non blocking.
             }
 
         });
@@ -1550,10 +1637,6 @@ app.prepare().then(() => {
             console.log("battlemode players: ", players);
 
         }
-
-
-
-
 
         console.log("update");
 
