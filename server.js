@@ -1493,6 +1493,10 @@ app.prepare().then(() => {
         io.to(serverRoomName).emit('players objects', players);
     }
 
+    async function handleEnemyTurn() {
+
+    }
+
     async function checkPlayersState() {
 
         let anyPlayerRoll = false
@@ -1512,6 +1516,11 @@ app.prepare().then(() => {
 
             if (playerData?.type == "player" && playerData?.mode == "initiative" && !playerData?.away && playerData?.battleMode?.initiativeRoll < 1) {
                 anyPlayerInitiativeRoll = true;
+            }
+
+            if (playerData.type == "enemy" && playerData.battleMode.yourTurn && playerData.battleMode.attackRoll < 0 && !playerData.battleMode.distanceMoved) {
+
+                handleEnemyTurn(); // call async function without awaiting so its non blocking.
             }
 
         });
@@ -1541,6 +1550,10 @@ app.prepare().then(() => {
             console.log("battlemode players: ", players);
 
         }
+
+
+
+
 
         console.log("update");
 

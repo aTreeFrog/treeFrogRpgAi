@@ -6,6 +6,7 @@ import BlurredLineEffect from '../components/BlurredLineEffect';
 import FlickeringRect from '../components/FlickeringRect'
 import DriftingTextEffect from '../components/DriftingTextEffect';
 import { cloneDeep } from 'lodash';
+import * as Tone from 'tone';
 
 const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, selectedRow, setSelectedRow, showPlayerName, setShowPlayerName, pingReady, setPingReady }) => {
     const [image, status] = useImage(players[userName]?.battleMode.mapUrl);
@@ -417,11 +418,16 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
 
         setUnavailCoord(newUnavailCoord);
 
+        let targetedPlayers = false;
         const newSpells = [];
         Object.entries(players).forEach(([playerName, playerData]) => {
 
             if (!prevPlayersBattleData.current.hasOwnProperty(playerName)) {
                 return;
+            }
+
+            if (playerData.battleMode.targeted && !prevPlayersBattleData.current[playerName]?.battleMode.targeted) {
+                targetedPlayers = true;
             }
 
             // set attack succeed or failed above players after attack roll made 
@@ -436,6 +442,23 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         [playerName]: "INIT"
                     }));
                 }, 5000);
+
+                const successTone = new Tone.Player({
+                    url: "/audio/attack_success.wav",
+                }).toDestination();
+
+                successTone.autostart = true;
+
+                successTone.onended = () => {
+                    console.log('ping playback ended');
+                    spellTone.disconnect(); // Disconnect the player
+                };
+
+                successTone.onerror = (error) => {
+                    console.error("Error with audio playback", error);
+                };
+
+
             } else if (playerData?.battleMode?.enemyAttackAttempt == "FAIL" && prevPlayersBattleData.current[playerName]?.battleMode?.enemyAttackAttempt == "INIT") {
                 setShowEnemyResult(prevState => ({
                     ...prevState,
@@ -447,6 +470,21 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                         [playerName]: "INIT"
                     }));
                 }, 5000);
+
+                const failedTone = new Tone.Player({
+                    url: "/audio/attack_failed.wav",
+                }).toDestination();
+
+                failedTone.autostart = true;
+
+                failedTone.onended = () => {
+                    console.log('ping playback ended');
+                    spellTone.disconnect(); // Disconnect the player
+                };
+
+                failedTone.onerror = (error) => {
+                    console.error("Error with audio playback", error);
+                };
             }
 
             // check if player health changed. 
@@ -507,9 +545,46 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
                     }
                 });
 
+                const attackData = playerData.attacks.find(attack => attack.name === playerData.battleMode.attackUsed);
+
+                if (attackData.type == "spell") {
+                    const spellTone = new Tone.Player({
+                        url: "/audio/magic_spell_attack.wav",
+                    }).toDestination();
+
+                    spellTone.autostart = true;
+
+                    spellTone.onended = () => {
+                        console.log('ping playback ended');
+                        spellTone.disconnect(); // Disconnect the player
+                    };
+
+                    spellTone.onerror = (error) => {
+                        console.error("Error with audio playback", error);
+                    };
+                }
+
             }
 
         });
+
+        if (targetedPlayers) {
+            const targetedTone = new Tone.Player({
+                url: "/audio/targeted.wav",
+            }).toDestination();
+
+            targetedTone.autostart = true;
+
+            targetedTone.onended = () => {
+                console.log('ping playback ended');
+                targetedTone.disconnect(); // Disconnect the player
+            };
+
+            targetedTone.onerror = (error) => {
+                console.error("Error with audio playback", error);
+            };
+
+        }
 
         if (newSpells.length > 0) {
             spells.current = newSpells;
@@ -519,6 +594,8 @@ const BattleMap = ({ gridSpacing, className, players, setPlayers, userName, sele
             }, 5000);
 
         }
+
+
 
         prevPlayersBattleData.current = cloneDeep(players);
 

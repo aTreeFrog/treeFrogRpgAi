@@ -25,7 +25,7 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
 
         //if moved to another tab and didn't already select attack on target, clear out attack.
         if (activeTab != "Attacks/Spells" && player?.battleMode?.usersTargeted?.length < 1) {
-            setSelectedRow(false);
+            setSelectedRow(null);
         }
 
     }, [activeTab]);
@@ -72,85 +72,112 @@ export default function CharacterSheet({ name, race, characterClass, level, acti
             </div>
             {/* New Rectangle below both sections */}
             <div className="relative block p-3 mt-7 text-white text-2xl font-bold text-medieval rounded wavy-edges" style={{ height: '38.5rem', width: '95%' }}>
-                {/* Level Circle (Left and towards the top) */}
-                <div className="absolute top-0 left-0 ml-3 mt-3">
-                    <div className="rounded-full flex items-center justify-center border-2"
-                        style={{
-                            height: '60px',
-                            width: '60px',
-                            borderWidth: '3px',
-                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
-                            borderColor: "rgb(49, 46, 129)" /* Solid amber border */
-                        }}>
-                        <span className="text-white text-3xl">{level}</span>
+                {activeTab != "Attacks/Spells" && (
+                    <div>
+                        {/* Level Circle (Left and towards the top) */}
+                        <div className="absolute top-0 left-0 ml-3 mt-3">
+                            <div className="rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    height: '60px',
+                                    width: '60px',
+                                    borderWidth: '3px',
+                                    backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
+                                    borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                                }}>
+                                <span className="text-white text-3xl">{level}</span>
+                            </div>
+                            <div className="text-white text-base text-center mt-1 ">Strength</div>
+                        </div>
+                        <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(6rem + 12px)' }}>
+                            <div className="rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    height: '60px',
+                                    width: '60px',
+                                    borderWidth: '3px',
+                                    backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
+                                    borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                                }}>
+                                <span className="text-white text-3xl">{level}</span>
+                            </div>
+                            <div className="text-white text-base text-center mt-1">Dexterity</div>
+                        </div>
+                        <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(12rem + 12px)' }}>
+                            <div className="rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    height: '60px',
+                                    width: '60px',
+                                    borderWidth: '3px',
+                                    backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
+                                    borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                                }}>
+                                <span className="text-white text-3xl">{level}</span>
+                            </div>
+                            <div className="text-white text-base text-center mt-1">Constitution</div>
+                        </div>
+                        <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(18rem + 12px)' }}>
+                            <div className="rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    height: '60px',
+                                    width: '60px',
+                                    borderWidth: '3px',
+                                    backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
+                                    borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                                }}>
+                                <span className="text-white text-3xl">{level}</span>
+                            </div>
+                            <div className="text-white text-base text-center mt-1">Intelligence</div>
+                        </div>
+                        <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(24rem + 12px)' }}>
+                            <div className="rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    height: '60px',
+                                    width: '60px',
+                                    borderWidth: '3px',
+                                    backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
+                                    borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                                }}>
+                                <span className="text-white text-3xl">{level}</span>
+                            </div>
+                            <div className="text-white text-base text-center mt-1">Wisdom</div>
+                        </div>
+                        <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(30rem + 12px)' }}>
+                            <div className="rounded-full flex items-center justify-center border-2"
+                                style={{
+                                    height: '60px',
+                                    width: '60px',
+                                    borderWidth: '3px',
+                                    backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
+                                    borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                                }}>
+                                <span className="text-white text-3xl">{level}</span>
+                            </div>
+                            <div className="text-white text-base text-center mt-1">Charisma</div>
+                        </div>
+
                     </div>
-                    <div className="text-white text-base text-center mt-1 ">Strength</div>
-                </div>
-                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(6rem + 12px)' }}>
-                    <div className="rounded-full flex items-center justify-center border-2"
-                        style={{
-                            height: '60px',
-                            width: '60px',
-                            borderWidth: '3px',
-                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
-                            borderColor: "rgb(49, 46, 129)" /* Solid amber border */
-                        }}>
-                        <span className="text-white text-3xl">{level}</span>
+                )}
+                {activeTab == "Attacks/Spells" && (
+                    <div className="absolute top-0 left-0 ml-3 mt-3">
+                        <div className="rounded-lg flex items-center justify-center border-2"
+                            style={{
+                                height: '60px',
+                                width: '60px',
+                                borderWidth: '3px',
+                                backgroundColor:
+                                    player.battleMode.attackRollSucceeded === true ? 'rgb(0, 155, 0)' :
+                                        player.battleMode.attackRollSucceeded === false ? 'red' :
+                                            'rgb(0, 204, 215)',
+                                borderColor: "rgb(49, 46, 129)" /* Solid amber border */
+                            }}>
+                            <img src="/icons/sword.svg" />
+                        </div>
+                        <div className="text-white text-base text-center mt-1 ">
+                            {player.battleMode.attackRollSucceeded === true ? 'Success' :
+                                player.battleMode.attackRollSucceeded === false ? 'Fail' :
+                                    (player.battleMode.attackRollSucceeded === null && selectedRow !== null) ? 'Selected' : ''}
+                        </div>
                     </div>
-                    <div className="text-white text-base text-center mt-1">Dexterity</div>
-                </div>
-                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(12rem + 12px)' }}>
-                    <div className="rounded-full flex items-center justify-center border-2"
-                        style={{
-                            height: '60px',
-                            width: '60px',
-                            borderWidth: '3px',
-                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
-                            borderColor: "rgb(49, 46, 129)" /* Solid amber border */
-                        }}>
-                        <span className="text-white text-3xl">{level}</span>
-                    </div>
-                    <div className="text-white text-base text-center mt-1">Constitution</div>
-                </div>
-                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(18rem + 12px)' }}>
-                    <div className="rounded-full flex items-center justify-center border-2"
-                        style={{
-                            height: '60px',
-                            width: '60px',
-                            borderWidth: '3px',
-                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
-                            borderColor: "rgb(49, 46, 129)" /* Solid amber border */
-                        }}>
-                        <span className="text-white text-3xl">{level}</span>
-                    </div>
-                    <div className="text-white text-base text-center mt-1">Intelligence</div>
-                </div>
-                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(24rem + 12px)' }}>
-                    <div className="rounded-full flex items-center justify-center border-2"
-                        style={{
-                            height: '60px',
-                            width: '60px',
-                            borderWidth: '3px',
-                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
-                            borderColor: "rgb(49, 46, 129)" /* Solid amber border */
-                        }}>
-                        <span className="text-white text-3xl">{level}</span>
-                    </div>
-                    <div className="text-white text-base text-center mt-1">Wisdom</div>
-                </div>
-                <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: 'calc(30rem + 12px)' }}>
-                    <div className="rounded-full flex items-center justify-center border-2"
-                        style={{
-                            height: '60px',
-                            width: '60px',
-                            borderWidth: '3px',
-                            backgroundColor: "rgba(45, 55, 72, 0.9)", /* Semi-transparent amber background */
-                            borderColor: "rgb(49, 46, 129)" /* Solid amber border */
-                        }}>
-                        <span className="text-white text-3xl">{level}</span>
-                    </div>
-                    <div className="text-white text-base text-center mt-1">Charisma</div>
-                </div>
+                )}
                 {/* Shield-shaped box */}
                 <div className="shield-box rounded" style={{
                     position: 'absolute',
