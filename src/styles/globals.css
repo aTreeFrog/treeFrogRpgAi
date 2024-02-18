@@ -661,6 +661,18 @@ textarea {
     border-bottom-left-radius: 0.375rem;
 }
 
+.attackRowDistanceClicked {
+    background-color: rgba(235, 220, 48, 0.2);
+}
+
+.attackRowDistanceHovered {
+    background-color: rgba(108, 112, 107, 0.2);
+}
+
+.hoverAttackRowDistance:hover {
+    background-color: rgba(235, 220, 48, 0.2);
+}
+
 .attackRowClicked {
     background-color: rgba(235, 220, 48, 0.2);
 }
