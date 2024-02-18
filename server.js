@@ -1126,7 +1126,7 @@ app.prepare().then(() => {
                 }
 
                 // did attack and did max move, so auto move player to next turn
-                if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && (players[diceData.User].battleMode.damageDelt > 0 || !players[diceData.User].battleMode.attackRollSucceeded)) {
+                if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && players[diceData.User].battleMode.damageDelt > 0) {
 
                     //send emit to all players before moving to next player in queue so everyone has latest data quickly.
                     players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
@@ -1135,6 +1135,15 @@ app.prepare().then(() => {
                     nextInLine();
                 }
 
+            }
+
+            if (players[diceData.User].battleMode.distanceMoved >= players[diceData.User].distance && players[diceData.User].battleMode.attackRollSucceeded == false) {
+
+                //send emit to all players before moving to next player in queue so everyone has latest data quickly.
+                players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+                activityCount++;
+                io.to(serverRoomName).emit('players objects', players);
+                nextInLine();
             }
 
             //set a bunch of default states for the player
