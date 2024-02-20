@@ -1285,15 +1285,17 @@ app.prepare().then(() => {
                 players[data.name].xPosition = data.xPosition;
                 players[data.name].yPosition = data.yPosition;
                 players[data.name].xScale = data.xScale;
-                players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
-                activityCount++;
-
-                io.to(serverRoomName).emit('players objects', players);
 
                 // player attacked and moved as much as they can so change to next person. 
                 if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.actionAttempted) {
                     nextInLine();
                 }
+
+                players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
+                activityCount++;
+
+                io.to(serverRoomName).emit('players objects', players);
+
             };
 
         });
@@ -1371,6 +1373,20 @@ app.prepare().then(() => {
 
                 io.to(serverRoomName).emit('players objects', players);
             };
+
+        });
+
+        socket.on('end turn', (playerName) => {
+
+            if (players.hasOwnProperty(playerName)) {
+
+                if (players[playerName].battleMode.yourTurn) {
+                    nextInLine();
+                    players[playerName].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+                    activityCount++;
+                    io.to(serverRoomName).emit('players objects', players);
+                }
+            }
 
         });
 

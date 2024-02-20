@@ -1,35 +1,35 @@
 import { useState, useEffect, useRef, useContext } from "react";
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from '@/styles/Home.module.css'
-import axios from 'axios';
+import Head from "next/head";
+import Image from "next/image";
+import { Inter } from "next/font/google";
+import styles from "@/styles/Home.module.css";
+import axios from "axios";
 import TypingAnimation from "../components/TypingAnimation";
-import HexagonDice from "../components/HexagonDice"
-import JitsiMeetComponent from '../components/JitsiMeetComponent';
-import CharacterSheet from '../components/CharacterSheet';
-import AudioInput from '../components/AudioInput'
-import * as Tone from 'tone';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHatWizard } from '@fortawesome/free-solid-svg-icons';
-import SocketContext from '../context/SocketContext';
-import CustomSelect from '../components/CustomSelect'; // Import the above created component
+import HexagonDice from "../components/HexagonDice";
+import JitsiMeetComponent from "../components/JitsiMeetComponent";
+import CharacterSheet from "../components/CharacterSheet";
+import AudioInput from "../components/AudioInput";
+import * as Tone from "tone";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHatWizard } from "@fortawesome/free-solid-svg-icons";
+import SocketContext from "../context/SocketContext";
+import CustomSelect from "../components/CustomSelect"; // Import the above created component
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
-import MoveOnPopup from "../components/MoveOnPopup"
-import BattleMap from '../components/BattleMap';
+import MoveOnPopup from "../components/MoveOnPopup";
+import BattleMap from "../components/BattleMap";
 import { io } from "socket.io-client";
-import { CountdownCircleTimer } from 'react-countdown-circle-timer';
-import KnifeCutText from '../components/KnifeCutText'
-import player from '../../lib/objects/player'
-import { cloneDeep } from 'lodash';
+import { CountdownCircleTimer } from "react-countdown-circle-timer";
+import KnifeCutText from "../components/KnifeCutText";
+import player from "../../lib/objects/player";
+import { cloneDeep } from "lodash";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 //let chatUrl = '/api/chat';
 //let chatSocket = io('http://localhost:3000', { path: chatUrl });
 
 export default function Home() {
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [dalleImageUrl, setDalleImageUrl] = useState();
@@ -43,21 +43,27 @@ export default function Home() {
   const [api, setApi] = useState(null);
   const audio = useRef(false);
   const chatLogRef = useRef(chatLog);
-  const tempBuffer = useRef('');
+  const tempBuffer = useRef("");
   const [isAtBottom, setIsAtBottom] = useState(true);
   const expectedSequence = useRef(0);
   const newAudio = useRef(null);
   const [inputTextHeight, setInputTextHeight] = useState(20);
   const textareaRef = useRef(null);
   const [isCustomTextOpen, setIsCustomTextOpen] = useState(false);
-  const [customTextCells, setCustomTextCells] = useState(['I jump away', 'I check for magic', 'I sneak by', 'I yell Guards', '']);
+  const [customTextCells, setCustomTextCells] = useState([
+    "I jump away",
+    "I check for magic",
+    "I sneak by",
+    "I yell Guards",
+    "",
+  ]);
   const [isAudioOpen, setIsAudioOpen] = useState(false);
-  const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000) // some high value for init
+  const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000); // some high value for init
   const [shouldStopAi, setShouldStopAi] = useState(false);
   const callSubmitFromAudio = useRef(false);
   const [audioInputData, setAudioInputData] = useState(false);
   const callSubmitFromDiceRolls = useRef(false);
-  const [diceRollsInputData, setDiceRollsInputData] = useState('');
+  const [diceRollsInputData, setDiceRollsInputData] = useState("");
   const defaultDiceStates = {
     d20: {
       value: [],
@@ -108,7 +114,7 @@ export default function Home() {
       displayedValue: 4,
       inhibit: false,
       advantage: false,
-    }
+    },
   };
   const attackRollDiceStates = {
     d20: {
@@ -160,16 +166,16 @@ export default function Home() {
       displayedValue: 4,
       inhibit: false,
       advantage: false,
-    }
+    },
   };
   const [diceStates, setDiceStates] = useState(defaultDiceStates);
   const [diceRollId, setDiceRollId] = useState();
   const [pendingDiceUpdate, setPendingDiceUpdate] = useState(null);
   const [messageQueueTrigger, setMessageQueueTrigger] = useState(false); //to make useEffect check for dice rolls
   const latestDiceMsg = useRef(null);
-  const [wizardHatEnable, setWizardHatEnable] = useState(false)
+  const [wizardHatEnable, setWizardHatEnable] = useState(false);
   const messageRefs = useRef([]);
-  const [activeSkill, setActiveSkill] = useState("")
+  const [activeSkill, setActiveSkill] = useState("");
   const activityCount = useRef(0);
   const { chatSocket, userName } = useContext(SocketContext);
   const diceTone = useRef(null);
@@ -177,24 +183,32 @@ export default function Home() {
   const [diceSelectionOption, setDiceSelectionOption] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const speechTurnedOffMusic = useRef(false);
-  const [customCellValue, setCustomCellValue] = useState('');
-  const [teamGmOption, setTeamGmOption] = useState({ value: 'All', label: 'All' });
+  const [customCellValue, setCustomCellValue] = useState("");
+  const [teamGmOption, setTeamGmOption] = useState({
+    value: "All",
+    label: "All",
+  });
   const musicThreadControlActive = useRef(false);
   const [enableCellButton, setEnableCellButton] = useState(true);
   const [showMoveOnPopup, setShowMoveOnPopup] = useState(false);
-  const storyModePopupWarning = "Are you sure?\n AI will wrap up scene and move onto next act.";
-  const diceModePopupWarning = "Are you sure?\n AI will end dice mode and re-enable chatbox.";
-  const battleModePopupWarning = "Are you sure?\n AI will wrap up battle and move onto next act.";
+  const storyModePopupWarning =
+    "Are you sure?\n AI will wrap up scene and move onto next act.";
+  const diceModePopupWarning =
+    "Are you sure?\n AI will end dice mode and re-enable chatbox.";
+  const battleModePopupWarning =
+    "Are you sure?\n AI will wrap up battle and move onto next act.";
   const storyModeMoveOnButton = "Move On";
   const diceModeMoveOnButton = "End Roll";
   const battleModeMoveOnButton = "End Battle";
   const [popupText, setPopupText] = useState(storyModePopupWarning);
-  const [moveOnButtonText, setMoveOnButtonText] = useState(storyModeMoveOnButton);
+  const [moveOnButtonText, setMoveOnButtonText] = useState(
+    storyModeMoveOnButton
+  );
   const [usersInServer, setUsersInServer] = useState([]);
   const [players, setPlayers] = useState({}); // init player dict
   const playersMsgActIds = useRef({});
   const [awayMode, setAwayMode] = useState(false);
-  const iAmBack = useRef(false)
+  const iAmBack = useRef(false);
   const [isTimerVisible, setIsTimerVisible] = useState(false);
   const [isTimerPlaying, setIsTimerPlaying] = useState(false);
   const [updatingChatLog, setUpdatingChatLog] = useState(false);
@@ -208,7 +222,7 @@ export default function Home() {
   const [floatingValue, setFloatingValue] = useState(null);
   const [yourTurnText, setYourTurnText] = useState(false);
   const [showOverlayText, setShowOverlayText] = useState(false);
-  const [activeTab, setActiveTab] = useState('Skills');
+  const [activeTab, setActiveTab] = useState("Skills");
   const [selectedRow, setSelectedRow] = useState(null);
   const latestUserServer = useRef();
   const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
@@ -221,7 +235,10 @@ export default function Home() {
   // Whenever chatLog updates, update the ref
   useEffect(() => {
     chatLogRef.current = chatLog;
-    if (chatLogRef.current.length && chatLogRef.current[chatLogRef.current.length - 1].role === 'user') {
+    if (
+      chatLogRef.current.length &&
+      chatLogRef.current[chatLogRef.current.length - 1].role === "user"
+    ) {
       scrollToBottom();
     }
   }, [chatLog]);
@@ -229,36 +246,33 @@ export default function Home() {
   const handleApiReady = (apiInstance) => {
     console.log("handleApiReady");
     setApi(apiInstance);
-  }
+  };
 
   const disposeApi = () => {
     if (api) {
       console.log("api disconnecting");
       api.dispose();
     }
-  }
+  };
 
   const resumeAudioContext = async () => {
-    if (Tone.context.state !== 'running') {
+    if (Tone.context.state !== "running") {
       await Tone.context.resume();
     }
   };
 
   // Ref to track if audio is currently playing
   const playNextAudio = () => {
-
-
     if (audioQueue.current.has(expectedSequence.current) && !audio.current) {
       resumeAudioContext();
-      console.log("playNextAudio expectedSequence: ", expectedSequence.current)
+      console.log("playNextAudio expectedSequence: ", expectedSequence.current);
 
       // Retrieve the object from the map
       const audioObj = audioQueue.current.get(expectedSequence.current);
-      const audioSrc = audioObj.audio;  // Access the audio source
+      const audioSrc = audioObj.audio; // Access the audio source
       const audioMessageId = audioObj.messageId; // If you need messageId
 
       audioQueue.current.delete(expectedSequence.current);
-
 
       // if brand new ai message came in, reset audioId inhibit to false
       // if user responds before ai speech is done, it will make inhibit true
@@ -270,17 +284,22 @@ export default function Home() {
 
       //Tone.start();
 
-      console.log("speechAudioId.current.messageId", speechAudioId.current.messageId);
+      console.log(
+        "speechAudioId.current.messageId",
+        speechAudioId.current.messageId
+      );
       console.log("audioMessageId", audioMessageId);
-      console.log("speechAudioId.current.inhibit", speechAudioId.current.inhibit);
+      console.log(
+        "speechAudioId.current.inhibit",
+        speechAudioId.current.inhibit
+      );
 
       newAudio.current = new Tone.Player(audioSrc, () => {
         console.log("Audio is ready to play");
-        volume: -10
+        volume: -10;
         audio.current = true;
         // Start the audio manually after it's loaded and connected to effects
         newAudio.current.start();
-
       }).toDestination();
 
       //newAudio.current = new Audio(audioSrc);
@@ -304,7 +323,7 @@ export default function Home() {
       // Adding reverb for a more ominous effect
       const reverb = new Tone.Reverb({
         decay: 1, // Reverb decay time in seconds
-        wet: 0.1  // Mix between the source and the reverb signal
+        wet: 0.1, // Mix between the source and the reverb signal
       }).toDestination();
       // newAudio.current.connect(reverb);
 
@@ -322,13 +341,10 @@ export default function Home() {
         newAudio.current.disconnect(); // Disconnect the player
         newAudio.current.dispose();
       };
-
     }
   };
 
-
   useEffect(() => {
-
     chatSocket.onopen = function (event) {
       console.log("Connection established!");
     };
@@ -342,20 +358,22 @@ export default function Home() {
     };
 
     // Emit event to server to create a meeting when component mounts
-    chatSocket.emit('create-meeting');
-
+    chatSocket.emit("create-meeting");
 
     // Listen for the server's response
-    chatSocket.once('meeting-created', (data) => {
+    chatSocket.once("meeting-created", (data) => {
       console.log("Meeting created:", data);
       setMeetingDetails(data); // Save the meeting details in state
     });
 
-    chatSocket.on('latest user message', (data) => {
+    chatSocket.on("latest user message", (data) => {
       //console.log('latest user message', data);
       chatSocket.emit("received user message", data);
       setUpdatingChatLog(true);
-      setChatLog((prevChatLog) => [...prevChatLog, { "role": 'user', "message": data.content, "mode": data.mode }])
+      setChatLog((prevChatLog) => [
+        ...prevChatLog,
+        { role: "user", message: data.content, mode: data.mode },
+      ]);
       setUpdatingChatLog(false);
     });
 
@@ -368,25 +386,26 @@ export default function Home() {
       tempBuffer.current += msg.message; // Modify tempBuffer ref
 
       // Process the buffer to extract complete sentences
-      let lastIndex = 0;  // To track the last index of end-of-sentence punctuation
+      let lastIndex = 0; // To track the last index of end-of-sentence punctuation
       for (let i = 0; i < tempBuffer.current.length; i++) {
         // Check for sentence termination (.,!,?)
-        if (tempBuffer.current[i] === '.' || tempBuffer.current[i] === '!' || tempBuffer.current[i] === '?') {
+        if (
+          tempBuffer.current[i] === "." ||
+          tempBuffer.current[i] === "!" ||
+          tempBuffer.current[i] === "?"
+        ) {
           // Extract the sentence
           let sentence = tempBuffer.current.substring(lastIndex, i + 1).trim();
           if (sentence.length > 0) {
             textToSpeechCall(sentence, msg.messageId); ////////////////TURN BACK ON!!!!///////////////////////////////////////////
           }
-          lastIndex = i + 1;  // Update the last index to the new position
+          lastIndex = i + 1; // Update the last index to the new position
         }
       }
 
       // Keep only the incomplete sentence part in the buffer
       tempBuffer.current = tempBuffer.current.substring(lastIndex);
-
-
     };
-
 
     const onChatComplete = (messageId) => {
       waitingForComplete.current = false;
@@ -395,18 +414,20 @@ export default function Home() {
       if (tempBuffer.current.length > 0) {
         textToSpeechCall(tempBuffer.current, messageId);
       }
-      tempBuffer.current = '';
-
+      tempBuffer.current = "";
     };
 
     // Attach the event listener only once when the component mounts
-    chatSocket.on('chat message', handleChatMessage);
-    chatSocket.on('chat complete', onChatComplete);
+    chatSocket.on("chat message", handleChatMessage);
+    chatSocket.on("chat complete", onChatComplete);
 
-    chatSocket.on('play audio', (recording) => {
+    chatSocket.on("play audio", (recording) => {
       const audioSrc = `data:audio/mp3;base64,${recording.audio}`;
       console.log("play audio sequence: ", recording.sequence);
-      audioQueue.current.set(recording.sequence, { audio: audioSrc, messageId: recording.messageId });
+      audioQueue.current.set(recording.sequence, {
+        audio: audioSrc,
+        messageId: recording.messageId,
+      });
       //audioQueue.current.push(audioSrc);
       playNextAudio();
     });
@@ -425,19 +446,17 @@ export default function Home() {
     // });
 
     // dice roll initializer message (server only sends when starting dice mode)
-    chatSocket.on('players objects', (data) => {
+    chatSocket.on("players objects", (data) => {
       console.log("players objects received ", data);
-
 
       if (data[userName]) {
         latestUserServer.current = data[userName];
       }
 
-
       console.log("playersMsgActIds", playersMsgActIds);
       //ToDo: SEE IF WE CAN PREVENT UPDATING THE USESTATE OF PLAYERS IF ITS NOT UPDATED INFORMATION
 
-      setPlayers(prevPlayers => {
+      setPlayers((prevPlayers) => {
         const updatedPlayers = cloneDeep(prevPlayers); // Deep copy the entire players object
 
         Object.entries(data).forEach(([playerName, playerData]) => {
@@ -450,18 +469,26 @@ export default function Home() {
           if (playerName !== userName) {
             console.log(`Updating player: ${playerName}`); // Debugging: Confirm this runs
             updatedPlayers[playerName] = cloneDeep(playerData);
-            playersMsgActIds.current[playerName].activityId = playerData?.activityId;
+            playersMsgActIds.current[playerName].activityId =
+              playerData?.activityId;
 
             // Debugging: Check the copied data
             console.log("clonedeep: ", updatedPlayers[playerName]);
           }
 
           // if user is in story mode, delete any enemy players in the players object
-          if (updatedPlayers[userName]?.mode == "story" && updatedPlayers[playerName]?.type == "enemy") {
+          if (
+            updatedPlayers[userName]?.mode == "story" &&
+            updatedPlayers[playerName]?.type == "enemy"
+          ) {
             delete updatedPlayers[playerName];
           }
           // For the current user, update only if the activityId is new
-          else if ((playersMsgActIds.current[playerName]?.activityId != playerData?.activityId) && playerName === userName) {
+          else if (
+            playersMsgActIds.current[playerName]?.activityId !=
+              playerData?.activityId &&
+            playerName === userName
+          ) {
             console.log("updated myself");
             updatedPlayers[playerName] = cloneDeep(playerData); // Deep copy playerData
           }
@@ -472,82 +499,81 @@ export default function Home() {
     });
 
     //detect all users in the server
-    chatSocket.on('connected users', (clients) => {
+    chatSocket.on("connected users", (clients) => {
       console.log("connected users: ", clients);
       setUsersInServer(clients);
     });
 
-    chatSocket.on('speech to text data', (data) => {
-
+    chatSocket.on("speech to text data", (data) => {
       //if empty audio comes in, for some reason response with a sentence. if so, dont call ai
       const processedText = data.text.trim().toLowerCase();
-      const textWithoutWhitespace = processedText.replace(/[\s]+/g, ''); //removes whitespace
+      const textWithoutWhitespace = processedText.replace(/[\s]+/g, ""); //removes whitespace
 
       //checks if data is thank you for watching or just a bunch of periods. If not, go on
       //i have a prompt in the api silence in the audio file which is what it outputs if theres no audio voice coming in
-      if (!(processedText.toLowerCase().startsWith("thank you for watching") || /^\.+$/.test(textWithoutWhitespace)
-        || processedText.toLowerCase().includes("silence in the audio file"))) {
+      if (
+        !(
+          processedText.toLowerCase().startsWith("thank you for watching") ||
+          /^\.+$/.test(textWithoutWhitespace) ||
+          processedText.toLowerCase().includes("silence in the audio file")
+        )
+      ) {
         callSubmitFromAudio.current = true;
         setAudioInputData(data.text);
       }
 
       console.log("speech to text input data", data.text);
-
     });
 
-    chatSocket.on('background music', (data) => {
+    chatSocket.on("background music", (data) => {
       resumeAudioContext();
       PlayBackgroundAudio(data);
-
     });
 
-    chatSocket.on('dall e image', (dallEObject) => {
+    chatSocket.on("dall e image", (dallEObject) => {
       console.log("dall e image made, ", dallEObject.imageUrl);
       setDalleImageUrl(dallEObject.imageUrl);
       setShadowDomColor(dallEObject.shadowColor);
-
     });
 
-    chatSocket.on('enter battle mode', (data) => {
+    chatSocket.on("enter battle mode", (data) => {
       setGameObject(data);
-
-
     });
 
     readyChatAndAudio();
 
     // Cleanup listener when component unmounts
     return () => {
-      chatSocket.off('meeting-created');
-      chatSocket.off('latest user message');
-      chatSocket.off('my user message');
-      chatSocket.off('chat message', handleChatMessage);
-      chatSocket.off('chat complete', onChatComplete);
-      chatSocket.off('play audio');
-      chatSocket.off('dice roll');
-      chatSocket.off('speech to text data');
-      chatSocket.off('background music');
-      chatSocket.off('players objects');
-
+      chatSocket.off("meeting-created");
+      chatSocket.off("latest user message");
+      chatSocket.off("my user message");
+      chatSocket.off("chat message", handleChatMessage);
+      chatSocket.off("chat complete", onChatComplete);
+      chatSocket.off("play audio");
+      chatSocket.off("dice roll");
+      chatSocket.off("speech to text data");
+      chatSocket.off("background music");
+      chatSocket.off("players objects");
     };
-
   }, [chatSocket]);
 
   useEffect(() => {
-
-
     if (!players) {
       return;
     }
 
     //check if already processed this message
-    if (playersMsgActIds.current[userName]?.activityId == players[userName]?.activityId) {
+    if (
+      playersMsgActIds.current[userName]?.activityId ==
+      players[userName]?.activityId
+    ) {
       return;
     }
 
     console.log("my players ", players);
     // add to list of received messages
-    playersMsgActIds.current[userName].activityId = players[userName]?.activityId;
+    playersMsgActIds.current[userName].activityId =
+      players[userName]?.activityId;
 
     if (!players[userName]?.active) {
       cleanUpDiceStates();
@@ -557,8 +583,11 @@ export default function Home() {
       setAwayMode(true);
     }
 
-    if (players[userName]?.mode == "dice" && players[userName]?.active && !players[userName]?.away) {
-
+    if (
+      players[userName]?.mode == "dice" &&
+      players[userName]?.active &&
+      !players[userName]?.away
+    ) {
       if (messageQueue.current.length > 0) {
         setPendingDiceUpdate(players[userName]); // Save the data for later
         setDiceSelectionOption(null);
@@ -566,14 +595,15 @@ export default function Home() {
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
-
-    } else if (players[userName]?.mode == "initiative" && players[userName]?.battleMode?.initiativeRoll < 1) {
-
+    } else if (
+      players[userName]?.mode == "initiative" &&
+      players[userName]?.battleMode?.initiativeRoll < 1
+    ) {
       // load player images
       Object.values(players)
-        .filter(player => player.userImageUrl)
+        .filter((player) => player.userImageUrl)
         .forEach((_, index) => {
-          setLoadBattlePlayerImages(prev => ({ ...prev, [index]: false }));
+          setLoadBattlePlayerImages((prev) => ({ ...prev, [index]: false }));
         });
 
       if (messageQueue.current.length > 0) {
@@ -590,33 +620,41 @@ export default function Home() {
         img.src = players[userName].battleMode.initiativeImageUrl;
         img.onload = () => setIsInitiativeImageLoaded(true);
       }
-
-    } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn) {
-
+    } else if (
+      players[userName]?.mode == "battle" &&
+      players[userName]?.battleMode?.yourTurn
+    ) {
       //roll attackRoll or attack amount dice if its your turn and you selected targets.
-      if (players[userName]?.battleMode?.attackRoll < 1 && !players[userName]?.battleMode?.actionAttempted) {
-
+      if (
+        players[userName]?.battleMode?.attackRoll < 1 &&
+        !players[userName]?.battleMode?.actionAttempted
+      ) {
         console.log("battle dice ready");
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
 
         // attack dice rolls now
-      } else if (players[userName]?.battleMode?.attackRollSucceeded && players[userName]?.battleMode?.actionAttempted && !players[userName]?.battleMode?.damageDelt) {
-
+      } else if (
+        players[userName]?.battleMode?.attackRollSucceeded &&
+        players[userName]?.battleMode?.actionAttempted &&
+        !players[userName]?.battleMode?.damageDelt
+      ) {
         console.log("action dice ready");
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
-
       }
-
     }
 
     Object.entries(players).forEach(([playerName, playerData]) => {
-
-      //if any player made a new ping position, set ping audio. 
-      if ((playerData?.pingXPosition != null && playerData?.pingXPosition != prevPlayersData.current[playerName]?.pingXPosition)
-        || (playerData?.pingYPosition != null && playerData.pingYPosition != prevPlayersData.current[playerName]?.pingYPosition)) {
-
+      //if any player made a new ping position, set ping audio.
+      if (
+        (playerData?.pingXPosition != null &&
+          playerData?.pingXPosition !=
+            prevPlayersData.current[playerName]?.pingXPosition) ||
+        (playerData?.pingYPosition != null &&
+          playerData.pingYPosition !=
+            prevPlayersData.current[playerName]?.pingYPosition)
+      ) {
         const pingTone = new Tone.Player({
           url: "/audio/player_ping.wav",
         }).toDestination();
@@ -624,68 +662,69 @@ export default function Home() {
         pingTone.autostart = true;
 
         pingTone.onended = () => {
-          console.log('ping playback ended');
+          console.log("ping playback ended");
           pingTone.disconnect(); // Disconnect the player
         };
 
         pingTone.onerror = (error) => {
           console.error("Error with audio playback", error);
         };
-
       }
-
     });
 
-
     prevPlayersData.current = players;
-
   }, [players]);
 
   useEffect(() => {
+    if (
+      latestUserServer.current?.xPosition != players[userName]?.xPosition ||
+      latestUserServer.current?.yPosition != players[userName]?.yPosition
+    ) {
+      console.log("player moved", players[userName]);
 
-    if (latestUserServer.current?.xPosition != players[userName]?.xPosition || latestUserServer.current?.yPosition != players[userName]?.yPosition) {
-
-      console.log('player moved', players[userName]);
-
-      chatSocket.emit('player moved', players[userName]);
-
+      chatSocket.emit("player moved", players[userName]);
     }
-
   }, [players[userName]?.xPosition, players[userName]?.yPosition]);
 
   useEffect(() => {
+    if (
+      latestUserServer.current?.pingXPosition !=
+        players[userName]?.pingXPosition ||
+      latestUserServer.current?.pingYPosition !=
+        players[userName]?.pingYPosition
+    ) {
+      console.log("ping moved", players[userName]);
 
-    if (latestUserServer.current?.pingXPosition != players[userName]?.pingXPosition || latestUserServer.current?.pingYPosition != players[userName]?.pingYPosition) {
-
-      console.log('ping moved', players[userName]);
-
-      chatSocket.emit('ping moved', players[userName]);
-
+      chatSocket.emit("ping moved", players[userName]);
     }
-
   }, [players[userName]?.pingXPosition, players[userName]?.pingYPosition]);
 
   useEffect(() => {
-    const serverUserNameTargeted = latestUserServer.current?.battleMode?.usersTargeted;
+    const serverUserNameTargeted =
+      latestUserServer.current?.battleMode?.usersTargeted;
     const userNameTargeted = players[userName]?.battleMode?.usersTargeted;
 
     // Check if both are arrays
-    if (Array.isArray(serverUserNameTargeted) && Array.isArray(userNameTargeted)) {
+    if (
+      Array.isArray(serverUserNameTargeted) &&
+      Array.isArray(userNameTargeted)
+    ) {
       // Check if the lengths are different or any element is different
-      const arraysDiffer = serverUserNameTargeted.length !== userNameTargeted.length ||
-        serverUserNameTargeted.some((user, index) => user !== userNameTargeted[index]);
+      const arraysDiffer =
+        serverUserNameTargeted.length !== userNameTargeted.length ||
+        serverUserNameTargeted.some(
+          (user, index) => user !== userNameTargeted[index]
+        );
 
       if (arraysDiffer) {
         console.log("users targeted: ", userNameTargeted);
-        chatSocket.emit('users targeted', players[userName]);
+        chatSocket.emit("users targeted", players[userName]);
       }
     }
   }, [players[userName]?.battleMode?.usersTargeted]);
 
-
   //makes the your turn text appear over the battle map for a little bit
   useEffect(() => {
-
     if (players[userName]?.battleMode?.yourTurn) {
       setActiveTab("Attacks/Spells");
       setTimeout(() => {
@@ -695,7 +734,6 @@ export default function Home() {
       setTimeout(() => {
         setYourTurnText(false);
       }, 3000);
-
     }
   }, [players[userName]?.battleMode?.yourTurn]);
 
@@ -705,9 +743,9 @@ export default function Home() {
       setShowOverlayText(true);
     } else {
       // Start the fade-out transition
-      const element = document.querySelector('.overlay-text');
+      const element = document.querySelector(".overlay-text");
       if (element) {
-        element.classList.add('your-turn-fade');
+        element.classList.add("your-turn-fade");
       }
       // Use a timeout to match the CSS transition duration
       setTimeout(() => {
@@ -716,16 +754,17 @@ export default function Home() {
     }
   }, [yourTurnText]);
 
-
   useEffect(() => {
     // Code to run when players[userName]?.backgroundAudio changes
     if (players[userName]?.backgroundAudio) {
-      console.log("Background audio changed to:", players[userName].backgroundAudio);
+      console.log(
+        "Background audio changed to:",
+        players[userName].backgroundAudio
+      );
       resumeAudioContext();
       PlayBackgroundAudio(players[userName].backgroundAudio);
     }
   }, [players[userName]?.backgroundAudio]);
-
 
   let lastMessage = [];
   // Function to process a single oldest message from the queue
@@ -738,13 +777,15 @@ export default function Home() {
         return;
       }
 
-      msg.message = msg.message?.replace(/undefined/g, '');
+      msg.message = msg.message?.replace(/undefined/g, "");
 
       setChatLog((prevChatLog) => {
         let updatedChatLog = [...prevChatLog];
 
         // Check if there's an existing entry with the same messageId
-        let existingEntryIndex = updatedChatLog.findIndex(entry => entry.messageId === msg.messageId);
+        let existingEntryIndex = updatedChatLog.findIndex(
+          (entry) => entry.messageId === msg.messageId
+        );
 
         if (existingEntryIndex !== -1) {
           // An existing entry is found
@@ -755,8 +796,7 @@ export default function Home() {
             existingEntry.message += msg.message; // Append new content to existing message
           }
         } else if (msg.message) {
-
-          // current messageId thats on chat log, audio can see if previous one 
+          // current messageId thats on chat log, audio can see if previous one
           // was inhibited, and new message came in, don't inhibit it.
           speechAudioId.current.messageId = msg.messageId;
 
@@ -764,7 +804,7 @@ export default function Home() {
           updatedChatLog.push({
             role: msg.role,
             message: msg.message,
-            messageId: msg.messageId // Assuming msg has a messageId property
+            messageId: msg.messageId, // Assuming msg has a messageId property
           });
         }
 
@@ -776,16 +816,13 @@ export default function Home() {
     } else {
       setWizardHatEnable(false);
     }
-    setMessageQueueTrigger(prev => !prev);
+    setMessageQueueTrigger((prev) => !prev);
   };
 
-
-
   const textToSpeechCall = async (text, messageId) => {
-
     const data = {
       message: text,
-      messageId: messageId
+      messageId: messageId,
     };
     // const data = {
     //   model: "tts-1",
@@ -794,8 +831,7 @@ export default function Home() {
     // };
     console.log("about to send emit for speech: ", text);
     // Convert the message object to a string and send it
-    chatSocket.emit('audio message', data);
-
+    chatSocket.emit("audio message", data);
   };
 
   // play background music and handle multiple calls in tight sequence
@@ -809,7 +845,10 @@ export default function Home() {
 
     try {
       // Stop any existing background music
-      if (backgroundTone.current && backgroundTone.current.state === "started") {
+      if (
+        backgroundTone.current &&
+        backgroundTone.current.state === "started"
+      ) {
         await backgroundTone.current.stop();
         backgroundTone.current = null;
       }
@@ -822,7 +861,7 @@ export default function Home() {
 
         backgroundTone.current = new Tone.Player({
           url: data,
-          loop: true
+          loop: true,
         }).toDestination();
 
         backgroundTone.current.volume.value = -10;
@@ -838,26 +877,23 @@ export default function Home() {
     }
   };
 
-
   const cancelButtonMonitor = () => {
-
     //if (audioQueue?.current.size > 0 || messageQueue.current.length > 0 || audio.current) {
     if (messageQueue.current.length > 0) {
-      setCancelButton(prevValue => Math.min(prevValue + 2, 3));
+      setCancelButton((prevValue) => Math.min(prevValue + 2, 3));
     } else {
-      setCancelButton(prevValue => Math.max(0, prevValue - 1));
+      setCancelButton((prevValue) => Math.max(0, prevValue - 1));
     }
-  }
+  };
 
   const handleKeyDown = (e) => {
-
     // dont allow enter key text submission if theres a pendingDiceUpdate meaning were gonna roll soon.
     if (!pendingDiceUpdate) {
       resumeAudioContext();
       // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault(); // Prevent the default action (new line)
-        handleSubmit({ preventDefault: () => { } }); // Call handleSubmit and pass a dummy event with preventDefault method
+        handleSubmit({ preventDefault: () => {} }); // Call handleSubmit and pass a dummy event with preventDefault method
       }
     }
   };
@@ -868,25 +904,33 @@ export default function Home() {
     const value = textarea.value;
     setInputValue(value); // existing state update
 
-    if (typeof window !== 'undefined') {
-      const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
+    if (typeof window !== "undefined") {
+      const lineHeight =
+        parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
       const oldHeight = textarea.style.height;
       // Temporarily reset height to 'auto' to get the correct scrollHeight
-      textarea.style.height = 'auto';
+      textarea.style.height = "auto";
       const currentScrollHeight = textarea.scrollHeight;
 
       // Calculate the number of lines
       const numberOfLines = Math.ceil(currentScrollHeight / lineHeight);
 
       // Only update if the number of lines has changed or if the textarea is shrinking
-      if (numberOfLines !== currentScrollHeight > parseInt(inputTextHeight, 10)) {
+      if (
+        numberOfLines !==
+        currentScrollHeight > parseInt(inputTextHeight, 10)
+      ) {
         textarea.style.height = `${currentScrollHeight}px`;
         setInputTextHeight(currentScrollHeight); // Update state with the new height
-
       } else {
         // If the new height is smaller, shrink the textarea
-        textarea.style.height = `${Math.max(currentScrollHeight, lineHeight * numberOfLines)}px`;
-        setInputTextHeight(Math.max(currentScrollHeight, lineHeight * numberOfLines));
+        textarea.style.height = `${Math.max(
+          currentScrollHeight,
+          lineHeight * numberOfLines
+        )}px`;
+        setInputTextHeight(
+          Math.max(currentScrollHeight, lineHeight * numberOfLines)
+        );
       }
 
       // Restore the old height if the currentScrollHeight is larger than the content needs
@@ -904,7 +948,7 @@ export default function Home() {
 
     // Set up the interval to check all users in server room
     const checkAllUsers = setInterval(() => {
-      chatSocket.emit('obtain all users');
+      chatSocket.emit("obtain all users");
     }, 5000);
 
     // Set up the interval to process audio queue every x ms
@@ -920,7 +964,6 @@ export default function Home() {
       clearInterval(audioIntervalId); // Clear the interval on component unmount
       clearInterval(cancelButtonIntervalId);
       clearInterval(checkAllUsers);
-
     };
   }, []);
 
@@ -938,9 +981,9 @@ export default function Home() {
   };
 
   useEffect(() => {
-
     if (scrollableDivRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = scrollableDivRef.current;
+      const { scrollTop, scrollHeight, clientHeight } =
+        scrollableDivRef.current;
 
       const isUserAtBottom = () => {
         const tolerance = 70; // Adjust this value as needed
@@ -953,18 +996,17 @@ export default function Home() {
         setIsAtBottom(true);
       }
     }
-
   }, [chatLog]);
 
   useEffect(() => {
-    ``
+    ``;
     // ComponentDidMount equivalent
     const handleLoad = () => {
       //checkScrolling(); // Call on window load
     };
 
     // Attach window load event
-    window.addEventListener('load', handleLoad);
+    window.addEventListener("load", handleLoad);
 
     // Attach scroll event to the div
     const scrollableDiv = scrollableDivRef.current;
@@ -974,7 +1016,7 @@ export default function Home() {
 
     // Cleanup function for component unmount
     return () => {
-      window.removeEventListener('load', handleLoad);
+      window.removeEventListener("load", handleLoad);
       if (scrollableDiv) {
         //scrollableDiv.removeEventListener('scroll', checkScrolling);
       }
@@ -985,32 +1027,32 @@ export default function Home() {
     const div = scrollableDivRef.current;
     if (div) {
       const tolerance = 30; // or whatever small number suits your situation
-      const isScrolledToBottom = Math.abs(div.scrollHeight - div.scrollTop - div.clientHeight) < tolerance;
+      const isScrolledToBottom =
+        Math.abs(div.scrollHeight - div.scrollTop - div.clientHeight) <
+        tolerance;
       setIsAtBottom(isScrolledToBottom);
-
     }
   };
 
   useEffect(() => {
     const div = scrollableDivRef.current;
     if (div) {
-      div.addEventListener('scroll', handleScroll);
+      div.addEventListener("scroll", handleScroll);
     }
 
     // Cleanup listener when component unmounts
     return () => {
       if (div) {
-        div.removeEventListener('scroll', handleScroll);
+        div.removeEventListener("scroll", handleScroll);
       }
     };
   }, []); // Empty dependency array means this effect runs once on mount
 
   const handleSubmit = (event) => {
-
     console.log("meeting details", meetingDetails?.meetingUrl);
 
     // Prevent the default form submission if an event is provided
-    if (event && typeof event.preventDefault === 'function') {
+    if (event && typeof event.preventDefault === "function") {
       event.preventDefault();
     }
 
@@ -1025,15 +1067,15 @@ export default function Home() {
     //see if data is coming from dice roll completion, audio message or normal text, or none at all.
     let chatMsgData = "";
     if (iAmBack.current) {
-      iAmBack.current = false
-      chatMsgData = "Game master, I am back in the game. Please continue to include me in the story again."
+      iAmBack.current = false;
+      chatMsgData =
+        "Game master, I am back in the game. Please continue to include me in the story again.";
     } else if (diceRollsInputData.length > 0) {
       chatMsgData = diceRollsInputData;
       //cleanUpDiceStates();
-      setDiceRollsInputData('');
+      setDiceRollsInputData("");
       setDiceSelectionOption(null);
     } else if (diceSelectionOption) {
-
       const rollCompleteData = {
         User: userName,
         Total: 15, //placeholder until figure out how to handle diceSelectionOption.value
@@ -1042,19 +1084,17 @@ export default function Home() {
         Skill: latestDiceMsg.current.Skill,
         Id: latestDiceMsg.current.activityId,
         Attack: selectedRow?.name,
-
       };
       //send data to the server (not sure yet how to use, prob for logs and others can see)
 
       chatMsgData = "I rolled a " + diceSelectionOption.value;
-      setDiceRollsInputData('');
+      setDiceRollsInputData("");
       setDiceSelectionOption(null);
       setTimeout(() => {
-        chatSocket.emit('D20 Dice Roll Complete', rollCompleteData);
+        chatSocket.emit("D20 Dice Roll Complete", rollCompleteData);
         cleanUpDiceStates();
         setDiceStates(defaultDiceStates);
       }, 1500);
-
     } else if (audioInputData.length > 0) {
       chatMsgData = audioInputData;
     } else if (customCellValue.length > 0) {
@@ -1064,10 +1104,9 @@ export default function Home() {
     }
 
     if (chatMsgData.length > 0) {
-
       //since you sent a message, auto say playing again
       if (players[userName]?.away) {
-        chatSocket.emit('playing again', userName);
+        chatSocket.emit("playing again", userName);
       }
 
       setAwayMode(false);
@@ -1079,19 +1118,15 @@ export default function Home() {
 
       sendMessage(chatMsgData);
 
-      setInputValue('');
+      setInputValue("");
 
       resetUserTextForm();
 
-      setAudioInputData('');
+      setAudioInputData("");
 
       setCustomCellValue("");
-
-
     }
-
-
-  }
+  };
 
   const cleanUpDiceStates = () => {
     latestDiceMsg.current = null;
@@ -1100,25 +1135,24 @@ export default function Home() {
     //setDiceRollsInputData('');
     //setDiceStates(defaultDiceStates);
     setActiveSkill("");
-  }
+  };
 
   const readyChatAndAudio = () => {
-    chatSocket.emit('resume processing');
+    chatSocket.emit("resume processing");
     audio.current = false;
 
     //messageQueue.current = [];
-    chatSocket.emit('reset audio sequence');
+    chatSocket.emit("reset audio sequence");
     expectedSequence.current = 0;
     audioQueue.current = new Map();
     console.log("chatLog: ", chatLog);
     //chatSocket.emit("received user message", serverData);
 
     //setChatLog((prevChatLog) => [...prevChatLog, { type: 'user', message: inputMessage }])
-  }
+  };
 
   const stopAi = () => {
-
-    chatSocket.emit('cancel processing');
+    chatSocket.emit("cancel processing");
     messageQueue.current = [];
     audioQueue.current = new Map();
     setIsLoading(false);
@@ -1131,11 +1165,10 @@ export default function Home() {
       }
       audio.current = false;
     }
-  }
+  };
 
   // this is called from the audioInput component if someone starts recording when ai is talking
   useEffect(() => {
-
     // only stop AI if theres no pending dice action about to go down. Otherwise prevent cancellations
     if (shouldStopAi && !pendingDiceUpdate) {
       // Call stopAi function here
@@ -1151,38 +1184,42 @@ export default function Home() {
       img.src = dalleImageUrl;
       img.onload = () => setIsImageLoaded(true);
     }
-  }, [dalleImageUrl])
-
-
+  }, [dalleImageUrl]);
 
   const resetUserTextForm = () => {
     // Reset the textarea after form submission
     if (textareaRef.current) {
-      textareaRef.current.value = ''; // Clear the text
-      textareaRef.current.style.height = 'auto'; // Reset the height to auto
+      textareaRef.current.value = ""; // Clear the text
+      textareaRef.current.style.height = "auto"; // Reset the height to auto
       textareaRef.current.focus(); // Refocus on the textarea
     }
 
     setInputTextHeight(20);
-  }
+  };
 
   const sendMessage = (message) => {
-
     console.log("about to send message: ", message);
 
-    const uniqueId = `user${'aTreeFrog'}-activity${activityCount.current}-${new Date().toISOString()}`;
-    let serverData = { "role": 'user', "content": message, "processed": false, "id": uniqueId, "mode": teamGmOption.value, "player": userName };
+    const uniqueId = `user${"aTreeFrog"}-activity${
+      activityCount.current
+    }-${new Date().toISOString()}`;
+    let serverData = {
+      role: "user",
+      content: message,
+      processed: false,
+      id: uniqueId,
+      mode: teamGmOption.value,
+      player: userName,
+    };
     activityCount.current++;
-    chatSocket.emit('my user message', serverData);
+    chatSocket.emit("my user message", serverData);
     console.log("sent my user message", serverData);
     // Convert the message object to a string and send it
     //chatSocket.emit('chat message', message);
     setIsLoading(true);
-
-  }
+  };
 
   const updateDiceStates = (data) => {
-
     console.log("updateDiceStates: ", data);
 
     latestDiceMsg.current = data;
@@ -1193,62 +1230,71 @@ export default function Home() {
       d20: {
         ...diceStates.d20,
         value: [],
-        displayedValue: data.diceStates.d20.isGlowActive ? null : diceStates.d20.displayedValue,
+        displayedValue: data.diceStates.d20.isGlowActive
+          ? null
+          : diceStates.d20.displayedValue,
         isActive: data.diceStates.d20.isActive,
         isGlowActive: data.diceStates.d20.isGlowActive,
         rolls: 0,
         rollsNeeded: data.diceStates.d20.rollsNeeded,
         inhibit: data.diceStates.d20.inhibit,
-        advantage: data.diceStates.d20.advantage
+        advantage: data.diceStates.d20.advantage,
       },
       d10: {
         ...diceStates.d10,
         value: [],
-        displayedValue: data.diceStates.d10.isGlowActive ? null : diceStates.d10.displayedValue,
+        displayedValue: data.diceStates.d10.isGlowActive
+          ? null
+          : diceStates.d10.displayedValue,
         isActive: data.diceStates.d10.isActive,
         isGlowActive: data.diceStates.d10.isGlowActive,
         rolls: 0,
         rollsNeeded: data.diceStates.d10.rollsNeeded,
         inhibit: data.diceStates.d10.inhibit,
-        advantage: data.diceStates.d10.advantage
+        advantage: data.diceStates.d10.advantage,
       },
       d8: {
         ...diceStates.d8,
         value: [],
-        displayedValue: data.diceStates.d8.isGlowActive ? null : diceStates.d8.displayedValue,
+        displayedValue: data.diceStates.d8.isGlowActive
+          ? null
+          : diceStates.d8.displayedValue,
         isActive: data.diceStates.d8.isActive,
         isGlowActive: data.diceStates.d8.isGlowActive,
         rolls: 0,
         rollsNeeded: data.diceStates.d8.rollsNeeded,
         inhibit: data.diceStates.d8.inhibit,
-        advantage: data.diceStates.d8.advantage
+        advantage: data.diceStates.d8.advantage,
       },
       d6: {
         ...diceStates.d6,
         value: [],
-        displayedValue: data.diceStates.d6.isGlowActive ? null : diceStates.d6.displayedValue,
+        displayedValue: data.diceStates.d6.isGlowActive
+          ? null
+          : diceStates.d6.displayedValue,
         isActive: data.diceStates.d6.isActive,
         isGlowActive: data.diceStates.d6.isGlowActive,
         rolls: 0,
         rollsNeeded: data.diceStates.d6.rollsNeeded,
         inhibit: data.diceStates.d6.inhibit,
-        advantage: data.diceStates.d6.advantage
+        advantage: data.diceStates.d6.advantage,
       },
       d4: {
         ...diceStates.d4,
         value: [],
-        displayedValue: data.diceStates.d4.isGlowActive ? null : diceStates.d4.displayedValue,
+        displayedValue: data.diceStates.d4.isGlowActive
+          ? null
+          : diceStates.d4.displayedValue,
         isActive: data.diceStates.d4.isActive,
         isGlowActive: data.diceStates.d4.isGlowActive,
         rolls: 0,
         rollsNeeded: data.diceStates.d4.rollsNeeded,
         inhibit: data.diceStates.d4.inhibit,
-        advantage: data.diceStates.d4.advantage
-      }
+        advantage: data.diceStates.d4.advantage,
+      },
     });
     setActiveSkill(data.skill);
-
-  }
+  };
 
   useEffect(() => {
     if (messageQueue.current.length == 0 && pendingDiceUpdate) {
@@ -1259,7 +1305,6 @@ export default function Home() {
 
   //check if dice rolls are done, and send to server. then bring dice back to init state
   useEffect(() => {
-
     //control move on button text.  Use is glow active until better state figured out
     if (diceStates.d20.isGlowActive) {
       setPopupText(diceModePopupWarning);
@@ -1270,7 +1315,6 @@ export default function Home() {
     }
 
     if (!pendingDiceUpdate && latestDiceMsg.current) {
-
       console.log("dice use effect d20 data: ", diceStates.d20);
 
       let totalDiceSum = 0; // Variable to store the total sum of all dice values
@@ -1278,7 +1322,9 @@ export default function Home() {
       let allRollsCompleted = true; // Assume all rolls are completed, verify in loop
 
       // Iterate through each dice state
-      for (const [diceType, playerDiceRequests] of Object.entries(latestDiceMsg.current.diceStates)) {
+      for (const [diceType, playerDiceRequests] of Object.entries(
+        latestDiceMsg.current.diceStates
+      )) {
         if (playerDiceRequests.isGlowActive) {
           activeDiceFound = true; // Found at least one active dice
 
@@ -1287,12 +1333,12 @@ export default function Home() {
           if (currentDiceState.rolls < playerDiceRequests.rollsNeeded) {
             allRollsCompleted = false; // Found a dice that hasn't completed its rolls
           } else {
-            setDiceStates(prevState => ({
+            setDiceStates((prevState) => ({
               ...prevState,
               [diceType]: {
                 ...prevState[diceType],
                 isGlowActive: false,
-              }
+              },
             }));
 
             // Sum up the values for dice that have completed their rolls
@@ -1307,10 +1353,11 @@ export default function Home() {
       let actionsComplete = activeDiceFound && allRollsCompleted;
 
       if (actionsComplete) {
-
         // this was a d20 roll so check for high roll and play music
-        if (latestDiceMsg.current.diceStates.d20.rollsNeeded > 0 && totalDiceSum > 14) {
-
+        if (
+          latestDiceMsg.current.diceStates.d20.rollsNeeded > 0 &&
+          totalDiceSum > 14
+        ) {
           resumeAudioContext();
           diceTone.current = new Tone.Player({
             url: "/audio/level_up_sound_effect.mp3",
@@ -1319,11 +1366,9 @@ export default function Home() {
           diceTone.current.autostart = true;
 
           diceTone.current.onended = () => {
-            console.log('Playback ended');
+            console.log("Playback ended");
             diceTone.current.disconnect(); // Disconnect the player
           };
-
-
         }
 
         const rollCompleteData = {
@@ -1340,7 +1385,7 @@ export default function Home() {
         //put outcome to chatbox
         //delay some time to give people chance to see there stuff, and for visuals on UI
 
-        setDiceStates(prevState => ({
+        setDiceStates((prevState) => ({
           ...prevState,
           d20: {
             ...prevState.d20,
@@ -1386,7 +1431,7 @@ export default function Home() {
             rollsNeeded: 0,
             inhibit: false,
             advantage: false,
-          }
+          },
         }));
         latestDiceMsg.current = null;
         setTimeout(() => {
@@ -1394,14 +1439,12 @@ export default function Home() {
           setDiceRollsInputData(`I rolled a ${totalDiceSum} +2 modifier`);
           setActiveSkill("");
           //cleanUpDiceStates();
-          //setDiceStates(defaultDiceStates);
-          chatSocket.emit('D20 Dice Roll Complete', rollCompleteData);
+          setDiceStates(defaultDiceStates);
+          chatSocket.emit("D20 Dice Roll Complete", rollCompleteData);
           console.log("the end");
         }, 2000);
 
         cleanUpDiceStates();
-
-
       }
     }
   }, [diceStates]);
@@ -1409,20 +1452,18 @@ export default function Home() {
   useEffect(() => {
     if (callSubmitFromDiceRolls.current && diceRollsInputData.length > 0) {
       console.log("submit from dice");
-      callSubmitFromDiceRolls.current = false
-      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
-
+      callSubmitFromDiceRolls.current = false;
+      handleSubmit({ preventDefault: () => {} }); //calls using dummy function
     }
   }, [diceRollsInputData]);
 
-  //if audio to text input received, send the data to the handleSubmit but need 
-  //to first ensure inputData got updated. So calling it this way. 
+  //if audio to text input received, send the data to the handleSubmit but need
+  //to first ensure inputData got updated. So calling it this way.
   useEffect(() => {
     if (callSubmitFromAudio.current) {
-      callSubmitFromAudio.current = false
-      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+      callSubmitFromAudio.current = false;
+      handleSubmit({ preventDefault: () => {} }); //calls using dummy function
       // Optionally reset the flag after calling the function
-
     }
   }, [audioInputData]);
 
@@ -1445,10 +1486,10 @@ export default function Home() {
   // }
 
   const newTextEnterKeyDown = (event) => {
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       event.preventDefault();
       // Prevent the default action to avoid form submission or anything else
-      event.target.blur();     // Remove focus from the input
+      event.target.blur(); // Remove focus from the input
     }
   };
 
@@ -1456,33 +1497,38 @@ export default function Home() {
   const handleBlur = (index, value) => {
     const newCells = [...customTextCells];
     // If all cells are empty, ensure there's one empty cell
-    if (newCells.every((cell) => cell === '')) {
-      newCells.push('');
+    if (newCells.every((cell) => cell === "")) {
+      newCells.push("");
     }
     newCells[index] = value;
 
-    if (index === customTextCells.length - 1 && value && customTextCells[customTextCells.length - 1] !== '') {
-      newCells.push('');  // Add a new empty cell at the end
-
+    if (
+      index === customTextCells.length - 1 &&
+      value &&
+      customTextCells[customTextCells.length - 1] !== ""
+    ) {
+      newCells.push(""); // Add a new empty cell at the end
     } else if (index === customTextCells.length - 1 && !value) {
       // If the last cell is emptied, remove extra empty cells
-      while (newCells.length > 1 && newCells[newCells.length - 2] === '') {
+      while (newCells.length > 1 && newCells[newCells.length - 2] === "") {
         newCells.pop();
       }
     }
 
     // ensures a new empty cell appears at the end even if last cell was modified
-    if (index === customTextCells.length - 1 && value && customTextCells[customTextCells.length - 1] == '') {
-      newCells.push('');
+    if (
+      index === customTextCells.length - 1 &&
+      value &&
+      customTextCells[customTextCells.length - 1] == ""
+    ) {
+      newCells.push("");
     }
 
     setCustomTextCells(newCells);
-
   };
 
   // Handles clicking on the cell
   const handleCellClick = (content) => {
-
     if (!enableCellButton) return;
 
     setEnableCellButton(false);
@@ -1494,62 +1540,61 @@ export default function Home() {
     setTimeout(() => {
       setEnableCellButton(true);
     }, 2000);
-
   };
 
   useEffect(() => {
     if (customCellValue.length > 0) {
-      handleSubmit({ preventDefault: () => { } }); //calls using dummy function
+      handleSubmit({ preventDefault: () => {} }); //calls using dummy function
     }
   }, [customCellValue]);
 
   // Deletes the content of the cell, making it an input again
   const deleteCellContent = (index) => {
     const newCells = [...customTextCells];
-    newCells.splice(index, 1);  // Remove the cell content at the specific index
+    newCells.splice(index, 1); // Remove the cell content at the specific index
     // Ensure the last cell is always an empty input
-    if (newCells.length === 0 || newCells[newCells.length - 1] !== '') {
-      newCells.push('');  // Add an empty cell if there isn't one already
+    if (newCells.length === 0 || newCells[newCells.length - 1] !== "") {
+      newCells.push(""); // Add an empty cell if there isn't one already
     } // Ensure there's always an empty input cell at the end
     setCustomTextCells(newCells);
   };
 
   //for the ICON that follows the text. only add it to last bot message
-  const lastBotMessageIndex = chatLog.map(e => e.role).lastIndexOf('assistant');
+  const lastBotMessageIndex = chatLog
+    .map((e) => e.role)
+    .lastIndexOf("assistant");
 
   const handleDropdownChange = (option) => {
-
     console.log("handleDropdownChange ", option);
 
     setDiceSelectionOption(option);
   };
 
   const options = [
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
-    { value: '20 + 2 Modifier', label: '20 + 2 Modifier' },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+    { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
   ];
 
   const handleTeamGmChange = (option) => {
-
     console.log("handleTeamGmChange ", option);
     setTeamGmOption(option);
   };
 
   const teamGmOptionsList = [
-    { value: 'All', label: 'All' },
-    { value: 'Team', label: 'Team' },
+    { value: "All", label: "All" },
+    { value: "Team", label: "Team" },
   ];
 
-  // if speech to text panel opened or closed, close or resume background audio. 
+  // if speech to text panel opened or closed, close or resume background audio.
   // But only resume audio if this panel was the thing that paused it
   useEffect(() => {
     let currentVolumeDb = 0;
@@ -1559,7 +1604,6 @@ export default function Home() {
       currentVolumeDb = backgroundTone.current.volume.value;
       backgroundTone.current.volume.value = -40;
       speechTurnedOffMusic.current = true;
-
     } else if (!isRecording && speechTurnedOffMusic.current) {
       speechTurnedOffMusic.current = false;
       backgroundTone.current.volume.value = currentVolumeDb;
@@ -1567,18 +1611,15 @@ export default function Home() {
   }, [isRecording]);
 
   useEffect(() => {
-
     if (players && players[userName]?.timers.enabled) {
       setIsTimerVisible(true);
     } else {
       setIsTimerVisible(false);
     }
-
   }, [players]);
 
   const MoveOnClick = () => {
-    setShowMoveOnPopup(prevState => !prevState);
-
+    setShowMoveOnPopup((prevState) => !prevState);
   };
 
   const MoveOnClose = () => {
@@ -1587,7 +1628,7 @@ export default function Home() {
 
   const MoveOnConfirm = () => {
     // Perform the action
-    console.log('Confirmed!');
+    console.log("Confirmed!");
 
     if (players[userName]?.mode == "dice") {
       const rollCompleteData = {
@@ -1596,13 +1637,12 @@ export default function Home() {
         D20Roll: 15, //placeholder until figure out how to handle diceSelectionOption.value
         Modifier: 2, /////put whatever the skill level is
         Skill: latestDiceMsg.current.Skill,
-        Id: latestDiceMsg.current.activityId
+        Id: latestDiceMsg.current.activityId,
       };
       //send data to the server (not sure yet how to use, prob for logs and others can see)
-      chatSocket.emit('D20 Dice Roll Complete', rollCompleteData);
-
+      chatSocket.emit("D20 Dice Roll Complete", rollCompleteData);
     } else if (players[userName]?.mode == "story") {
-      chatSocket.emit('story move on');
+      chatSocket.emit("story move on");
     }
 
     cleanUpDiceStates();
@@ -1610,10 +1650,10 @@ export default function Home() {
   };
 
   const handleImBack = () => {
-    chatSocket.emit('playing again', userName);
+    chatSocket.emit("playing again", userName);
     iAmBack.current = true;
     setAwayMode(false);
-    handleSubmit({ preventDefault: () => { } });
+    handleSubmit({ preventDefault: () => {} });
   };
 
   const onTimerComplete = () => {
@@ -1640,47 +1680,57 @@ export default function Home() {
         }
     `;
 
-
   // Update the loadedplayerImages state when an image is loaded or fails to load
   const handlePlayerImageLoaded = (index) => {
     setLoadBattlePlayerImages((prev) => ({ ...prev, [index]: true }));
   };
 
   // Check if all player images are loaded
-  const allPlayerImagesLoaded = Object.values(loadBattlePlayerImages).length === Object.values(players).filter(player => player.userImageUrl).length && Object.values(loadBattlePlayerImages).every(status => status);
+  const allPlayerImagesLoaded =
+    Object.values(loadBattlePlayerImages).length ===
+      Object.values(players).filter((player) => player.userImageUrl).length &&
+    Object.values(loadBattlePlayerImages).every((status) => status);
 
   const handleMouseOver = (player) => {
     console.log("handleMouseOver ", player);
-    setShowPlayerName(prevState => ({
+    setShowPlayerName((prevState) => ({
       ...prevState,
-      [player.name]: true
+      [player.name]: true,
     }));
   };
 
   const handleMouseOut = (player) => {
-    setShowPlayerName(prevState => ({
+    setShowPlayerName((prevState) => ({
       ...prevState,
-      [player.name]: false
+      [player.name]: false,
     }));
   };
 
   useEffect(() => {
-
-    if ((!isAudioOpen || isCustomTextOpen) && (mediaRecorder && mediaRecorder.state === "recording")) {
+    if (
+      (!isAudioOpen || isCustomTextOpen) &&
+      mediaRecorder &&
+      mediaRecorder.state === "recording"
+    ) {
       audioChunks.current = [];
       mediaRecorder.stop();
     }
-
   }, [isAudioOpen, isCustomTextOpen]);
+
+  const handleEndTurn = (name) => {
+    chatSocket.emit("end turn", name);
+  };
 
   return (
     <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
       {/* Left Box */}
-      <div className="flex-1 max-w-[400px] border border-white">
+      <div className="flex-1 max-w-[30%] border border-white">
         {awayMode ? (
           <div className="flex items-center justify-center h-screen bg-purple-500 bg-opacity-30 backdrop-blur ">
             <div className="text-center">
-              <p className="text-white text-2xl font-semibold mb-10">You stepped away</p>
+              <p className="text-white text-2xl font-semibold mb-10">
+                You stepped away
+              </p>
               <button
                 onClick={handleImBack}
                 className="bg-white text-purple-500 text-xl font-semibold py-2 px-4 rounded"
@@ -1690,11 +1740,27 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col h-screen justify-between"> {/* Adjusted for spacing */}
+          <div className="flex flex-col h-screen justify-between">
+            {" "}
+            {/* Adjusted for spacing */}
             <div>
-              <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Character</h1>
+              <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">
+                Character
+              </h1>
               <div>
-                <CharacterSheet name="Aragorn" race="Human" characterClass="Ranger" level="5" activeSkill={activeSkill} activeTab={activeTab} setActiveTab={setActiveTab} player={players[userName]} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
+                <CharacterSheet
+                  name="Aragorn"
+                  race="Human"
+                  characterClass="Ranger"
+                  level="5"
+                  activeSkill={activeSkill}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  player={players[userName]}
+                  selectedRow={selectedRow}
+                  setSelectedRow={setSelectedRow}
+                  isD20Spinning={isD20Spinning}
+                />
               </div>
             </div>
             {/* Toggle Meeting Panel Button */}
@@ -1709,107 +1775,171 @@ export default function Home() {
                   // }
                   // Next, toggle the panel's open state regardless of the current state.
                   // If it was open, this will close it, and vice versa.
-                  setIsPanelOpen(prevState => !prevState);
+                  setIsPanelOpen((prevState) => !prevState);
                 }}
-                className="absolute bottom-0 left-20 mb-10 ml-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+                className="absolute bottom-0 left-20 mb-6 ml-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
               >
-                {isPanelOpen ? 'Hide Party' : 'Open Party'}
+                {isPanelOpen ? "Hide Party" : "Open Party"}
               </button>
               <button
                 onClick={MoveOnClick}
-                className="absolute bottom-0 left-60 mb-10 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
+                className="absolute bottom-0 left-60 mb-6 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded"
               >
                 {moveOnButtonText}
               </button>
               {showMoveOnPopup && (
-                <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />
+                <MoveOnPopup
+                  popupText={popupText}
+                  MoveOnClose={MoveOnClose}
+                  MoveOnConfirm={MoveOnConfirm}
+                />
               )}
             </div>
             {/* Floating Jitsi Meeting Panel */}
-            <div className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${isPanelOpen ? 'visible w-96 h-[30rem]' : 'invisible h-0 overflow-hidden'}`}>
-              <JitsiMeetComponent meetingRoom={meetingDetails?.roomName} onApiReady={handleApiReady} />
+            <div
+              className={`absolute bottom-0 left-0 mb-20 ml-20 p-3 bg-black border border-gray-200 rounded-lg shadow-lg max-w-[250px] ${
+                isPanelOpen
+                  ? "visible w-96 h-[30rem]"
+                  : "invisible h-0 overflow-hidden"
+              }`}
+            >
+              <JitsiMeetComponent
+                meetingRoom={meetingDetails?.roomName}
+                onApiReady={handleApiReady}
+              />
             </div>
           </div>
         )}
       </div>
       {/* Center Box (Original Content) */}
-      <div className="flex-1 max-w-[700px] border border-white">
+      <div className="flex-1 max-w-[40%] border border-white">
         <div className="flex flex-col h-screen justify-start">
-          <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">Story</h1>
+          <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">
+            Story
+          </h1>
           {/* Conditional DALL·E Image */}
-          {isImageLoaded && (players[userName]?.mode == "story" || players[userName]?.mode == "dice") && (
-            <img
-              src={dalleImageUrl}
-              alt="DALL·E Generated"
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
-              style={boxShadowStyle}
-            />
-          )}
-          {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
-            <div>
+          {isImageLoaded &&
+            (players[userName]?.mode == "story" ||
+              players[userName]?.mode == "dice") && (
               <img
-                src={players[userName].battleMode.initiativeImageUrl}
+                src={dalleImageUrl}
                 alt="DALL·E Generated"
-                className="h-auto mx-auto rounded-lg relative w-4/5 md:w-3/4 mx-auto shadow-lg md:mt-12"
+                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
                 style={boxShadowStyle}
               />
-              <div className="text-center mt-6">
-                <span className="whitespace-nowrap backdrop-blur-sm mr-2 rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">Roll for Initiative</span>
+            )}
+          {isInitiativeImageLoaded &&
+            players[userName]?.mode == "initiative" &&
+            !pendingDiceUpdate && (
+              <div>
+                <img
+                  src={players[userName].battleMode.initiativeImageUrl}
+                  alt="DALL·E Generated"
+                  className="h-auto mx-auto rounded-lg relative w-4/5 md:w-3/4 mx-auto shadow-lg md:mt-12"
+                  style={boxShadowStyle}
+                />
+                <div className="text-center mt-6">
+                  <span className="whitespace-nowrap backdrop-blur-sm mr-2 rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">
+                    Roll for Initiative
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           {players[userName]?.mode == "battle" && (
             <>
               <BattleMap
-                gridSpacing={45} players={players} setPlayers={setPlayers} userName={userName} selectedRow={selectedRow} setSelectedRow={setSelectedRow} showPlayerName={showPlayerName} setShowPlayerName={setShowPlayerName} pingReady={pingReady} setPingReady={setPingReady}
-                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-4 ml-6"
+                gridSpacing={45}
+                players={players}
+                setPlayers={setPlayers}
+                userName={userName}
+                selectedRow={selectedRow}
+                setSelectedRow={setSelectedRow}
+                showPlayerName={showPlayerName}
+                setShowPlayerName={setShowPlayerName}
+                pingReady={pingReady}
+                setPingReady={setPingReady}
+                className="w-3/4 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-1 ml-5"
               />
               {showOverlayText && (
-                <div className="overlay-text fade-in">
-                  Your Turn
-                </div>
+                <div className="overlay-text fade-in">Your Turn</div>
               )}
             </>
           )}
           {/* Row of Player Images in Battle Mode */}
           {players[userName]?.mode == "battle" && !floatingValue && (
-            <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? 'invisible' : ''}`}>
+            <div
+              className={`flex justify-center mt-4 mr-8 ${
+                !allPlayerImagesLoaded ? "invisible" : ""
+              }`}
+            >
               {Object.values(players)
-                .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
-                .filter(player => player.userImageUrl)
+                .sort(
+                  (a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder
+                )
+                .filter((player) => player.userImageUrl)
                 .map((player, index) => (
-                  <div key={index} className="player-container relative flex flex-col items-center mx-1"> {/* Adjusted line */}
-                    <div className={`w-10 h-10 rounded-full overflow-hidden ${player.battleMode.targeted ? 'player-glow-active' : ''}`}>
+                  <div
+                    key={index}
+                    className="player-container relative flex flex-col items-center mx-1"
+                  >
+                    {" "}
+                    {/* Adjusted line */}
+                    <div
+                      className={`w-10 h-10 rounded-full overflow-hidden ${
+                        player.battleMode.targeted ? "player-glow-active" : ""
+                      }`}
+                    >
                       <img
                         src={player.userImageUrl}
                         alt={player.name}
                         onLoad={() => handlePlayerImageLoaded(index)}
-                        className={`w-full h-full object-cover rounded-full ${(player.name === userName && player.battleMode.yourTurn) ? 'userpicture-effect' : ''}`}
+                        className={`w-full h-full object-cover rounded-full ${
+                          player.name === userName && player.battleMode.yourTurn
+                            ? "userpicture-effect"
+                            : ""
+                        }`}
                         style={{
-                          border: (player.name === userName && player.battleMode.yourTurn) ? '2px solid yellow' :
-                            player.battleMode.yourTurn ? '2px solid white' : 'none',
-                          opacity: loadBattlePlayerImages[index] ? '1' : '0',
+                          border:
+                            player.name === userName &&
+                            player.battleMode.yourTurn
+                              ? "2px solid yellow"
+                              : player.battleMode.yourTurn
+                              ? "2px solid white"
+                              : "none",
+                          opacity: loadBattlePlayerImages[index] ? "1" : "0",
                         }}
                       />
-                      <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '50%',
-                        backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${100 - (100 * player.currentHealth / player.maxHealth)}%, transparent ${100 - (100 * player.currentHealth / player.maxHealth)}%)`,
-                        zIndex: 2,
-                      }}
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          height: "100%",
+                          borderRadius: "50%",
+                          backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
+                            100 -
+                            (100 * player.currentHealth) / player.maxHealth
+                          }%, transparent ${
+                            100 -
+                            (100 * player.currentHealth) / player.maxHealth
+                          }%)`,
+                          zIndex: 2,
+                        }}
                         onMouseOver={() => handleMouseOver(player)}
-                        onMouseOut={() => handleMouseOut(player)}>
-
-                      </div>
+                        onMouseOut={() => handleMouseOut(player)}
+                      ></div>
                     </div>
                     {showPlayerName[player.name] === true && (
                       <div
                         className="player-name-tooltip absolute bottom-full mb-2"
-                        style={{ backgroundColor: player.type === "enemy" ? 'red' : 'green' }} > {/* Adjusted line for tooltip */}
+                        style={{
+                          backgroundColor:
+                            player.type === "enemy" ? "red" : "green",
+                        }}
+                      >
+                        {" "}
+                        {/* Adjusted line for tooltip */}
                         {player.name}
                       </div>
                     )}
@@ -1822,16 +1952,20 @@ export default function Home() {
           {/* Apply negative margin or adjust padding as needed */}
           <div className="absolute left-23 bottom-10">
             {isTimerVisible && (
-              <div className={`${pendingDiceUpdate ? 'timer-hidden' : ''} absolute bottom text-white text-xl font-semibold ml-[-302px] mb-[-50px]`}>
+              <div
+                className={`${
+                  pendingDiceUpdate ? "timer-hidden" : ""
+                } absolute bottom text-white text-xl font-semibold ml-[-302px] mb-[-50px]`}
+              >
                 <CountdownCircleTimer
                   isPlaying={isTimerVisible}
                   duration={players[userName].timers.duration}
                   size={50}
                   strokeWidth={4} // Adjust stroke width as needed
                   colors={[
-                    ['#000000', 0.33],
-                    ['#F7B801', 0.33],
-                    ['#A30000', 0.33],
+                    ["#000000", 0.33],
+                    ["#F7B801", 0.33],
+                    ["#A30000", 0.33],
                   ]}
                   onComplete={onTimerComplete}
                 >
@@ -1839,34 +1973,60 @@ export default function Home() {
                 </CountdownCircleTimer>
               </div>
             )}
-            <div className="text-white text-2xl font-semibold  ml-[-35px]">
-              <HexagonDice diceStates={diceStates} setDiceStates={setDiceStates} floatingValue={floatingValue} setFloatingValue={setFloatingValue} isD20Spinning={isD20Spinning} setIsD20Spinning={setIsD20Spinning} />
+            <div className="text-white text-2xl font-semibold ml-[-2.1875rem] mb-[-1rem]">
+              <HexagonDice
+                diceStates={diceStates}
+                setDiceStates={setDiceStates}
+                floatingValue={floatingValue}
+                setFloatingValue={setFloatingValue}
+                isD20Spinning={isD20Spinning}
+                setIsD20Spinning={setIsD20Spinning}
+              />
             </div>
           </div>
         </div>
       </div>
       {/* Right Box */}
-      <div className="flex-1 max-w-[450px] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
+      <div className="flex-1 max-w-[30%] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
         {/* Sticky Header */}
-        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">Game Master</h1>
+        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">
+          Game Master
+        </h1>
         {/* Scrollable Content */}
-        <div ref={scrollableDivRef} className="overflow-y-auto scrollable-container flex-grow" id="scrollableDiv">
+        <div
+          ref={scrollableDivRef}
+          className="overflow-y-auto scrollable-container flex-grow"
+          id="scrollableDiv"
+        >
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
-              <div key={`${message.messageId}-${index}`} className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <div
+                key={`${message.messageId}-${index}`}
+                className={`flex flex-col ${
+                  message.role === "user" ? "items-end" : "items-start"
+                }`}
+              >
                 {/* Conditional rendering of the user's name */}
-                {message.role === 'user' && (usersInServer.length > 1) && (
-                  <div className="text-sm mb-1 mr-1 text-white">
-                    {userName}
-                  </div>
+                {message.role === "user" && usersInServer.length > 1 && (
+                  <div className="text-sm mb-1 mr-1 text-white">{userName}</div>
                 )}
-                <div className={`${message.role === 'user' && message.mode === 'All' ? 'bg-purple-500' : message.role === 'user' && message.mode === 'Team' ? 'bg-yellow-700' : 'bg-gray-800'} rounded-lg p-2 text-white max-w-sm`}>
+                <div
+                  className={`${
+                    message.role === "user" && message.mode === "All"
+                      ? "bg-purple-500"
+                      : message.role === "user" && message.mode === "Team"
+                      ? "bg-yellow-700"
+                      : "bg-gray-800"
+                  } rounded-lg p-2 text-white max-w-sm`}
+                >
                   {message.message}
-                  {wizardHatEnable && message.role === 'assistant' && index === lastBotMessageIndex &&
-                    <span className="wizard-hat inline-block ml-1">
-                      <FontAwesomeIcon icon={faHatWizard} />
-                    </span>
-                  }
+                  {wizardHatEnable &&
+                    message.role === "assistant" &&
+                    index === lastBotMessageIndex && (
+                      <span className="wizard-hat inline-block ml-1">
+                        <FontAwesomeIcon icon={faHatWizard} />
+                      </span>
+                    )}
                 </div>
               </div>
             ))}
@@ -1874,38 +2034,65 @@ export default function Home() {
         </div>
         {/* Fixed Send Message Form or other bottom content */}
         <div>
-          {players[userName]?.mode == "battle" && !players[userName]?.battleMode?.yourTurn && (
-            <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
-              Not your turn, only team sees your message
-            </div>
-          )}
+          {players[userName]?.mode == "battle" &&
+            !players[userName]?.battleMode?.yourTurn && (
+              <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
+                Not your turn, only team sees your message
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
-            <button type="button" style={{ minWidth: '29px', width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '2px', marginLeft: '-20px', zIndex: 3 }}
+          <form
+            onSubmit={handleSubmit}
+            className="mt-auto p-6 flex items-center"
+          >
+            <button
+              type="button"
+              style={{
+                minWidth: "29px",
+                width: "29px",
+                height: "29px",
+                borderRadius: "50%",
+                opacity: "0.7",
+                left: "2px",
+                marginLeft: "-20px",
+                zIndex: 3,
+              }}
               className=" mt-2 flex items-center justify-center bg-gray-700 text-white font-semibold "
               onClick={() => {
-                setIsCustomTextOpen(prevState => !prevState);
-                setIsAudioOpen(false); {/* probably have some audio clean up to do too */ }
+                setIsCustomTextOpen((prevState) => !prevState);
+                setIsAudioOpen(false);
+                {
+                  /* probably have some audio clean up to do too */
+                }
                 {
                   isCustomTextOpen && (
                     <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
                       <div className="grid grid-cols-3 gap-2">
                         {/* Render cells */}
-                        {customTextCells.map((content, index) => (
-                          content ?
+                        {customTextCells.map((content, index) =>
+                          content ? (
                             // Cell with text and cancel area
-                            <div key={index} className="flex items-center gap-1">
+                            <div
+                              key={index}
+                              className="flex items-center gap-1"
+                            >
                               {/* Cell with text */}
-                              <button className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                              <button
+                                className="flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
                                 disabled={diceStates.d20.isGlowActive}
                                 onClick={() => handleCellClick(content)}
                               >
                                 {content}
                               </button>
                               {/* Cancel button */}
-                              <button className="text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
+                              <button
+                                className="text-red-500 p-2 rounded"
+                                onClick={() => deleteCellContent(index)}
+                              >
+                                X
+                              </button>
                             </div>
-                            :
+                          ) : (
                             // Input cell
                             <input
                               key={index}
@@ -1914,37 +2101,51 @@ export default function Home() {
                               onKeyDown={newTextEnterKeyDown}
                               onBlur={(e) => handleBlur(index, e.target.value)}
                               className="p-2 bg-gray-700 rounded text-white maxWidth:10px"
-
                             />
-                        ))}
+                          )
+                        )}
                       </div>
                     </div>
-                  )
+                  );
                 }
-              }}>
-              <span style={{ paddingBottom: '4px' }}>+</span>
+              }}
+            >
+              <span style={{ paddingBottom: "4px" }}>+</span>
             </button>
-            <div className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800" style={{ position: 'relative', minWidth: '330px' }}>
+            <div
+              className="ml-2 flex-grow flex items-center rounded-lg border border-gray-700 bg-gray-800"
+              style={{ position: "relative", minWidth: "330px" }}
+            >
               {/* Arrow Button at the Bottom Middle, initially hidden */}
               <button
                 type="button"
                 id="scrollArrow"
-                className={`${isAtBottom ? 'hidden' : ''} absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
+                className={`${
+                  isAtBottom ? "hidden" : ""
+                } absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full`}
                 style={{ bottom: `${inputTextHeight + 35}px` }}
                 onClick={scrollToBottom}
               >
                 ↓
               </button>
               {/* Make sure the input container can grow and the button stays aligned */}
-              <div className="flex items-center" style={{ position: 'relative', zIndex: 2, flexGrow: 1 }}>
-                {diceStates.d20.isGlowActive ?
+              <div
+                className="flex items-center"
+                style={{ position: "relative", zIndex: 2, flexGrow: 1 }}
+              >
+                {diceStates.d20.isGlowActive ? (
                   <>
                     <textarea
                       className="bg-transparent text-white focus:outline-none"
                       placeholder=""
                       value={"I rolled a"}
                       readOnly
-                      style={{ maxWidth: '70px', minHeight: '10px', marginRight: '1px', marginLeft: '15px' }} // Set a fixed width
+                      style={{
+                        maxWidth: "70px",
+                        minHeight: "10px",
+                        marginRight: "1px",
+                        marginLeft: "15px",
+                      }} // Set a fixed width
                       rows={1}
                       ref={textareaRef}
                     ></textarea>
@@ -1954,9 +2155,8 @@ export default function Home() {
                       onChange={handleDropdownChange}
                       submittingDice={diceStates.d20.isGlowActive}
                     />
-
                   </>
-                  :
+                ) : (
                   <>
                     <TeamOrGmSelect
                       options={teamGmOptionsList}
@@ -1969,27 +2169,46 @@ export default function Home() {
                       value={inputValue}
                       onKeyDown={handleKeyDown}
                       onChange={(e) => handleInputChange(e)}
-                      style={{ minHeight: '10px' }}
+                      style={{ minHeight: "10px" }}
                       rows={1}
                       ref={textareaRef}
                       disabled={pendingDiceUpdate}
                     ></textarea>
                   </>
-                }
+                )}
               </div>
-              <button type="submit" style={{ position: 'relative', zIndex: 1 }}
-                className={`${(!diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption))
-                  ? 'bg-purple-600 hover:bg-purple-700'
-                  : 'bg-grey-700 hover:bg-grey-700'
-                  } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-                disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
-                {messageQueue.current.length > 0 ? '▮▮' : 'Send'}
+              <button
+                type="submit"
+                style={{ position: "relative", zIndex: 1 }}
+                className={`${
+                  !diceStates.d20.isGlowActive ||
+                  (diceStates.d20.isGlowActive && diceSelectionOption)
+                    ? "bg-purple-600 hover:bg-purple-700"
+                    : "bg-grey-700 hover:bg-grey-700"
+                } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
+                disabled={
+                  (diceStates.d20.isGlowActive && !diceSelectionOption) ||
+                  pendingDiceUpdate
+                }
+              >
+                {messageQueue.current.length > 0 ? "▮▮" : "Send"}
               </button>
             </div>
-            <button type="button" style={{ width: '29px', height: '29px', borderRadius: '50%', opacity: '0.7', left: '20px', marginLeft: '10px', marginRight: '-15px', zIndex: 3 }}
+            <button
+              type="button"
+              style={{
+                width: "29px",
+                height: "29px",
+                borderRadius: "50%",
+                opacity: "0.7",
+                left: "20px",
+                marginLeft: "10px",
+                marginRight: "-15px",
+                zIndex: 3,
+              }}
               className="bg-gray-700 text-white font-semibold rounded-full w-10 h-10 flex items-center justify-center p-2"
               onClick={() => {
-                setIsAudioOpen(prevState => !prevState);
+                setIsAudioOpen((prevState) => !prevState);
                 setIsCustomTextOpen(false);
               }}
             >
@@ -2003,70 +2222,90 @@ export default function Home() {
           <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
             <div className="grid grid-cols-3 gap-2">
               <button
-                className={`${players[userName]?.battleMode?.yourTurn ? "endturn-gradient" : "bg-gray-900 font-semibold rounded py-2 px-4 text-white"
-                  } disabled:opacity-50`}
+                className={`${
+                  players[userName]?.battleMode?.yourTurn
+                    ? "endturn-gradient"
+                    : "bg-gray-900 font-semibold rounded py-2 px-4 text-white"
+                } disabled:opacity-50`}
                 disabled={!players[userName]?.battleMode?.yourTurn}
+                onClick={() => handleEndTurn(userName)}
               >
                 End Turn
               </button>
 
               <button
-                className={`${pingReady ? 'bg-red-500 hover:bg-red-700' : 'bg-purple-600 hover:bg-purple-700'} text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded`}
+                className={`${
+                  pingReady
+                    ? "bg-red-500 hover:bg-red-700"
+                    : "bg-purple-600 hover:bg-purple-700"
+                } text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded`}
                 onClick={() => {
-                  setPingReady(prevState => !prevState);
+                  setPingReady((prevState) => !prevState);
                 }}
               >
-                {pingReady ? 'Stop Ping' : 'Ping'}
+                {pingReady ? "Stop Ping" : "Ping"}
               </button>
             </div>
           </div>
         )}
-        {
-          isCustomTextOpen && (
-            <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
-              <div className="grid grid-cols-3 gap-2 all-cells">
-                {/* Render cells */}
-                {customTextCells.map((content, index) => (
-                  content ?
-                    // Cell with text and cancel area
-                    <div key={index} className="flex items-center gap-1">
-                      {/* Cell with text */}
-                      <button className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                        disabled={diceStates.d20.isGlowActive}
-                        onClick={() => handleCellClick(content)}
-                      >
-                        {content}
-                      </button>
-                      {/* Cancel button */}
-                      <button className=" all-cells text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>X</button>
-                    </div>
-                    :
-                    // Input cell
-                    <input
-                      key={index}
-                      type="text"
-                      placeholder="Type here..."
-                      maxLength={50}
-                      onKeyDown={newTextEnterKeyDown}
-                      onBlur={(e) => handleBlur(index, e.target.value)}
-                      className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
-                    />
-                ))}
-              </div>
+        {isCustomTextOpen && (
+          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
+            <div className="grid grid-cols-3 gap-2 all-cells">
+              {/* Render cells */}
+              {customTextCells.map((content, index) =>
+                content ? (
+                  // Cell with text and cancel area
+                  <div key={index} className="flex items-center gap-1">
+                    {/* Cell with text */}
+                    <button
+                      className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                      disabled={diceStates.d20.isGlowActive}
+                      onClick={() => handleCellClick(content)}
+                    >
+                      {content}
+                    </button>
+                    {/* Cancel button */}
+                    <button
+                      className=" all-cells text-red-500 p-2 rounded"
+                      onClick={() => deleteCellContent(index)}
+                    >
+                      X
+                    </button>
+                  </div>
+                ) : (
+                  // Input cell
+                  <input
+                    key={index}
+                    type="text"
+                    placeholder="Type here..."
+                    maxLength={50}
+                    onKeyDown={newTextEnterKeyDown}
+                    onBlur={(e) => handleBlur(index, e.target.value)}
+                    className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
+                  />
+                )
+              )}
             </div>
-          )
-        }
-        {
-          isAudioOpen && (
-            <div>
-              <AudioInput isAudioOpen={isAudioOpen} setIsAudioOpen={setIsAudioOpen} chatSocket={chatSocket} setLastAudioInputSequence={setLastAudioInputSequence} setShouldStopAi={setShouldStopAi} isRecording={isRecording} setIsRecording={setIsRecording} diceRollsActive={diceStates.d20.isGlowActive} mediaRecorder={mediaRecorder} setMediaRecorder={setMediaRecorder} audioChunks={audioChunks} />
-            </div>
-          )
-        }
-
-
-      </div >
-    </div >
-  )
-
+          </div>
+        )}
+        {isAudioOpen && (
+          <div>
+            <AudioInput
+              isAudioOpen={isAudioOpen}
+              setIsAudioOpen={setIsAudioOpen}
+              chatSocket={chatSocket}
+              setLastAudioInputSequence={setLastAudioInputSequence}
+              setShouldStopAi={setShouldStopAi}
+              isRecording={isRecording}
+              setIsRecording={setIsRecording}
+              diceRollsActive={diceStates.d20.isGlowActive}
+              mediaRecorder={mediaRecorder}
+              setMediaRecorder={setMediaRecorder}
+              audioChunks={audioChunks}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
