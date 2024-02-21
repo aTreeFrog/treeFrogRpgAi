@@ -184,10 +184,9 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
 
       spinTone.autostart = true;
 
-      //not going to disconnect cause prob have to do this alot
-      // spinTone.onended = () => {
-      //   spinTone.disconnect();
-      // };
+      spinTone.onended = () => {
+        spinTone.disconnect();
+      };
 
       spinTone.onerror = (error) => {
         console.error("Error with audio playback", error);
