@@ -975,8 +975,8 @@ app.prepare().then(() => {
         class: "Wizard",
         race: "Elf",
         distance: 28,
-        attacks: [
-          {
+        attacks: {
+          staff: {
             name: "staff",
             attackBonus: 5,
             damage: "1d6",
@@ -985,7 +985,7 @@ app.prepare().then(() => {
             xWidth: 7,
             yWidth: 7,
           },
-          {
+          iceBlast: {
             name: "ice blast",
             attackBonus: 5,
             damage: "2d6+1d4",
@@ -994,7 +994,7 @@ app.prepare().then(() => {
             xWidth: 14,
             yWidth: 14,
           },
-        ],
+        },
         initiative: 5,
         armorClass: 14,
         maxHealth: 30,
@@ -1095,6 +1095,7 @@ app.prepare().then(() => {
 
         // ToDo: figure out healing spells
 
+        const dateAct = new Date().toISOString();
         for (const target of players[diceData.User].battleMode.usersTargeted) {
           if (!players.hasOwnProperty(target)) {
             continue;
@@ -1102,6 +1103,7 @@ app.prepare().then(() => {
 
           players[target].currentHealth = Math.max(0, players[target].currentHealth - players[diceData.User].battleMode.damageDelt);
           players[target].battleMode.enemyAttackAttempt = AttackAttempt.COMPLETE;
+          players[target].activityId = `user${target}-game${serverRoomName}-activity${activityCount}-${dateAct}`;
         }
 
         // did attack and did max move, so auto move player to next turn
@@ -1170,10 +1172,11 @@ app.prepare().then(() => {
 
     function findAndUpdatePlayerDiceStates(player) {
       // Find the attack in player.attacks array
-      const attack = player.attacks.find((attack) => attack.name === player.battleMode.attackUsed);
+      const attacksArray = Object.values(player.attacks);
+      const attack = attacksArray.filter((attack) => attack.name === player.battleMode.attackUsed);
 
-      if (attack) {
-        const parts = parseDamageValue(attack.damage);
+      if (attack[0]) {
+        const parts = parseDamageValue(attack[0].damage);
         if (parts && parts.length) {
           parts.forEach((part) => {
             if ("a" in part && "b" in part) {
@@ -1341,7 +1344,7 @@ app.prepare().then(() => {
       if (players.hasOwnProperty(playerName)) {
         if (players[playerName].battleMode.yourTurn) {
           nextInLine();
-          players[playerName].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+          players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
           activityCount++;
           io.to(serverRoomName).emit("players objects", players);
         }
@@ -1473,27 +1476,58 @@ app.prepare().then(() => {
 
   // calculate distance between enemy and selected player
   function calculateDistance(x1, y1, x2, y2) {
-    console.log("calculateDistance");
+    console.log("calculateDistance", x1, y1, x2, y2);
     return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)) * 7; // Convert grid distance to feet
   }
 
   // Find all players within melee attack distance
-  function findPlayersWithinMeleeDistance(players, enemy) {
+  function findPlayersWithinMeleeDistance(players, enemyXPos, enemyYPos) {
     return players.filter((player) => {
-      const distance = calculateDistance(enemy.xPosition, enemy.yPosition, player.xPosition, player.yPosition);
+      const playerKey = Object.keys(player)[0]; // Get the key (player name or ID)
+      const playerData = player[playerKey]; // Get the player data object
+      const distance = calculateDistance(enemyXPos, enemyYPos, playerData.xPosition, playerData.yPosition);
       return distance === 7; // 7 feet away, adjacent on the grid
     });
   }
 
+  function isPositionOccupied(newX, newY, players) {
+    return Object.values(players).some((player) => player.xPosition === newX && player.yPosition === newY);
+  }
+
+  function findAlternativePosition(enemy, target, players, withinBowRange) {
+    // Potential moves are combinations of moving 0, 1, or 2 squares in any direction
+    const potentialMoves = withinBowRange ? [0, 1, 2] : [0, 1, 2, 3, 4];
+    for (let dx of potentialMoves) {
+      for (let dy of potentialMoves) {
+        // Calculate potential new positions
+        const potentialNewX = enemy.xPosition + dx * (target.xPosition > enemy.xPosition ? 1 : -1);
+        const potentialNewY = enemy.yPosition + dy * (target.yPosition > enemy.yPosition ? 1 : -1);
+
+        // Check if the position is occupied
+        if (!isPositionOccupied(potentialNewX, potentialNewY, players)) {
+          return { x: potentialNewX, y: potentialNewY };
+        }
+      }
+    }
+
+    // If all else fails, stay in place
+    return { x: enemy.xPosition, y: enemy.yPosition };
+  }
+
   function moveCloser(enemy, target, withinBowRange = false) {
+    const targetKey = Object.keys(target)[0];
+    const targetData = target[targetKey];
     // Calculate the number of squares to move horizontally and vertically
     const squaresToMoveX =
-      Math.min(Math.abs(target.xPosition - enemy.xPosition), withinBowRange ? 2 : 4) * (target.xPosition > enemy.xPosition ? 1 : -1);
+      Math.min(Math.abs(targetData.xPosition - enemy.xPosition), withinBowRange ? 2 : 4) * (targetData.xPosition > enemy.xPosition ? 1 : -1);
     const squaresToMoveY =
-      Math.min(Math.abs(target.yPosition - enemy.yPosition), withinBowRange ? 2 : 4) * (target.yPosition > enemy.yPosition ? 1 : -1);
+      Math.min(Math.abs(targetData.yPosition - enemy.yPosition), withinBowRange ? 2 : 4) * (targetData.yPosition > enemy.yPosition ? 1 : -1);
 
+    console.log("squaresToMoveX", squaresToMoveX);
     // If within bow range, randomly decide whether to move closer or stay in place
-    if (withinBowRange && Math.random() < 0.5) {
+    //////////////CHANGE BACK TO 0.5 when done testing//////////////////////
+    if (withinBowRange && Math.random() < 0.1) {
+      console.log("chose to stay in place");
       // Randomly choose to not move (stay in place)
       return { x: enemy.xPosition, y: enemy.yPosition };
     }
@@ -1514,6 +1548,14 @@ app.prepare().then(() => {
       newY = enemy.yPosition + (squaresToMoveY > 0 ? 2 : -2);
     }
 
+    // Check if the desired new position is occupied
+    if (isPositionOccupied(newX, newY, players)) {
+      console.log("Desired position is occupied, looking for alternatives.");
+      const alternative = findAlternativePosition(enemy, targetData, players, withinBowRange);
+      newX = alternative.x;
+      newY = alternative.y;
+    }
+
     // Ensure newX and newY are calculated based on desired logic above
     return { x: newX, y: newY };
   }
@@ -1524,7 +1566,7 @@ app.prepare().then(() => {
     const playersArray = Array.isArray(players) ? players : [players];
     console.log("playersArray", playersArray);
 
-    const playersWithinMeleeDistance = findPlayersWithinMeleeDistance(playersArray, enemy);
+    const playersWithinMeleeDistance = findPlayersWithinMeleeDistance(playersArray, enemy.xPosition, enemy.yPosition);
 
     if (playersWithinMeleeDistance.length > 0) {
       // If one or more players are within sword distance, randomly select one and attack
@@ -1533,23 +1575,156 @@ app.prepare().then(() => {
     } else {
       // Select a random player to target for potential bow attack or movement
       const target = playersArray[Math.floor(Math.random() * playersArray.length)];
-      console.log("decideAction target data", target);
-      console.log("decideAction enemy position x", enemy.xPosition);
-      const distance = calculateDistance(enemy.xPosition, enemy.yPosition, target.xPosition, target.yPosition);
+      const playerKey = Object.keys(target)[0];
+      const distance = calculateDistance(enemy.xPosition, enemy.yPosition, target[playerKey].xPosition, target[playerKey].yPosition);
 
+      console.log("distance", distance);
       // When deciding to move closer within bow range, pass true for withinBowRange
-      if (distance <= 60 && distance > 7) {
+      if (distance <= 56 && distance > 7) {
         // Within bow range but not adjacent, randomly decide to move closer or stay
         return { action: "rangeAttack", target, moveTo: moveCloser(enemy, target, true) };
       } else if (distance > 60) {
         // Too far for either attack, move closer up to 28 feet
         const moveTo = moveCloser(enemy, target);
+
         return { action: "move", moveTo };
       }
     }
   }
 
-  function handleEnemyTurn(playerData) {
+  function emitPlayersAfterDelay(delay) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        io.to(serverRoomName).emit("players objects", players);
+        resolve(); // Resolve the promise when emission is done
+      }, delay);
+    });
+  }
+
+  async function enemyAttackRollEvent(enemy, enemyDecision) {
+    // Get the enemy attack list
+    const enemyAttacks = Object.values(enemy.attacks);
+    console.log("enemyAttacks", enemyAttacks);
+    let validAttacks = [];
+    if (enemyDecision.action == "rangeAttack") {
+      // Filter attacks with distance > 7
+      validAttacks = enemyAttacks.filter((attack) => attack.distance > 7);
+      console.log("made it to rangeAttack", validAttacks);
+    } else if (enemyDecision.action == "meleeAttack") {
+      validAttacks = enemyAttacks.filter((attack) => attack.distance < 8);
+    }
+
+    if (validAttacks.length < 1) {
+      //ToDo: handle invalid attacks. wrap up, assume attack failed maybe?
+    }
+
+    const randomIndex = Math.floor(Math.random() * validAttacks.length);
+    const selectedAttack = validAttacks[randomIndex];
+    console.log("selectedAttack", selectedAttack);
+
+    const attackRollValue = Math.floor(Math.random() * 20) + 1 + selectedAttack.attackBonus;
+    console.log("attackRoll", attackRollValue);
+    players[enemy.name].battleMode.attackRoll = attackRollValue;
+    players[enemy.name].battleMode.attackUsed = selectedAttack.name;
+    //ToDo: need to account for heal spells. Shouldnt use armor class for that
+    players[enemy.name].battleMode.attackRollSucceeded = false; //init, will change if any are true
+
+    // Initially mark all targets for removal, assuming none of them meet the attack roll condition
+    let targetsToRemove = new Set(players[enemy.name].battleMode.usersTargeted);
+
+    const actDate = new Date().toISOString();
+    for (const target of players[enemy.name].battleMode.usersTargeted) {
+      console.log("target", target);
+      let enemyArmor = players[target]?.armorClass;
+      if (players.hasOwnProperty(target) && players[enemy.name].battleMode.attackRoll >= enemyArmor) {
+        players[enemy.name].battleMode.attackRollSucceeded = true;
+        targetsToRemove.delete(target);
+        console.log("target stay", target);
+        players[target].battleMode.enemyAttackAttempt = AttackAttempt.SUCCESS;
+      } else {
+        players[target].battleMode.targeted = false;
+        console.log("target remove", target); //that player is no longer targeted
+        players[target].battleMode.enemyAttackAttempt = AttackAttempt.FAIL;
+      }
+
+      players[target].activityId = `user${target}-game${serverRoomName}-activity${activityCount}-${actDate} `;
+    }
+
+    // Filter out the targets marked for removal
+    players[enemy.name].battleMode.usersTargeted = players[enemy.name].battleMode.usersTargeted.filter((player) => !targetsToRemove.has(player));
+
+    if (players[enemy.name].battleMode.attackRollSucceeded) {
+      players[enemy.name].battleMode.damageRollRequested = true;
+    }
+
+    players[enemy.name].battleMode.actionAttempted = true;
+
+    players[enemy.name].activityId = `user${enemy.name}-game${serverRoomName}-activity${activityCount}-${actDate} `;
+
+    activityCount++;
+
+    // ToDo: put a try catch here
+    await emitPlayersAfterDelay(5000);
+
+    console.log("enemy player after attack roll ", players[enemy.name]);
+  }
+
+  async function enemyMoveEvent(enemy, enemyDecision) {
+    players[enemy.name].xPosition = enemyDecision.moveTo.x;
+    players[enemy.name].yPosition = enemyDecision.moveTo.y;
+    players[enemy.name].activityId = `user${enemy.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
+    activityCount++;
+    await emitPlayersAfterDelay(5000);
+  }
+
+  function rollComplexDice(diceNotation) {
+    // Split the notation by '+' to handle each part separately (e.g., "1d4", "1d6", "2")
+    const parts = diceNotation.split("+").map((part) => part.trim());
+
+    let total = 0;
+    parts.forEach((part) => {
+      if (part.includes("d")) {
+        // If the part includes 'd', it's a dice roll (e.g., "1d4")
+        const [numDice, diceValue] = part.split("d").map(Number);
+        for (let i = 0; i < numDice; i++) {
+          total += Math.floor(Math.random() * diceValue) + 1;
+        }
+      } else {
+        // Otherwise, it's a static modifier (e.g., "2")
+        total += parseInt(part, 10);
+      }
+    });
+
+    return total;
+  }
+
+  async function enemyDoDamageEvent(enemy) {
+    const enemyAttacks = Object.values(enemy.attacks);
+    console.log("enemyAttacks", enemyAttacks);
+    const attackData = enemyAttacks.filter((attack) => attack.name == enemy.battleMode.attackUsed);
+    console.log("attackData 2", attackData);
+    const damageTotal = rollComplexDice(attackData[0].damage);
+    console.log("damageTotal", damageTotal);
+
+    players[enemy.name].battleMode.damageDelt = damageTotal;
+
+    // ToDo: figure out healing spells
+
+    const dateAct = new Date().toISOString();
+    for (const target of players[enemy.name].battleMode.usersTargeted) {
+      if (!players.hasOwnProperty(target)) {
+        continue;
+      }
+      players[target].currentHealth = Math.max(0, players[target].currentHealth - players[enemy.name].battleMode.damageDelt);
+      players[target].battleMode.enemyAttackAttempt = AttackAttempt.COMPLETE;
+      players[target].activityId = `user${target}-game${serverRoomName}-activity${activityCount}-${dateAct}`;
+    }
+
+    activityCount++;
+    await emitPlayersAfterDelay(2000);
+  }
+
+  async function handleEnemyTurn(playerData) {
     const nonEnemies = Object.entries(players).reduce((acc, [key, value]) => {
       if (value.type !== "enemy") {
         acc[key] = value;
@@ -1564,13 +1739,42 @@ app.prepare().then(() => {
     const enemyDecision = decideAction(nonEnemies, playerData);
 
     console.log("enemyDecision", enemyDecision);
+
+    players[playerData.name].battleMode.usersTargeted = [];
+    const actDate = new Date().toISOString();
+    players[playerData.name].activityId = `user${playerData.name}-game${serverRoomName}-activity${activityCount}-${actDate} `;
+
+    Object.keys(enemyDecision.target).forEach((key) => {
+      players[playerData.name].battleMode.usersTargeted.push(key);
+      players[key].battleMode.targeted = true;
+      players[key].activityId = `user${key}-game${serverRoomName}-activity${activityCount}-${actDate} `;
+    });
+
+    activityCount++;
+    await emitPlayersAfterDelay(5000);
+
+    //if attack made, do attack action
+    if (enemyDecision.action) {
+      await enemyAttackRollEvent(playerData, enemyDecision);
+    }
+
+    //if attack roll successful, do the attack
+    if (players[playerData.name].battleMode.damageRollRequested) {
+      await enemyDoDamageEvent(playerData);
+    }
+
+    if (enemyDecision.moveTo.x != playerData.xPosition || enemyDecision.moveTo.y != playerData.yPosition) {
+      //always move after attack, in case you moved out of range. and logic doesnt account for re-checking targets after a move...maybe fix that
+      await enemyMoveEvent(playerData, enemyDecision);
+    }
+    nextInLine();
   }
 
   async function checkPlayersState() {
     let anyPlayerRoll = false;
     let anyPlayerInitiativeRoll = false;
     let inInitiativeMode = false;
-    Object.entries(players).forEach(([userName, playerData]) => {
+    Object.entries(players).forEach(async ([userName, playerData]) => {
       // check if any player is in iniative mode, means game is in iniative mode
       if (playerData?.type == "player" && playerData?.mode == "initiative") {
         inInitiativeMode = true;
@@ -1589,9 +1793,10 @@ app.prepare().then(() => {
         playerData.type == "enemy" &&
         playerData.battleMode.yourTurn &&
         playerData.battleMode.attackRoll < 1 &&
-        !playerData.battleMode.distanceMoved
+        !playerData.battleMode.distanceMoved &&
+        playerData.battleMode.usersTargeted.length < 1
       ) {
-        handleEnemyTurn(playerData); // call async function without awaiting so its non blocking.
+        await handleEnemyTurn(playerData); // call async function without awaiting so its non blocking.
       }
     });
 
