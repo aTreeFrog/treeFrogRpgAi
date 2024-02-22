@@ -20,11 +20,12 @@ const PlayerIcon = ({
   setShowEnemyResult,
 }) => {
   const [image] = useImage(playerData.figureIcon);
+  const [crosshairImg] = useImage("/icons/crosshair.svg");
 
   // takes into account amount a player moved during their turn
   let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
 
-  if (!image) {
+  if (!image || !crosshairImg) {
     return null; // Or some placeholder
   }
 
@@ -115,18 +116,23 @@ const PlayerIcon = ({
   return (
     <>
       {playerData.battleMode.targeted && playerData.battleMode.enemyAttackAttempt != "COMPLETE" && (
-        <Rect
-          x={circleX - 22}
-          y={circleY - 22}
-          width={gridSpacing} // Width of the rectangle, twice the radius to mimic a square with the same diameter as the circle
-          height={gridSpacing} // Height of the rectangle, same as width for a square
-          fill="rgba(235, 48, 67, 0.7)"
-          shadowColor="rgba(235, 48, 67, 0.5)"
-          shadowBlur={10}
-          shadowOpacity={1}
-          opacity={0.9}
-          cornerRadius={10}
-        />
+        <>
+          <Rect
+            x={circleX - 22}
+            y={circleY - 22}
+            width={gridSpacing} // Width of the rectangle, twice the radius to mimic a square with the same diameter as the circle
+            height={gridSpacing} // Height of the rectangle, same as width for a square
+            fill="rgba(235, 48, 67, 0.3)"
+            shadowColor="rgba(235, 48, 67, 0.3)"
+            shadowBlur={10}
+            shadowOpacity={1}
+            opacity={0.9}
+            cornerRadius={10}
+          />
+          {playerData?.battleMode?.enemyAttackAttempt !== "SUCCESS" && (
+            <Image image={crosshairImg} x={circleX - 22} y={circleY - 22} width={gridSpacing} height={gridSpacing}></Image>
+          )}
+        </>
       )}
       <Image
         image={image}
