@@ -28,9 +28,9 @@ const BattleMap = ({
   const travelZoneRadius = 6.67;
   const [imageFigureUrl, setImageFigureUrl] = useState(null);
   let [userNameFigureImage] = useImage(imageFigureUrl);
-  const [playerSize, setPlayerSize] = useState();
-  const [pixelX, setPixelX] = useState();
-  const [pixelY, setPixelY] = useState();
+  const playerSize = useRef(gridSpacing / 2);
+  const pixelX = useRef(players[userName]?.xPosition * gridSpacing);
+  const pixelY = useRef(players[userName]?.yPosition * gridSpacing);
   const [clickable, setClickable] = useState(false);
   const [unavailCoord, setUnavailCoord] = useState([]);
   const [cursorPos, setCursorPos] = useState({ x: -50, y: -50 }); // Initial position off-screen
@@ -91,20 +91,22 @@ const BattleMap = ({
   }
 
   // Calculate the distance between the figure icon and the cursor position
-  const distanceToCursor = Math.sqrt(Math.pow(cursorPos.x - (pixelX + playerSize / 2), 2) + Math.pow(cursorPos.y - (pixelY + playerSize / 2), 2));
+  const distanceToCursor = Math.sqrt(
+    Math.pow(cursorPos.x - (pixelX.current + playerSize.current / 2), 2) + Math.pow(cursorPos.y - (pixelY.current + playerSize.current / 2), 2)
+  );
 
   // Calculate the endpoint for the line within the allowed distance
   let endPoint = { x: cursorPos.x, y: cursorPos.y };
   if (distanceToCursor > attackDistance) {
     // Calculate the direction vector and normalize it
-    const direction = { x: cursorPos.x - (pixelX + playerSize / 2), y: cursorPos.y - (pixelY + playerSize / 2) };
+    const direction = { x: cursorPos.x - (pixelX.current + playerSize.current / 2), y: cursorPos.y - (pixelY.current + playerSize.current / 2) };
     const length = Math.sqrt(direction.x ** 2 + direction.y ** 2);
     const normalized = { x: direction.x / length, y: direction.y / length };
 
     // Scale the normalized direction by the attack distance to get the new endpoint
     endPoint = {
-      x: pixelX + playerSize / 2 + normalized.x * attackDistance,
-      y: pixelY + playerSize / 2 + normalized.y * attackDistance,
+      x: pixelX.current + playerSize.current / 2 + normalized.x * attackDistance,
+      y: pixelY.current + playerSize.current / 2 + normalized.y * attackDistance,
     };
   }
 
@@ -275,7 +277,7 @@ const BattleMap = ({
       const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2;
 
       // Check if the circle should stop based on the line logic
-      const lineStart = { x: pixelX + playerSize / 2, y: pixelY + playerSize / 2 };
+      const lineStart = { x: pixelX.current + playerSize.current / 2, y: pixelY.current + playerSize.current / 2 };
       const lineEnd = endPoint; // Ensure this is correctly calculated based on previous logic
       const circleCenter = { x: clickedPixelX, y: clickedPixelY };
       const circleRadius = attackRadius; // Ensure this is set to your circle's radius
@@ -295,14 +297,14 @@ const BattleMap = ({
       // move icon to new clicked position.
     } else if (!selectedRow && !pingReady && players[userName]?.battleMode?.yourTurn) {
       // Calculate the pixel position of the center of the clicked grid cell
-      const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize / 2;
-      const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2 - playerSize / 2;
+      const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize.current / 2;
+      const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2 - playerSize.current / 2;
 
       console.log("Click event");
 
-      const distance = Math.sqrt(Math.pow(clickedPixelX - pixelX, 2) + Math.pow(clickedPixelY - pixelY, 2));
+      const distance = Math.sqrt(Math.pow(clickedPixelX - pixelX.current, 2) + Math.pow(clickedPixelY - pixelY.current, 2));
 
-      console.log("pixelX", pixelX);
+      console.log("pixelX", pixelX.current);
 
       console.log("distance", distance);
 
@@ -356,12 +358,12 @@ const BattleMap = ({
     if (userNameFigureImage) {
       console.log("hi userNameFigureImage");
       const playerScale = (gridSpacing * 0.8) / userNameFigureImage.width;
-      setPlayerSize(userNameFigureImage.width * playerScale);
+      playerSize.current = userNameFigureImage.width * playerScale;
       const gridX = players[userName].xPosition;
       const gridY = players[userName].yPosition;
-      setPixelX(gridX * gridSpacing + gridSpacing / 2 - playerSize / 2);
-      setPixelY(gridY * gridSpacing + gridSpacing / 2 - playerSize / 2);
-      console.log("battlemap pixelX", pixelX);
+      pixelX.current = gridX * gridSpacing + gridSpacing / 2 - playerSize.current / 2;
+      pixelY.current = gridY * gridSpacing + gridSpacing / 2 - playerSize.current / 2;
+      console.log("battlemap pixelX", pixelX.current);
     }
 
     console.log("selectedRow", selectedRow);
@@ -789,7 +791,7 @@ const BattleMap = ({
             {enableLines && (
               <>
                 <Line
-                  points={[pixelX + playerSize / 2, pixelY + playerSize / 2, endPoint.x, endPoint.y]}
+                  points={[pixelX.current + playerSize.current / 2, pixelY.current + playerSize.current / 2, endPoint.x, endPoint.y]}
                   stroke="white"
                   strokeWidth={2}
                   lineCap="round"
