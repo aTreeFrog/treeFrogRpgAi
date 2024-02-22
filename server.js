@@ -1012,6 +1012,27 @@ app.prepare().then(() => {
         },
         figureIcon: "/icons/wizard.svg",
         userImageUrl: `http://localhost:3000/userImages/${userName}.png`,
+        battleMode: {
+          initiativeRoll: 0,
+          attackRoll: 0,
+          attackRollSucceeded: null,
+          turnOrder: null,
+          yourTurn: false,
+          distanceMoved: null,
+          attackUsed: null,
+          actionAttempted: false,
+          damageRollRequested: false,
+          damageDelt: null,
+          usersTargeted: [],
+          turnCompleted: false,
+          mapUrl: null,
+          gridDataUrl: null,
+          initiativeImageUrl: null,
+          initiativeImageShadow: null,
+          targeted: false,
+          enemyAttackAttempt: "INIT",
+          attackSound: null,
+        },
       };
 
       players[userName] = newPlayer;
@@ -1760,23 +1781,30 @@ app.prepare().then(() => {
     activityCount++;
     await emitPlayersAfterDelay(5000);
 
+    //always check if its still the enemies turn. in case client ends turn for enemy, it wont continue.
     //if attack made, do attack action
-    if (enemyDecision.action) {
+    if (enemyDecision.action && players[playerData.name].battleMode.yourTurn) {
       await enemyAttackRollEvent(playerData, enemyDecision);
     }
 
     //if attack roll successful, do the attack
-    if (players[playerData.name].battleMode.damageRollRequested) {
+    if (players[playerData.name].battleMode.damageRollRequested && players[playerData.name].battleMode.yourTurn) {
       await enemyDoDamageEvent(playerData);
     }
 
-    if (enemyDecision?.moveTo?.x != playerData?.xPosition || enemyDecision?.moveTo?.y != playerData?.yPosition) {
+    if (
+      (enemyDecision?.moveTo?.x != playerData?.xPosition || enemyDecision?.moveTo?.y != playerData?.yPosition) &&
+      players[playerData.name].battleMode.yourTurn
+    ) {
       //always move after attack, in case you moved out of range. and logic doesnt account for re-checking targets after a move...maybe fix that
       await enemyMoveEvent(playerData, enemyDecision);
     }
-    setTimeout(() => {
-      nextInLine();
-    }, 2000);
+
+    if (players[playerData.name].battleMode.yourTurn) {
+      setTimeout(() => {
+        nextInLine();
+      }, 2000);
+    }
   }
 
   async function checkPlayersState() {

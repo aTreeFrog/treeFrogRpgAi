@@ -563,6 +563,44 @@ const BattleMap = ({
             console.error("Error with audio playback", error);
           };
         }
+
+        if (playerData?.battleMode?.attackSound) {
+          const attackTone = new Tone.Player({
+            url: playerData?.battleMode?.attackSound,
+          }).toDestination();
+
+          attackTone.autostart = true;
+
+          attackTone.onended = () => {
+            console.log("attackTone playback ended");
+            attackTone.disconnect(); // Disconnect the player
+          };
+
+          attackTone.onerror = (error) => {
+            console.error("Error with audio playback", error);
+          };
+        }
+      }
+
+      //if player moved, do whoosh sound
+      if (
+        playerData.xPosition != prevPlayersBattleData.current[playerName]?.xPosition ||
+        playerData.yPosition != prevPlayersBattleData.current[playerName]?.yPosition
+      ) {
+        const movedTone = new Tone.Player({
+          url: "/audio/whoosh.wav",
+        }).toDestination();
+
+        movedTone.autostart = true;
+
+        movedTone.onended = () => {
+          console.log("moved playback ended");
+          movedTone.disconnect(); // Disconnect the player
+        };
+
+        movedTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
       }
     });
 
