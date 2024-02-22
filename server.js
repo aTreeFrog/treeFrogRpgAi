@@ -1012,6 +1012,27 @@ app.prepare().then(() => {
         },
         figureIcon: "/icons/wizard.svg",
         userImageUrl: `http://localhost:3000/userImages/${userName}.png`,
+        battleMode: {
+          initiativeRoll: 0,
+          attackRoll: 0,
+          attackRollSucceeded: null,
+          turnOrder: null,
+          yourTurn: false,
+          distanceMoved: null,
+          attackUsed: null,
+          actionAttempted: false,
+          damageRollRequested: false,
+          damageDelt: null,
+          usersTargeted: [],
+          turnCompleted: false,
+          mapUrl: null,
+          gridDataUrl: null,
+          initiativeImageUrl: null,
+          initiativeImageShadow: null,
+          targeted: false,
+          enemyAttackAttempt: "INIT",
+          attackSound: null,
+        },
       };
 
       players[userName] = newPlayer;

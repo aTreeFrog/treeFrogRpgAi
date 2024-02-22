@@ -1801,7 +1801,7 @@ export default function Home() {
                           top: 0,
                           left: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? 0 : 4,
                           width: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? "100%" : "82%",
-                          height: "100%",
+                          height: Object.values(iconSelection).some((value) => value === true) ? "80%" : "100%",
                           borderRadius: "50%",
                           backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
                             100 - (100 * player.currentHealth) / player.maxHealth

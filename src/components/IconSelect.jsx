@@ -51,7 +51,7 @@ const IconSelect = ({ options, onChange, player, setIconSelection }) => {
       width: "135px",
       fontSize: "16px",
       borderRadius: "8px",
-      marginLeft: "-45px",
+      marginLeft: "-27px",
       marginBottom: "2px",
     }),
     menuList: (provided) => ({
