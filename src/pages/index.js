@@ -1799,8 +1799,8 @@ export default function Home() {
                         style={{
                           position: "absolute",
                           top: 0,
-                          left: 0,
-                          width: "100%",
+                          left: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? 0 : 4,
+                          width: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? "100%" : "82%",
                           height: "100%",
                           borderRadius: "50%",
                           backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
