@@ -1112,7 +1112,9 @@ app.prepare().then(() => {
           players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
           activityCount++;
           io.to(serverRoomName).emit("players objects", players);
-          nextInLine();
+          setTimeout(() => {
+            nextInLine();
+          }, 2000);
         }
       }
 
@@ -1124,7 +1126,9 @@ app.prepare().then(() => {
         players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         activityCount++;
         io.to(serverRoomName).emit("players objects", players);
-        nextInLine();
+        setTimeout(() => {
+          nextInLine();
+        }, 2000);
       }
 
       //set a bunch of default states for the player
@@ -1262,7 +1266,9 @@ app.prepare().then(() => {
 
         // player attacked and moved as much as they can so change to next person.
         if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.actionAttempted) {
-          nextInLine();
+          setTimeout(() => {
+            nextInLine();
+          }, 2000);
         }
 
         players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()} `;
@@ -1467,6 +1473,7 @@ app.prepare().then(() => {
         player.battleMode.usersTargeted = [];
         player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
         player.battleMode.targeted = false;
+        player.activityId = `user${player.name}-game${serverRoomName}-activity${activityCount}-${timeStamp}`;
       }
     });
 
@@ -1767,7 +1774,9 @@ app.prepare().then(() => {
       //always move after attack, in case you moved out of range. and logic doesnt account for re-checking targets after a move...maybe fix that
       await enemyMoveEvent(playerData, enemyDecision);
     }
-    nextInLine();
+    setTimeout(() => {
+      nextInLine();
+    }, 2000);
   }
 
   async function checkPlayersState() {
