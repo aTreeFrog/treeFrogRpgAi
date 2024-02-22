@@ -1571,7 +1571,7 @@ app.prepare().then(() => {
     if (playersWithinMeleeDistance.length > 0) {
       // If one or more players are within sword distance, randomly select one and attack
       const target = playersWithinMeleeDistance[Math.floor(Math.random() * playersWithinMeleeDistance.length)];
-      return { action: "meleeAttack", target };
+      return { action: "meleeAttack", target, moveTo: { x: enemy.xPosition, y: enemy.yPosition } };
     } else {
       // Select a random player to target for potential bow attack or movement
       const target = playersArray[Math.floor(Math.random() * playersArray.length)];
@@ -1763,7 +1763,7 @@ app.prepare().then(() => {
       await enemyDoDamageEvent(playerData);
     }
 
-    if (enemyDecision.moveTo.x != playerData.xPosition || enemyDecision.moveTo.y != playerData.yPosition) {
+    if (enemyDecision?.moveTo?.x != playerData?.xPosition || enemyDecision?.moveTo?.y != playerData?.yPosition) {
       //always move after attack, in case you moved out of range. and logic doesnt account for re-checking targets after a move...maybe fix that
       await enemyMoveEvent(playerData, enemyDecision);
     }
