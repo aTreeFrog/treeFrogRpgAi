@@ -15,6 +15,7 @@ import { faHatWizard } from "@fortawesome/free-solid-svg-icons";
 import SocketContext from "../context/SocketContext";
 import CustomSelect from "../components/CustomSelect"; // Import the above created component
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
+import IconSelect from "../components/IconSelect";
 import MoveOnPopup from "../components/MoveOnPopup";
 import BattleMap from "../components/BattleMap";
 import { io } from "socket.io-client";
@@ -219,7 +220,8 @@ export default function Home() {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const audioChunks = useRef([]);
   const [pingReady, setPingReady] = useState(false);
-  const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning state
+  const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning
+  const [iconSelection, setIconSelection] = useState({});
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1489,6 +1491,11 @@ export default function Home() {
     { value: "Team", label: "Team" },
   ];
 
+  const playerIconList = [
+    { value: "End Turn", label: "End Turn" },
+    { value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" },
+  ];
+
   // if speech to text panel opened or closed, close or resume background audio.
   // But only resume audio if this panel was the thing that paused it
   useEffect(() => {
@@ -1609,6 +1616,21 @@ export default function Home() {
 
   const handleEndTurn = (name) => {
     chatSocket.emit("end turn", name);
+  };
+
+  const toggleIconSelectVisibility = (player) => {
+    setIconSelection((prevState) => {
+      // Create a new state object, initializing all player names to false
+      const newState = Object.keys(prevState).reduce((acc, key) => {
+        acc[key] = false; // Set all players to false initially
+        return acc;
+      }, {});
+
+      // Set the current player's name to opposite of previous
+      newState[player.name] = !prevState[player.name];
+
+      return newState;
+    });
   };
 
   return (
@@ -1737,7 +1759,7 @@ export default function Home() {
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter((player) => player.userImageUrl)
                 .map((player, index) => (
-                  <div key={index} className="player-container relative flex flex-col items-center mx-1">
+                  <div key={index} className="player-container relative flex flex-col items-center mx-1 w-12">
                     {" "}
                     {/* Adjusted line */}
                     <div
@@ -1773,11 +1795,13 @@ export default function Home() {
                             100 - (100 * player.currentHealth) / player.maxHealth
                           }%, transparent ${100 - (100 * player.currentHealth) / player.maxHealth}%)`,
                           zIndex: 2,
+                          cursor: "pointer",
                         }}
                         onMouseOver={() => handleMouseOver(player)}
-                        onMouseOut={() => handleMouseOut(player)}></div>
+                        onMouseOut={() => handleMouseOut(player)}
+                        onClick={() => toggleIconSelectVisibility(player)}></div>
                     </div>
-                    {showPlayerName[player.name] === true && (
+                    {showPlayerName[player.name] === true && !iconSelection[player.name] === true && (
                       <div
                         className="player-name-tooltip absolute bottom-full mb-2"
                         style={{
@@ -1786,6 +1810,17 @@ export default function Home() {
                         {" "}
                         {/* Adjusted line for tooltip */}
                         {player.name}
+                      </div>
+                    )}
+                    {iconSelection[player.name] === true && (
+                      <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
+                        <IconSelect
+                          options={playerIconList}
+                          value={teamGmOption}
+                          onChange={handleTeamGmChange}
+                          player={player.name}
+                          setIconSelection={setIconSelection}
+                        />
                       </div>
                     )}
                   </div>
