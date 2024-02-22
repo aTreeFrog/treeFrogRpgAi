@@ -17,9 +17,19 @@ const IconOption = (props) => (
   </Option>
 );
 
-const IconSelect = ({ options, onChange, value, player, setIconSelection }) => {
+const IconSelect = ({ options, onChange, player, setIconSelection }) => {
   const [menuIsOpen, setMenuIsOpen] = useState(true);
   const selectRef = useRef(null);
+
+  //this adds the player name to the onChange event for parent
+  const internalOnChange = (selectedOption) => {
+    // Assuming 'player' is available in this scope, prepare the data to send back
+    const extraInfo = { selectedOption, player };
+
+    // Call the parent's callback function with the prepared data
+    onChange(extraInfo);
+  };
+
   const customStyles = {
     control: (provided) => ({
       ...provided,
@@ -76,7 +86,7 @@ const IconSelect = ({ options, onChange, value, player, setIconSelection }) => {
             ...prevState, // Spread the previous state to retain the values of other entries
             [player]: false, // Only toggle the state for the specific player's name
           }));
-        }, 500);
+        }, 500); //giving delay to give index.js to update state if user clicks on icon which changes state
       }
     };
 
@@ -91,8 +101,7 @@ const IconSelect = ({ options, onChange, value, player, setIconSelection }) => {
       <Select
         styles={customStyles}
         options={options}
-        onChange={onChange}
-        value={value}
+        onChange={internalOnChange}
         menuPlacement="top"
         menuPosition="fixed"
         components={{ DropdownIndicator, Option: IconOption }}

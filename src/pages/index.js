@@ -1492,9 +1492,21 @@ export default function Home() {
   ];
 
   const playerIconList = [
-    { value: "End Turn", label: "End Turn" },
+    { value: "endTurn", label: "End Turn" },
     { value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" },
   ];
+
+  const handleIconSelection = (option) => {
+    console.log("handleIconSelection ", option);
+    setIconSelection((prevState) => ({
+      ...prevState, // Spread the previous state to retain the values of other entries
+      [option.player]: false, // Only toggle the state for the specific player's name
+    }));
+
+    if (option?.selectedOption?.value?.toLowerCase() == "endturn") {
+      handleEndTurn(option.player);
+    }
+  };
 
   // if speech to text panel opened or closed, close or resume background audio.
   // But only resume audio if this panel was the thing that paused it
@@ -1816,8 +1828,7 @@ export default function Home() {
                       <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
                         <IconSelect
                           options={playerIconList}
-                          value={teamGmOption}
-                          onChange={handleTeamGmChange}
+                          onChange={handleIconSelection}
                           player={player.name}
                           setIconSelection={setIconSelection}
                         />
