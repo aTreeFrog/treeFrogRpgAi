@@ -337,7 +337,7 @@ const BattleMap = ({
     }
   };
 
-  const animationClass = imageLoaded ? "bubble-in" : "";
+  const animationClass = imageLoaded ? "fade-in" : "";
 
   const updatePlayerData = (playerName, newX, newY) => {
     console.log("updatePlayerData", playerName);

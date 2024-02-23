@@ -1732,17 +1732,15 @@ export default function Home() {
             />
           )}
           {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
-            <div>
+            <div className="fade-in">
               <img
                 src={players[userName].battleMode.initiativeImageUrl}
                 alt="DALL·E Generated"
                 className="h-auto mx-auto rounded-lg relative w-4/5 md:w-3/4 mx-auto shadow-lg md:mt-12"
                 style={boxShadowStyle}
               />
-              <div className="text-center mt-6">
-                <span className="whitespace-nowrap backdrop-blur-sm mr-2 rounded text-purple-700 font-semibold shiny-text blur-text md:text-3xl">
-                  Roll for Initiative
-                </span>
+              <div className="overlay-text" style={{ top: "40%", left: "39%" }}>
+                Roll for Initiative
               </div>
             </div>
           )}
@@ -1761,7 +1759,7 @@ export default function Home() {
                 setPingReady={setPingReady}
                 className="w-3/4 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-1 ml-5"
               />
-              {showOverlayText && <div className="overlay-text fade-in">Your Turn</div>}
+              {showOverlayText && <div className="fade-in overlay-text">Your Turn</div>}
             </>
           )}
           {/* Row of Player Images in Battle Mode */}
