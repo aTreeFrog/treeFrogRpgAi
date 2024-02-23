@@ -19,8 +19,12 @@ const PlayerIcon = ({
   showEnemyResult,
   setShowEnemyResult,
 }) => {
-  const [image] = useImage(playerData.figureIcon);
+  const [image] = useImage(playerData.currentHealth < 1 && playerData.type == "enemy" ? "/icons/enemydead.svg" : playerData.figureIcon);
   const [crosshairImg] = useImage("/icons/crosshair.svg");
+
+  const downPlayer = playerData.currentHealth < 1 && playerData.type == "player" ? true : false;
+  const playerAngle = downPlayer ? 90 : 0;
+  const downYAxis = downPlayer ? gridSpacing : 0; // shift player icon if at dead 90 degree angle, otherwise it appears in higher grid point
 
   // takes into account amount a player moved during their turn
   let travelZone = travelZoneRadius * (playerData?.distance - playerData?.battleMode?.distanceMoved);
@@ -115,7 +119,7 @@ const PlayerIcon = ({
 
   return (
     <>
-      {playerData.battleMode.targeted && playerData.battleMode.enemyAttackAttempt != "COMPLETE" && (
+      {((playerData.battleMode.targeted && playerData.battleMode.enemyAttackAttempt != "COMPLETE") || downPlayer) && (
         <>
           <Rect
             x={circleX - 22}
@@ -129,7 +133,7 @@ const PlayerIcon = ({
             opacity={0.9}
             cornerRadius={10}
           />
-          {playerData?.battleMode?.enemyAttackAttempt !== "SUCCESS" && (
+          {playerData.battleMode.targeted && playerData?.battleMode?.enemyAttackAttempt !== "SUCCESS" && (
             <Image image={crosshairImg} x={circleX - 22} y={circleY - 22} width={gridSpacing} height={gridSpacing}></Image>
           )}
         </>
@@ -137,13 +141,14 @@ const PlayerIcon = ({
       <Image
         image={image}
         x={pixelX}
-        y={pixelY}
+        y={pixelY + downYAxis / 1.2}
         scaleX={playerScale * playerData.xScale}
         scaleY={playerScale}
         draggable={clickable}
         onDragEnd={(e) => clickable && handleDragEnd(e)}
         onMouseOver={handleMouseOver}
         onMouseOut={handleMouseOut}
+        rotation={playerAngle}
       />
       {((showPlayerName[playerName] === true && showEnemyResult[playerName] != "SUCCESS" && showEnemyResult[playerName] != "FAIL") ||
         playerData.battleMode.yourTurn) && (
@@ -167,37 +172,6 @@ const PlayerIcon = ({
           />
         </Group>
       )}
-      {/* {showEnemyResult[playerName] && (showEnemyResult[playerName] == "SUCCESS" || showEnemyResult[playerName] == "FAIL") && (
-                // moveToTop ensures proper zindex for this group since zindex itself did not work
-                <Group ref={node => node && node.moveToTop()}>
-                    <Rect
-                        x={circleX - ((showEnemyResult[playerName] === 'SUCCESS' ? hitWidth : missedWidth))}
-                        y={circleY - gridSpacing / 1.2}
-                        width={((showEnemyResult[playerName] === 'SUCCESS' ? hitWidth * 2 : missedWidth * 2)) + 2}
-                        height={tooltipHeight + 2}
-                        fill={showEnemyResult[playerName] === 'SUCCESS' ? 'green' : 'red'}
-                        cornerRadius={4}
-                        shadowBlur={10} // Adjust the glow effect's blur radius
-                        shadowColor={showEnemyResult[playerName] === 'SUCCESS' ? 'green' : 'red'} // Use the same color for the glow to match the fill
-                        shadowOffsetX={0} // No horizontal offset
-                        shadowOffsetY={0} // No vertical offset
-                        shadowOpacity={0.7} // Adjust the shadow (glow) opacity
-                    />
-                    <Text
-                        x={circleX + 1 + tooltipPadding - ((showEnemyResult[playerName] === 'SUCCESS' ? hitWidth : missedWidth))}
-                        y={circleY + tooltipPadding - gridSpacing / 1.2}
-                        text={showEnemyResult[playerName] === 'SUCCESS' ? 'hit' : 'miss'}
-                        fontSize={tooltipFontSize}
-                        fontFamily={tooltipFontFamily}
-                        fill={tooltipTextColor}
-                        shadowColor={'black'} // Choose a contrasting shadow color
-                        shadowBlur={5}
-                        shadowOffsetX={2}
-                        shadowOffsetY={2}
-                        shadowOpacity={0.7}
-                    />
-                </Group>
-            )} */}
     </>
   );
 };
