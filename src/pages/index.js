@@ -434,6 +434,13 @@ export default function Home() {
       setPlayers((prevPlayers) => {
         const updatedPlayers = cloneDeep(prevPlayers); // Deep copy the entire players object
 
+        // First, remove players that are not in the new data
+        Object.keys(prevPlayers).forEach((playerName) => {
+          if (!data.hasOwnProperty(playerName)) {
+            delete updatedPlayers[playerName];
+          }
+        });
+
         Object.entries(data).forEach(([playerName, playerData]) => {
           if (!playersMsgActIds.current[playerName]) {
             playersMsgActIds.current[playerName] = {};
@@ -1374,24 +1381,6 @@ export default function Home() {
     }
   }, [audioInputData]);
 
-  // const sendImageMessage = (message) => {
-  //   const url = '/api/image';
-  //   const data = {
-  //     model: "dall-e-3",
-  //     prompt: "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night",
-  //     n: 1,
-  //     size: "1024x1024",
-  //     quality: "hd",
-  //   };
-
-  //   axios.post(url, data).then((response) => {
-  //     setDalleImageUrl(response.data.data[0].url);
-  //     console.log("dalleImageUrl", dalleImageUrl);
-  //   }).catch((error) => {
-  //     console.log(error);
-  //   })
-  // }
-
   const newTextEnterKeyDown = (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -1601,7 +1590,8 @@ export default function Home() {
 
   // Check if all player images are loaded
   const allPlayerImagesLoaded =
-    Object.values(loadBattlePlayerImages).length === Object.values(players).filter((player) => player.userImageUrl).length &&
+    // making it greater or equal to too account for removed players/enemies during battle
+    Object.values(loadBattlePlayerImages).length >= Object.values(players).filter((player) => player.userImageUrl).length &&
     Object.values(loadBattlePlayerImages).every((status) => status);
 
   const handleMouseOver = (player) => {
@@ -1686,14 +1676,6 @@ export default function Home() {
             <div className="flex">
               <button
                 onClick={() => {
-                  // First, check if the panel is currently open
-                  // if (isPanelOpen) {
-                  //   // If the panel is open, it means we're about to close it,
-                  //   // so call the function to end the Jitsi meeting.
-                  //   disposeApi();  // Make sure this function properly disposes of your Jitsi meeting
-                  // }
-                  // Next, toggle the panel's open state regardless of the current state.
-                  // If it was open, this will close it, and vice versa.
                   setIsPanelOpen((prevState) => !prevState);
                 }}
                 className="absolute bottom-0 left-20 mb-6 ml-10 bg-purple-600 hover:bg-purple-700 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded">

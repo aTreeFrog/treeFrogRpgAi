@@ -1032,6 +1032,7 @@ app.prepare().then(() => {
           targeted: false,
           enemyAttackAttempt: "INIT",
           attackSound: null,
+          deathSound: null,
         },
       };
 
@@ -1439,6 +1440,13 @@ app.prepare().then(() => {
 
     const timeStamp = new Date().toISOString();
 
+    //first go through all players and remove any dead enemies
+    Object.values(players).forEach((player) => {
+      if (player.currentHealth <= 0 && player.type == "enemy") {
+        delete players[player.name];
+      }
+    });
+
     // First, find the current player, min, and max turnOrder
     Object.values(players).forEach((player) => {
       if (player.battleMode.yourTurn) {
@@ -1473,10 +1481,30 @@ app.prepare().then(() => {
       player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
     });
 
-    //ToDo: if all player turns completed, show a picture
+    let foundNextPlayer = false;
+    let nextTurnOrder = currentPlayerTurnOrder;
+    let attempts = 0;
+    const playerCount = Object.keys(players).length;
 
-    // Determine the next player's turnOrder
-    let nextTurnOrder = currentPlayerTurnOrder === maxTurnOrder ? minTurnOrder : currentPlayerTurnOrder + 1;
+    do {
+      nextTurnOrder = nextTurnOrder === maxTurnOrder ? minTurnOrder : nextTurnOrder + 1;
+      const nextPlayer = Object.values(players).find((player) => player.battleMode.turnOrder === nextTurnOrder);
+
+      if (nextPlayer) {
+        foundNextPlayer = true;
+        // Set the found player's turn to true and reset their state as needed
+      }
+
+      attempts++;
+    } while (!foundNextPlayer && attempts <= playerCount); // Ensure we only loop through once
+
+    if (!foundNextPlayer) {
+      console.log("No eligible players found after a full cycle. Handling end-of-game scenario.");
+      // Handle the scenario appropriately here (e.g., end the game, show message)
+      return;
+    }
+
+    //ToDo: if all player turns completed, show a picture
 
     // Set the next player's yourTurn to true
     Object.values(players).forEach((player) => {

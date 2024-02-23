@@ -602,6 +602,23 @@ const BattleMap = ({
           console.error("Error with audio playback", error);
         };
       }
+
+      if (playerData.currentHealth <= 0 && prevPlayersBattleData.current[playerName].currentHealth > 0) {
+        const deathTone = new Tone.Player({
+          url: playerData.battleMode.deathSound,
+        }).toDestination();
+
+        deathTone.autostart = true;
+
+        deathTone.onended = () => {
+          console.log("death playback ended");
+          deathTone.disconnect(); // Disconnect the player
+        };
+
+        deathTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
+      }
     });
 
     if (targetedPlayers) {
