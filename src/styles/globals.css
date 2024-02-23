@@ -977,7 +977,7 @@ textarea {
 .overlay-text {
     position: absolute;
     top: 45%;
-    left: 40%;
+    left: 42%;
     transform: translateY(-50%);
     background-color: rgba(255, 255, 255, 0.6);
     /* Semi-transparent white background */
@@ -1027,6 +1027,11 @@ textarea {
 
 .fade-in {
     animation: fadeIn 2s ease-in-out;
+}
+
+.fade-in-slow {
+    animation: fadeIn 2s ease-in-out;
+    animation-delay: 5s;
 }
 
 .player-name-tooltip {
