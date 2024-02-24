@@ -555,6 +555,22 @@ app.prepare().then(() => {
       io.to(serverRoomName).emit("players objects", players);
     }
 
+    async function battleRoundAISummary() {
+      let message = `Game master, the team just had a round in battle. Please summarize this battle round 
+      scene with vivid detail. Keep your response to 600 characters or less. the battlefield 
+      has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each players battle round: `;
+
+      Object.entries(battleRoundData).forEach(([player, data]) => {
+        message += `name: ${player}, type:${data.type}, $race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
+      });
+
+      const uniqueId = `user${"backend"} -activity${activityCount} -${new Date().toISOString()} `;
+      let serverData = { role: "backend", content: message, processed: false, id: uniqueId, mode: "All" };
+      activityCount++;
+      //send message to ai
+      chatMessages.push(serverData);
+    }
+
     async function createDallEImage(prompt) {
       //const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
 
@@ -1607,6 +1623,8 @@ app.prepare().then(() => {
     });
 
     activityCount++;
+
+    console.log("battleRoundData ", battleRoundData);
     io.to(serverRoomName).emit("players objects", players);
   }
 
