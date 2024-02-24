@@ -12,6 +12,7 @@ const FormData = require("form-data");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const { player } = require("./lib/objects/player");
 const { game } = require("./lib/objects/game");
+const { battleRound } = require("./lib/objects/battleRound");
 const enemies = require("./lib/enemies");
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
@@ -82,6 +83,7 @@ let aiInOrderChatMessage = [];
 let waitingForUser = false;
 let clients = {};
 let players = {};
+let battleRoundData = {};
 let responseSent = new Map();
 let waitingForRolls = false;
 let awayPlayerCount = 1;
@@ -89,6 +91,7 @@ let settingUpNewScene = false;
 let msgActivityCount = 1;
 let processingMessage = false;
 let activePlayers = 0;
+let mapDescription = "";
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -142,6 +145,9 @@ app.prepare().then(() => {
       }
     }
 
+    // toDo make this function
+    function enterStoryMode() {}
+
     async function enterBattleMode(mapName, backgroundMusic, enemyType, enemyCount) {
       const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
       const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
@@ -158,6 +164,11 @@ app.prepare().then(() => {
       game.battleGrid = gridDataUrl;
       game.image = mapUrl;
       game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+
+      battleRoundData = {}; //start fresh with battleRoundData since a battle just started.
+      const mapData = path.join(__dirname, `public/battleMaps/${mapName}.json`);
+      const mapDataJson = JSON.parse(fs.readFileSync(mapData, "utf8"));
+      mapDescription = mapDataJson.description;
 
       activePlayers = 0;
       //update players state for init battle mode
@@ -266,6 +277,14 @@ app.prepare().then(() => {
         console.log("all players with enemies", players);
       }
       activityCount++;
+
+      //initial battleRound data for all players including enemies to be used to summarize rounds.
+      Object.entries(players).forEach(([name, player]) => {
+        battleRoundData[name] = { ...battleRound };
+        battleRoundData[name].type = player.type;
+        battleRoundData[name].class = player.class;
+        battleRoundData[name].race = player.race;
+      });
 
       console.log("enter battle mode");
 
@@ -1055,7 +1074,7 @@ app.prepare().then(() => {
       io.emit("players objects", players);
     });
 
-    socket.on("D20 Dice Roll Complete", (diceData) => {
+    socket.on("D20 Dice Roll Complete", async (diceData) => {
       players[diceData.User].diceStates = cloneDeep(defaultDiceStates); //re-default dice after roll completes
 
       if (players[diceData.User].mode == "initiative") {
@@ -1134,9 +1153,26 @@ app.prepare().then(() => {
           players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
           activityCount++;
           io.to(serverRoomName).emit("players objects", players);
-          setTimeout(() => {
-            nextInLine();
+          setTimeout(async () => {
+            await nextInLine();
           }, 2000);
+        }
+
+        // after attack, see if all enemies are dead, if so go to story mode
+        let allEnemiesDead = true;
+        Object.values(players).forEach((player) => {
+          if (player.type == "enemy") {
+            if (player.currentHealth > 0) {
+              allEnemiesDead = false;
+            } else {
+              delete players[player.name];
+              battleRoundData[player.name].died = true;
+            }
+          }
+        });
+
+        if (allEnemiesDead) {
+          await runFunctionAfterDelay(enterStoryMode, 5000);
         }
       }
 
@@ -1148,8 +1184,8 @@ app.prepare().then(() => {
         players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         activityCount++;
         io.to(serverRoomName).emit("players objects", players);
-        setTimeout(() => {
-          nextInLine();
+        setTimeout(async () => {
+          await nextInLine();
         }, 2000);
       }
 
@@ -1288,8 +1324,8 @@ app.prepare().then(() => {
 
         // player attacked and moved as much as they can so change to next person.
         if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.actionAttempted) {
-          setTimeout(() => {
-            nextInLine();
+          setTimeout(async () => {
+            await nextInLine();
           }, 2000);
         }
 
@@ -1368,14 +1404,19 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("end turn", (playerName) => {
-      if (players.hasOwnProperty(playerName)) {
-        if (players[playerName].battleMode.yourTurn) {
-          nextInLine();
-          players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
-          activityCount++;
-          io.to(serverRoomName).emit("players objects", players);
+    socket.on("end turn", async (playerName) => {
+      try {
+        if (players.hasOwnProperty(playerName)) {
+          if (players[playerName].battleMode.yourTurn) {
+            await nextInLine();
+            players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+            activityCount++;
+            io.to(serverRoomName).emit("players objects", players);
+          }
         }
+      } catch (error) {
+        console.error("Error handling end turn:", error);
+        // Handle error appropriately
       }
     });
 
@@ -1433,23 +1474,63 @@ app.prepare().then(() => {
     io.to(serverRoomName).emit("players objects", players);
   }
 
-  function nextInLine() {
+  async function battleRoundAISummary() {
+    let message = `Game master, the team just had a round in battle. Please summarize this battle round 
+    scene with vivid detail. Keep your response to 600 characters or less. the battlefield 
+    has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each players battle round: `;
+
+    Object.entries(battleRoundData).forEach(([player, data]) => {
+      message += `name: ${player}, type:${data.type}, race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
+    });
+
+    console.log("battleRoundAISummary message ", message);
+
+    const uniqueId = `user${"backend"} -activity${activityCount} -${new Date().toISOString()} `;
+    let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+    activityCount++;
+    //send message to ai
+    chatMessages.push(serverData);
+  }
+
+  async function nextInLine() {
     let currentPlayerTurnOrder = null;
     let minTurnOrder = Infinity;
     let maxTurnOrder = -Infinity;
 
     const timeStamp = new Date().toISOString();
 
+    //go through battleRound players and see if they no longer exist, if so that means they died a while back so remove
+    Object.entries(battleRoundData).forEach(([name, data]) => {
+      if (!players.hasOwnProperty(name) && battleRoundData[name].died) {
+        delete battleRoundData[player.name];
+      }
+    });
+
     //first go through all players and remove any dead enemies
     Object.values(players).forEach((player) => {
       if (player.currentHealth <= 0 && player.type == "enemy") {
         delete players[player.name];
+        battleRoundData[player.name].died = true;
       }
     });
 
     // First, find the current player, min, and max turnOrder
     Object.values(players).forEach((player) => {
       if (player.battleMode.yourTurn) {
+        //create battleRoundData for that players turn
+        battleRoundData[player.name].attackAttempt = player?.battleMode?.actionAttempted;
+        battleRoundData[player.name].attackHit = player.battleMode.damageDelt >= 1;
+        battleRoundData[player.name].moved = player.battleMode.distanceMoved >= 1;
+
+        if (player.battleMode.damageDelt >= 1) {
+          battleRoundData[player.name].attackUsed = player.battleMode?.attackUsed;
+          for (const target of player.battleMode.usersTargeted) {
+            if (battleRoundData.hasOwnProperty(target)) {
+              battleRoundData[target].gotHit = true;
+            }
+          }
+        }
+
         currentPlayerTurnOrder = player.battleMode.turnOrder;
 
         player.battleMode.yourTurn = false; // End current player's turn
@@ -1504,7 +1585,25 @@ app.prepare().then(() => {
       return;
     }
 
-    //ToDo: if all player turns completed, show a picture
+    //ToDo: if all player turns completed, explain scene and show picture
+    let roundCompleted = true; // Assuming this is declared somewhere in your scope
+    const playersArray = Object.values(players);
+    for (const player of playersArray) {
+      if (!player?.battleMode?.turnCompleted) {
+        roundCompleted = false;
+        break; // This will exit the loop if the condition is met
+      }
+    }
+
+    // first reset all the turn Completed so it will trigger again next round
+    if (roundCompleted) {
+      //ToDo: Tell AI what happened and call DallE
+      await battleRoundAISummary();
+
+      Object.values(players).forEach((player) => {
+        player.battleMode.turnCompleted = false;
+      });
+    }
 
     // Set the next player's yourTurn to true
     Object.values(players).forEach((player) => {
@@ -1527,6 +1626,8 @@ app.prepare().then(() => {
     });
 
     activityCount++;
+
+    console.log("battleRoundData ", battleRoundData);
     io.to(serverRoomName).emit("players objects", players);
   }
 
@@ -1653,6 +1754,15 @@ app.prepare().then(() => {
       setTimeout(() => {
         io.to(serverRoomName).emit("players objects", players);
         resolve(); // Resolve the promise when emission is done
+      }, delay);
+    });
+  }
+
+  function runFunctionAfterDelay(callbackFunction, delay) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        callbackFunction();
+        resolve();
       }, delay);
     });
   }
@@ -1829,8 +1939,8 @@ app.prepare().then(() => {
     }
 
     if (players[playerData.name].battleMode.yourTurn) {
-      setTimeout(() => {
-        nextInLine();
+      setTimeout(async () => {
+        await nextInLine();
       }, 2000);
     }
   }
