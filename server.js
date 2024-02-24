@@ -1529,6 +1529,23 @@ app.prepare().then(() => {
     }
 
     //ToDo: if all player turns completed, explain scene and show picture
+    let roundCompleted = true; // Assuming this is declared somewhere in your scope
+    const playersArray = Object.values(players);
+    for (const player of playersArray) {
+      if (!player?.battleMode?.turnCompleted) {
+        roundCompleted = false;
+        break; // This will exit the loop if the condition is met
+      }
+    }
+
+    // first reset all the turn Completed so it will trigger again next round
+    if (roundCompleted) {
+      Object.values(players).forEach((player) => {
+        player.battleMode.turnCompleted = false;
+      });
+
+      //ToDo: Tell AI what happened and call DallE
+    }
 
     // Set the next player's yourTurn to true
     Object.values(players).forEach((player) => {
