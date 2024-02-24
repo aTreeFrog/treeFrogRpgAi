@@ -555,22 +555,6 @@ app.prepare().then(() => {
       io.to(serverRoomName).emit("players objects", players);
     }
 
-    async function battleRoundAISummary() {
-      let message = `Game master, the team just had a round in battle. Please summarize this battle round 
-      scene with vivid detail. Keep your response to 600 characters or less. the battlefield 
-      has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each players battle round: `;
-
-      Object.entries(battleRoundData).forEach(([player, data]) => {
-        message += `name: ${player}, type:${data.type}, $race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
-      });
-
-      const uniqueId = `user${"backend"} -activity${activityCount} -${new Date().toISOString()} `;
-      let serverData = { role: "backend", content: message, processed: false, id: uniqueId, mode: "All" };
-      activityCount++;
-      //send message to ai
-      chatMessages.push(serverData);
-    }
-
     async function createDallEImage(prompt) {
       //const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
 
@@ -1490,6 +1474,24 @@ app.prepare().then(() => {
     io.to(serverRoomName).emit("players objects", players);
   }
 
+  async function battleRoundAISummary() {
+    let message = `Game master, the team just had a round in battle. Please summarize this battle round 
+    scene with vivid detail. Keep your response to 600 characters or less. the battlefield 
+    has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each players battle round: `;
+
+    Object.entries(battleRoundData).forEach(([player, data]) => {
+      message += `name: ${player}, type:${data.type}, race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
+    });
+
+    console.log("battleRoundAISummary message ", message);
+
+    const uniqueId = `user${"backend"} -activity${activityCount} -${new Date().toISOString()} `;
+    let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+    activityCount++;
+    //send message to ai
+    chatMessages.push(serverData);
+  }
+
   async function nextInLine() {
     let currentPlayerTurnOrder = null;
     let minTurnOrder = Infinity;
@@ -1521,7 +1523,7 @@ app.prepare().then(() => {
         battleRoundData[player.name].moved = player.battleMode.distanceMoved >= 1;
 
         if (player.battleMode.damageDelt >= 1) {
-          battleRound[player.name].attackUsed = player.battleMode?.attackUsed;
+          battleRoundData[player.name].attackUsed = player.battleMode?.attackUsed;
           for (const target of player.battleMode.usersTargeted) {
             if (battleRoundData.hasOwnProperty(target)) {
               battleRoundData[target].gotHit = true;
@@ -1596,6 +1598,7 @@ app.prepare().then(() => {
     // first reset all the turn Completed so it will trigger again next round
     if (roundCompleted) {
       //ToDo: Tell AI what happened and call DallE
+      await battleRoundAISummary();
 
       Object.values(players).forEach((player) => {
         player.battleMode.turnCompleted = false;
