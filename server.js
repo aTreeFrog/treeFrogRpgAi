@@ -142,6 +142,9 @@ app.prepare().then(() => {
       }
     }
 
+    // toDo make this function
+    function enterStoryMode() {}
+
     async function enterBattleMode(mapName, backgroundMusic, enemyType, enemyCount) {
       const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
       const gridDataUrl = `http://localhost:3000/battlemaps/${mapName}.json`;
@@ -1055,7 +1058,7 @@ app.prepare().then(() => {
       io.emit("players objects", players);
     });
 
-    socket.on("D20 Dice Roll Complete", (diceData) => {
+    socket.on("D20 Dice Roll Complete", async (diceData) => {
       players[diceData.User].diceStates = cloneDeep(defaultDiceStates); //re-default dice after roll completes
 
       if (players[diceData.User].mode == "initiative") {
@@ -1134,9 +1137,25 @@ app.prepare().then(() => {
           players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
           activityCount++;
           io.to(serverRoomName).emit("players objects", players);
-          setTimeout(() => {
-            nextInLine();
+          setTimeout(async () => {
+            await nextInLine();
           }, 2000);
+        }
+
+        // after attack, see if all enemies are dead, if so go to story mode
+        let allEnemiesDead = true;
+        Object.values(players).forEach((player) => {
+          if (player.type == "enemy") {
+            if (player.currentHealth > 0) {
+              allEnemiesDead = false;
+            } else {
+              delete players[player.name];
+            }
+          }
+        });
+
+        if (allEnemiesDead) {
+          await runFunctionAfterDelay(enterStoryMode, 5000);
         }
       }
 
@@ -1148,8 +1167,8 @@ app.prepare().then(() => {
         players[diceData.User].activityId = `user${diceData.User}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         activityCount++;
         io.to(serverRoomName).emit("players objects", players);
-        setTimeout(() => {
-          nextInLine();
+        setTimeout(async () => {
+          await nextInLine();
         }, 2000);
       }
 
@@ -1288,8 +1307,8 @@ app.prepare().then(() => {
 
         // player attacked and moved as much as they can so change to next person.
         if (players[data.name].battleMode.distanceMoved >= players[data.name].distance && players[data.name].battleMode.actionAttempted) {
-          setTimeout(() => {
-            nextInLine();
+          setTimeout(async () => {
+            await nextInLine();
           }, 2000);
         }
 
@@ -1368,14 +1387,19 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on("end turn", (playerName) => {
-      if (players.hasOwnProperty(playerName)) {
-        if (players[playerName].battleMode.yourTurn) {
-          nextInLine();
-          players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
-          activityCount++;
-          io.to(serverRoomName).emit("players objects", players);
+    socket.on("end turn", async (playerName) => {
+      try {
+        if (players.hasOwnProperty(playerName)) {
+          if (players[playerName].battleMode.yourTurn) {
+            await nextInLine();
+            players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+            activityCount++;
+            io.to(serverRoomName).emit("players objects", players);
+          }
         }
+      } catch (error) {
+        console.error("Error handling end turn:", error);
+        // Handle error appropriately
       }
     });
 
@@ -1433,7 +1457,7 @@ app.prepare().then(() => {
     io.to(serverRoomName).emit("players objects", players);
   }
 
-  function nextInLine() {
+  async function nextInLine() {
     let currentPlayerTurnOrder = null;
     let minTurnOrder = Infinity;
     let maxTurnOrder = -Infinity;
@@ -1504,7 +1528,7 @@ app.prepare().then(() => {
       return;
     }
 
-    //ToDo: if all player turns completed, show a picture
+    //ToDo: if all player turns completed, explain scene and show picture
 
     // Set the next player's yourTurn to true
     Object.values(players).forEach((player) => {
@@ -1653,6 +1677,15 @@ app.prepare().then(() => {
       setTimeout(() => {
         io.to(serverRoomName).emit("players objects", players);
         resolve(); // Resolve the promise when emission is done
+      }, delay);
+    });
+  }
+
+  function runFunctionAfterDelay(callbackFunction, delay) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        callbackFunction();
+        resolve();
       }, delay);
     });
   }
@@ -1829,8 +1862,8 @@ app.prepare().then(() => {
     }
 
     if (players[playerData.name].battleMode.yourTurn) {
-      setTimeout(() => {
-        nextInLine();
+      setTimeout(async () => {
+        await nextInLine();
       }, 2000);
     }
   }
