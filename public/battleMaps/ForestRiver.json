@@ -1,4 +1,7 @@
-[
+{
+    "name": "ForestRiver",
+    "description": "a sunny grassland with spread out trees and a large river",
+    "gridData": [
     {
         "x": 0,
         "y": 0,
@@ -844,4 +847,7 @@
         "y": 12,
         "environment": ""
     }
-]
+
+    ]
+    
+}

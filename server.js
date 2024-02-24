@@ -12,6 +12,7 @@ const FormData = require("form-data");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const { player } = require("./lib/objects/player");
 const { game } = require("./lib/objects/game");
+const { battleRound } = require("./lib/objects/battleRound");
 const enemies = require("./lib/enemies");
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
@@ -82,6 +83,7 @@ let aiInOrderChatMessage = [];
 let waitingForUser = false;
 let clients = {};
 let players = {};
+let battleRoundData = {};
 let responseSent = new Map();
 let waitingForRolls = false;
 let awayPlayerCount = 1;
@@ -89,6 +91,7 @@ let settingUpNewScene = false;
 let msgActivityCount = 1;
 let processingMessage = false;
 let activePlayers = 0;
+let mapDescription = "";
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -161,6 +164,11 @@ app.prepare().then(() => {
       game.battleGrid = gridDataUrl;
       game.image = mapUrl;
       game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+
+      battleRoundData = {}; //start fresh with battleRoundData since a battle just started.
+      const mapData = path.join(__dirname, `public/battleMaps/${mapName}.json`);
+      const mapDataJson = JSON.parse(fs.readFileSync(mapData, "utf8"));
+      mapDescription = mapDataJson.description;
 
       activePlayers = 0;
       //update players state for init battle mode
@@ -269,6 +277,14 @@ app.prepare().then(() => {
         console.log("all players with enemies", players);
       }
       activityCount++;
+
+      //initial battleRound data for all players including enemies to be used to summarize rounds.
+      Object.entries(players).forEach(([name, player]) => {
+        battleRoundData[name] = { ...battleRound };
+        battleRoundData[name].type = player.type;
+        battleRoundData[name].class = player.class;
+        battleRoundData[name].race = player.race;
+      });
 
       console.log("enter battle mode");
 
@@ -1150,6 +1166,7 @@ app.prepare().then(() => {
               allEnemiesDead = false;
             } else {
               delete players[player.name];
+              battleRoundData[player.name].died = true;
             }
           }
         });
@@ -1464,16 +1481,38 @@ app.prepare().then(() => {
 
     const timeStamp = new Date().toISOString();
 
+    //go through battleRound players and see if they no longer exist, if so that means they died a while back so remove
+    Object.entries(battleRoundData).forEach(([name, data]) => {
+      if (!players.hasOwnProperty(name) && battleRoundData[name].died) {
+        delete battleRoundData[player.name];
+      }
+    });
+
     //first go through all players and remove any dead enemies
     Object.values(players).forEach((player) => {
       if (player.currentHealth <= 0 && player.type == "enemy") {
         delete players[player.name];
+        battleRoundData[player.name].died = true;
       }
     });
 
     // First, find the current player, min, and max turnOrder
     Object.values(players).forEach((player) => {
       if (player.battleMode.yourTurn) {
+        //create battleRoundData for that players turn
+        battleRoundData[player.name].attackAttempt = player?.battleMode?.actionAttempted;
+        battleRoundData[player.name].attackHit = player.battleMode.damageDelt >= 1;
+        battleRoundData[player.name].moved = player.battleMode.distanceMoved >= 1;
+
+        if (player.battleMode.damageDelt >= 1) {
+          battleRound[player.name].attackUsed = player.battleMode?.attackUsed;
+          for (const target of player.battleMode.usersTargeted) {
+            if (battleRoundData.hasOwnProperty(target)) {
+              battleRoundData[target].gotHit = true;
+            }
+          }
+        }
+
         currentPlayerTurnOrder = player.battleMode.turnOrder;
 
         player.battleMode.yourTurn = false; // End current player's turn
@@ -1540,11 +1579,11 @@ app.prepare().then(() => {
 
     // first reset all the turn Completed so it will trigger again next round
     if (roundCompleted) {
+      //ToDo: Tell AI what happened and call DallE
+
       Object.values(players).forEach((player) => {
         player.battleMode.turnCompleted = false;
       });
-
-      //ToDo: Tell AI what happened and call DallE
     }
 
     // Set the next player's yourTurn to true
