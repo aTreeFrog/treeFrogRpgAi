@@ -1165,7 +1165,6 @@ app.prepare().then(() => {
             if (player.currentHealth > 0) {
               allEnemiesDead = false;
             } else {
-              delete players[player.name];
               battleRoundData[player.name].died = true;
             }
           }
@@ -1509,8 +1508,8 @@ app.prepare().then(() => {
     //first go through all players and remove any dead enemies
     Object.values(players).forEach((player) => {
       if (player.currentHealth <= 0 && player.type == "enemy") {
-        delete players[player.name];
         battleRoundData[player.name].died = true;
+        delete players[player.name];
       }
     });
 
