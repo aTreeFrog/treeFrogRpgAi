@@ -222,6 +222,7 @@ export default function Home() {
   const [pingReady, setPingReady] = useState(false);
   const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning
   const [iconSelection, setIconSelection] = useState({});
+  const lastImageUrlRef = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -352,13 +353,13 @@ export default function Home() {
       //console.log('latest user message', data);
       chatSocket.emit("received user message", data);
       setUpdatingChatLog(true);
-      setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: data.content, mode: data.mode }]);
+      setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: data.content, mode: data.mode, type: "text" }]);
       setUpdatingChatLog(false);
     });
 
     const handleChatMessage = (msg) => {
       waitingForComplete.current = true;
-      //console.log("handleChatMessage", msg);
+      //console.log("handleChatMessage", msg);,
       setCancelButton(1);
       setIsLoading(false);
       messageQueue.current.push(msg);
@@ -506,8 +507,26 @@ export default function Home() {
 
     chatSocket.on("dall e image", (dallEObject) => {
       console.log("dall e image made, ", dallEObject.imageUrl);
+
+      // Check if the current message is the same as the last processed one
+      if (dallEObject.imageUrl === lastImageUrlRef.current) {
+        console.log("Duplicate message detected, skipping processing.");
+        return; // Exit early if it's a duplicate message
+      }
+
+      lastImageUrlRef.current = dallEObject.imageUrl;
+
       setDalleImageUrl(dallEObject.imageUrl);
       setShadowDomColor(dallEObject.shadowColor);
+
+      console.log("prevPlayersData.current[userName]?.mode", prevPlayersData.current[userName]?.mode);
+
+      if (prevPlayersData.current[userName]?.mode == "battle") {
+        console.log("battle dall e image");
+        setUpdatingChatLog(true);
+        setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: dallEObject.imageUrl, mode: "All", type: "image" }]);
+        setUpdatingChatLog(false);
+      }
     });
 
     chatSocket.on("enter battle mode", (data) => {
@@ -741,6 +760,7 @@ export default function Home() {
             role: msg.role,
             message: msg.message,
             messageId: msg.messageId, // Assuming msg has a messageId property
+            type: "text",
           });
         }
 
@@ -918,6 +938,15 @@ export default function Home() {
         scrollableDivRef.current.scrollTop = scrollHeight;
         setIsAtBottom(true);
       }
+    }
+
+    //if image just appeared in textbox, auto go to it.
+    const latestEntry = chatLog[chatLog.length - 1];
+    if (latestEntry?.type == "image") {
+      console.log("latestEntry", latestEntry);
+      setTimeout(() => {
+        scrollToBottom();
+      }, 1500);
     }
   }, [chatLog]);
 
@@ -1863,23 +1892,39 @@ export default function Home() {
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
               <div key={`${message.messageId}-${index}`} className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}>
-                {/* Conditional rendering of the user's name */}
-                {message.role === "user" && usersInServer.length > 1 && <div className="text-sm mb-1 mr-1 text-white">{userName}</div>}
-                <div
-                  className={`${
-                    message.role === "user" && message.mode === "All"
-                      ? "bg-purple-500"
-                      : message.role === "user" && message.mode === "Team"
-                      ? "bg-yellow-700"
-                      : "bg-gray-800"
-                  } rounded-lg p-2 text-white max-w-sm`}>
-                  {message.message}
-                  {wizardHatEnable && message.role === "assistant" && index === lastBotMessageIndex && (
-                    <span className="wizard-hat inline-block ml-1">
-                      <FontAwesomeIcon icon={faHatWizard} />
-                    </span>
-                  )}
-                </div>
+                {/* Conditional rendering of the user's name for text messages */}
+                {message.type === "text" && message.role === "user" && usersInServer.length > 1 && (
+                  <div className="text-sm mb-1 mr-1 text-white">{userName}</div>
+                )}
+
+                {message.type === "text" ? (
+                  // Text message rendering
+                  <div
+                    className={`${
+                      message.role === "user" && message.mode === "All"
+                        ? "bg-purple-500"
+                        : message.role === "user" && message.mode === "Team"
+                        ? "bg-yellow-700"
+                        : "bg-gray-800"
+                    } rounded-lg p-2 text-white max-w-sm`}>
+                    {message.message}
+                    {wizardHatEnable && message.role === "assistant" && index === lastBotMessageIndex && (
+                      <span className="wizard-hat inline-block ml-1">
+                        <FontAwesomeIcon icon={faHatWizard} />
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  // Image message rendering
+                  message.type === "image" && (
+                    <img
+                      src={message.message}
+                      alt="DALL·E Generated"
+                      className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+                      style={boxShadowStyle}
+                    />
+                  )
+                )}
               </div>
             ))}
           </div>
