@@ -760,7 +760,7 @@ app.prepare().then(() => {
         if (functionData.name == "createDallEImage") {
           argumentsJson = JSON.parse(functionData.arguments);
           promptValue = argumentsJson.prompt;
-          //createDallEImage(promptValue);  ////////////TURN BACK ON!!!////////////////
+          createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
         }
       }
 
