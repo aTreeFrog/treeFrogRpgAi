@@ -1087,3 +1087,9 @@ textarea {
     justify-content: center;
     align-items: center;
 }
+
+.transition-bg-color {
+    transition-property: background-color;
+    transition-duration: 10s; /* Adjust the duration as needed */
+  }
+  

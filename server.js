@@ -76,6 +76,29 @@ const defaultDiceStates = {
   },
 };
 
+const defaultBattleMode = {
+  initiativeRoll: 0,
+  attackRoll: 0,
+  attackRollSucceeded: null,
+  turnOrder: null,
+  yourTurn: false,
+  distanceMoved: null,
+  attackUsed: null,
+  actionAttempted: false,
+  damageRollRequested: false,
+  damageDelt: null,
+  usersTargeted: [],
+  turnCompleted: false,
+  mapUrl: null,
+  gridDataUrl: null,
+  initiativeImageUrl: null,
+  initiativeImageShadow: null,
+  targeted: false,
+  enemyAttackAttempt: "INIT",
+  attackSound: null,
+  deathSound: null,
+};
+
 let shouldContinue = {};
 let activityCount = 1;
 let chatMessages = [];
@@ -92,6 +115,7 @@ let msgActivityCount = 1;
 let processingMessage = false;
 let activePlayers = 0;
 let mapDescription = "";
+let playerCountForGame = 1;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -145,8 +169,116 @@ app.prepare().then(() => {
       }
     }
 
+    function startOfGame() {
+      const dateStamp = new Date().toISOString();
+      game.mode = "startOfGame";
+      game.battleGrid = null;
+      game.image = null;
+      game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+      for (let user in players) {
+        if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+          console.log("deleting player", user);
+          delete players[user];
+        }
+        if (players.hasOwnProperty(user) && players[user].type == "player") {
+          players[user].diceStates = cloneDeep(defaultDiceStates);
+          players[user].battleMode = { ...defaultBattleMode };
+          players[user].pingXPosition = null;
+          players[user].pingYPosition = null;
+          players[user].mode = "startOfGame";
+          players[user].backgroundColor = "bg-black";
+          players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
+          players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+        }
+      }
+
+      message = `you are a dungeon master and i am a player named aTreeFrog. I am a wizard male elf. 
+      You will narrate the story. Every once in a while, ask me to roll a d20 dice with some modifier. 
+      But don't ask all the time. Keep the story open for me to make my own decisions on what to do as well. 
+      And anytime i respond with the answer to a dice roll, don't mention the roll in your response. 
+      just continue with the story and adjust the outcome of the story based on my role. Have the story start with 
+      me at an elf village walking inside a tavern on a cold dim night. Have danger emerge somewhere in the story involving goblins. 
+      Start the story slow. Let the player get a feel for the environment. The danger will be goblins that start invading the village. 
+      Include the bartender as a non player character who helps me get to a good fighting position in a secret upstairs location at the bar.
+      Also, if you ask me to roll, dont continue the story, instead stop and wait for me to respond with my roll. 
+      Also, only ask me to roll with modifiers of nature, perception or stealth. always ensure you say the words 
+      roll and d20 when you want me to roll. Keep your responses less than 300 characters.  If I am about to engage 
+      in battle, first ask me to do an initiative roll in order to get the turn order for the battle. Ensure you always 
+      say the words roll and d20 if your asking me to roll. Always say roll and d20 in the same sentence when asking me 
+      to roll everytime. At the start of your output, great me the player by my name, and say the name of the game we
+      are playing, which is called Wizards and Goblins, an AI based Role Playing Game.`;
+
+      const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
+      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      activityCount++;
+      //send message to ai
+      chatMessages.push(serverData);
+      io.to(serverRoomName).emit("enter battle mode", game); //not sure i need game object at all yet
+      io.to(serverRoomName).emit("players objects", players);
+    }
+
     // toDo make this function
-    function enterStoryMode() {}
+    function leaveBattleMode(success = true) {
+      const dateStamp = new Date().toISOString();
+      //setup post battle mode for the battle object
+      game.mode = "postBattle";
+      game.battleGrid = null;
+      game.image = null;
+      game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+
+      for (let user in players) {
+        // delete any enemies that may still exist
+        if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+          console.log("deleting player", user);
+          delete players[user];
+        }
+        if (players.hasOwnProperty(user) && players[user].type == "player") {
+          players[user].diceStates = cloneDeep(defaultDiceStates);
+          players[user].battleMode = { ...defaultBattleMode };
+          players[user].currentHealth = players[user].maxHealth;
+          players[user].pingXPosition = null;
+          players[user].pingYPosition = null;
+          players[user].mode = "postBattle";
+          players[user].backgroundColor = "bg-black";
+          players[user].backgroundAudio = `http://localhost:3000/audio/Dhaka.mp3`;
+          players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+        }
+      }
+
+      let message = "";
+      if (success) {
+        message = `Game master, the team just won the battle. You need to recall 
+        where the players were during the fighting and describe in detail how the players recompose themselves
+        and prepare to continue on with their journey. They may not want to leave the current scene, but set it
+        up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
+        constitution modifier. They won this battle, so explain in vivid detail the battle ending scene in 400
+        characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
+        group as a whole (asking each player to roll and determining the outcome) will determine how likely players
+        sense good loot nearby or if there is any special treasure to be found. The players will respond with their dice
+        rolls. Remember, keep your output less then 400 characters`;
+      } else {
+        message = `Game master, the team just lost the battle. You need to recall 
+        where the players were during the fighting and describe in detail a scenario that allowed the players
+        to somehow survive this battle. For example, say a dragon flew overhead and unleashed a ray of flames killing
+        all the enemies. Or a mystical fairy blessed the team and brought them to safety. Come up with what happened
+        thats believable based on the fighting that had occurred such as the landscape and type of enemies they were facing.
+        then prepare the players to continue on with their journey. They may not want to leave the current scene, but set it
+        up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
+        constitution modifier. They survived this battle as a miracle, so explain in vivid detail the battle ending scene in 600
+        characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
+        group as a whole (asking each player to roll and determining the outcome) will determine how likely players
+        sense good loot nearby or if there is any special treasure to be found. The players will respond with their dice
+        rolls. Remember, keep your output less then 400 characters`;
+      }
+
+      const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
+      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      activityCount++;
+      //send message to ai
+      chatMessages.push(serverData);
+      io.to(serverRoomName).emit("enter battle mode", game); //not sure i need game object at all yet
+      io.to(serverRoomName).emit("players objects", players);
+    }
 
     async function enterBattleMode(mapName, backgroundMusic, enemyType, enemyCount) {
       const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
@@ -317,7 +449,7 @@ app.prepare().then(() => {
       });
 
       const data = {
-        model: "gpt-4",
+        model: "gpt-3.5-turbo-1106",
         messages: messagesFilteredForApi,
         stream: true,
       };
@@ -464,14 +596,15 @@ app.prepare().then(() => {
           };
           waitingForRolls = true;
 
-          players[user].timers.duration = 60;
-          players[user].timers.enabled = true;
-          //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-          waitAndCall(
-            players[user].timers.duration,
-            () => forceResetCheck(players[user]),
-            () => players[user].timers.enabled
-          );
+          //ToDo: lots of bugs here, figure it out!!!!!!!!!!!!!
+          // players[user].timers.duration = 240;
+          // players[user].timers.enabled = true;
+          // //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+          // waitAndCall(
+          //   players[user].timers.duration,
+          //   () => forceResetCheck(players[user]),
+          //   () => players[user].timers.enabled
+          // );
         }
       }
 
@@ -659,7 +792,7 @@ app.prepare().then(() => {
         });
         console.log("latestAssistantMessage", latestAssistantMessage);
         const data = {
-          model: "gpt-4",
+          model: "gpt-3.5-turbo-1106",
           messages: latestAssistantMessage,
           stream: false,
           tools: [
@@ -684,7 +817,7 @@ app.prepare().then(() => {
                     },
                     users: {
                       type: "array",
-                      enum: Object.keys(clients),
+                      enum: ["aTreeFrog"],
                       description:
                         "Based on the latest conversation history. the Assistant or bot says exactly which players should roll the d20. look for all the players that need to role and add them to this array.",
                     },
@@ -723,7 +856,7 @@ app.prepare().then(() => {
         content: "Based on this prompt history, has a new scenery change just been made? If so, call the function createDallEImage.",
       });
       const dallEdata = {
-        model: "gpt-4",
+        model: "gpt-3.5-turbo-1106",
         messages: messagesFilteredForFunction,
         stream: false,
         tools: [
@@ -782,7 +915,7 @@ app.prepare().then(() => {
         });
         console.log("enterBattleMode latestAssistantMessage", latestAssistantMessage);
         const data = {
-          model: "gpt-4",
+          model: "gpt-3.5-turbo-1106",
           messages: messagesFilteredForFunction,
           stream: false,
           tools: [
@@ -948,7 +1081,16 @@ app.prepare().then(() => {
       console.log("arrayBuffer: ", arrayBuffer);
       const buffer = Buffer.from(arrayBuffer);
       console.log("buffer: ", buffer);
-      const filePath = "src/temp/input.webm";
+
+      const directoryPath = path.join(__dirname, "src", "temp");
+      const filePath = path.join(directoryPath, "input.webm");
+
+      // Ensure directory exists
+      if (!fs.existsSync(directoryPath)) {
+        fs.mkdirSync(directoryPath, { recursive: true });
+      }
+
+      // Write file
       fs.writeFileSync(filePath, buffer);
       const readStream = fs.createReadStream(filePath);
 
@@ -963,7 +1105,7 @@ app.prepare().then(() => {
       fs.unlinkSync(filePath); // deletes file
     });
 
-    socket.on("user name", (userName) => {
+    socket.on("user name", async (userName) => {
       console.log("user name");
 
       if (clients[userName] && clients[userName] !== socket.id) {
@@ -1063,7 +1205,12 @@ app.prepare().then(() => {
 
       io.to(serverRoomName).emit("players objects", players);
 
-      enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
+      // lets setup the game
+      if (Object.keys(players).length >= playerCountForGame) {
+        await runFunctionAfterDelay(() => startOfGame(), 10000);
+      }
+
+      //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
 
     socket.on("obtain all users", () => {
@@ -1076,6 +1223,9 @@ app.prepare().then(() => {
 
     socket.on("D20 Dice Roll Complete", async (diceData) => {
       players[diceData.User].diceStates = cloneDeep(defaultDiceStates); //re-default dice after roll completes
+
+      //reset any modified background colors since roll done.
+      players[diceData.User].backgroundColor = null;
 
       if (players[diceData.User].mode == "initiative") {
         players[diceData.User].battleMode.initiativeRoll = diceData.Total;
@@ -1160,6 +1310,7 @@ app.prepare().then(() => {
 
         // after attack, see if all enemies are dead, if so go to story mode
         let allEnemiesDead = true;
+        let allPlayersDead = true;
         Object.values(players).forEach((player) => {
           if (player.type == "enemy") {
             if (player.currentHealth > 0) {
@@ -1167,11 +1318,15 @@ app.prepare().then(() => {
             } else {
               battleRoundData[player.name].died = true;
             }
+          } else if (player.currentHealth > 0) {
+            allPlayersDead = false;
           }
         });
 
-        if (allEnemiesDead) {
-          await runFunctionAfterDelay(enterStoryMode, 5000);
+        // if all enemies dead, call story mode with true for successful battle
+        if (allEnemiesDead || allPlayersDead) {
+          await runFunctionAfterDelay(() => leaveBattleMode(allEnemiesDead), 10000);
+          //return;
         }
       }
 
@@ -1506,12 +1661,26 @@ app.prepare().then(() => {
     });
 
     //first go through all players and remove any dead enemies
+    let allEnemiesDead = true;
+    let allPlayersDead = true;
     Object.values(players).forEach((player) => {
-      if (player.currentHealth <= 0 && player.type == "enemy") {
-        battleRoundData[player.name].died = true;
-        delete players[player.name];
+      if (player.type == "enemy") {
+        if (player.currentHealth > 0) {
+          allEnemiesDead = false;
+        } else {
+          battleRoundData[player.name].died = true;
+          delete players[player.name];
+        }
+      } else if (player.currentHealth > 0) {
+        allPlayersDead = false;
       }
     });
+
+    // if pass true to storymode function, it means successful battle. otherwise players all died and failed.
+    if (allEnemiesDead || allPlayersDead) {
+      await runFunctionAfterDelay(() => leaveBattleMode(allEnemiesDead), 10000);
+      return;
+    }
 
     // First, find the current player, min, and max turnOrder
     Object.values(players).forEach((player) => {

@@ -1169,6 +1169,11 @@ export default function Home() {
   const updateDiceStates = (data) => {
     console.log("updateDiceStates: ", data);
 
+    //open skills tab if not in battle so player can see the highlighted roll modifier
+    if (players[userName].mode != "battle") {
+      setActiveTab("Skills");
+    }
+
     latestDiceMsg.current = data;
     setDiceRollId(data.activityId);
 
@@ -1665,7 +1670,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
+    <div
+      className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
+        players[userName]?.backgroundColor ? players[userName].backgroundColor : "bg-gray-900"
+      }`}>
       {/* Left Box */}
       <div className="flex-1 max-w-[30%] border border-white">
         {awayMode ? (
@@ -1734,14 +1742,18 @@ export default function Home() {
             Story
           </h1>
           {/* Conditional DALL·E Image */}
-          {isImageLoaded && (players[userName]?.mode == "story" || players[userName]?.mode == "dice") && (
-            <img
-              src={dalleImageUrl}
-              alt="DALL·E Generated"
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
-              style={boxShadowStyle}
-            />
-          )}
+          {isImageLoaded &&
+            (players[userName]?.mode == "story" ||
+              players[userName]?.mode == "dice" ||
+              players[userName]?.mode == "postBattle" ||
+              players[userName]?.mode == "startOfGame") && (
+              <img
+                src={dalleImageUrl}
+                alt="DALL·E Generated"
+                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+                style={boxShadowStyle}
+              />
+            )}
           {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
             <div className="fade-in">
               <img
@@ -1882,7 +1894,10 @@ export default function Home() {
         </div>
       </div>
       {/* Right Box */}
-      <div className="flex-1 max-w-[30%] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
+      <div
+        className={`flex-1 max-w-[30%] p-4 relative flex flex-col h-[100vh] border border-white ${
+          players[userName]?.backgroundColor ? "transition-bg-color " + players[userName].backgroundColor : "transition-bg-color bg-gray-800"
+        }`}>
         {/* Sticky Header */}
         <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">
           Game Master
