@@ -190,10 +190,10 @@ app.prepare().then(() => {
           players[user].pingXPosition = null;
           players[user].pingYPosition = null;
           players[user].mode = "postBattle";
-          players[user].backgroundColor = "black";
+          players[user].backgroundColor = "bg-black";
           players[user].backgroundAudio = `http://localhost:3000/audio/Dhaka.mp3`;
+          players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
         }
-        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
       }
 
       let message = "";
@@ -202,10 +202,11 @@ app.prepare().then(() => {
         where the players were during the fighting and describe in detail how the players recompose themselves
         and prepare to continue on with their journey. They may not want to leave the current scene, but set it
         up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
-        constitution modifier. They won this battle, so explain in vivid detail the battle ending scene in 600
+        constitution modifier. They won this battle, so explain in vivid detail the battle ending scene in 400
         characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
         group as a whole (asking each player to roll and determining the outcome) will determine how likely players
-        sense good loot nearby or if there is any special treasure to be found.`;
+        sense good loot nearby or if there is any special treasure to be found. The players will respond with their dice
+        rolls. Remember, keep your output less then 400 characters`;
       } else {
         message = `Game master, the team just lost the battle. You need to recall 
         where the players were during the fighting and describe in detail a scenario that allowed the players
@@ -217,7 +218,8 @@ app.prepare().then(() => {
         constitution modifier. They survived this battle as a miracle, so explain in vivid detail the battle ending scene in 600
         characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
         group as a whole (asking each player to roll and determining the outcome) will determine how likely players
-        sense good loot nearby or if there is any special treasure to be found.`;
+        sense good loot nearby or if there is any special treasure to be found. The players will respond with their dice
+        rolls. Remember, keep your output less then 400 characters`;
       }
 
       const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
@@ -545,14 +547,15 @@ app.prepare().then(() => {
           };
           waitingForRolls = true;
 
-          players[user].timers.duration = 60;
-          players[user].timers.enabled = true;
-          //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-          waitAndCall(
-            players[user].timers.duration,
-            () => forceResetCheck(players[user]),
-            () => players[user].timers.enabled
-          );
+          //ToDo: lots of bugs here, figure it out!!!!!!!!!!!!!
+          // players[user].timers.duration = 240;
+          // players[user].timers.enabled = true;
+          // //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+          // waitAndCall(
+          //   players[user].timers.duration,
+          //   () => forceResetCheck(players[user]),
+          //   () => players[user].timers.enabled
+          // );
         }
       }
 
@@ -1158,6 +1161,9 @@ app.prepare().then(() => {
     socket.on("D20 Dice Roll Complete", async (diceData) => {
       players[diceData.User].diceStates = cloneDeep(defaultDiceStates); //re-default dice after roll completes
 
+      //reset any modified background colors since roll done.
+      players[diceData.User].backgroundColor = null;
+
       if (players[diceData.User].mode == "initiative") {
         players[diceData.User].battleMode.initiativeRoll = diceData.Total;
       } else if (players[diceData.User].mode == "dice") {
@@ -1256,7 +1262,8 @@ app.prepare().then(() => {
 
         // if all enemies dead, call story mode with true for successful battle
         if (allEnemiesDead || allPlayersDead) {
-          await runFunctionAfterDelay(leaveBattleMode(allEnemiesDead), 5000);
+          await runFunctionAfterDelay(() => leaveBattleMode(allEnemiesDead), 10000);
+          //return;
         }
       }
 
@@ -1608,7 +1615,8 @@ app.prepare().then(() => {
 
     // if pass true to storymode function, it means successful battle. otherwise players all died and failed.
     if (allEnemiesDead || allPlayersDead) {
-      await runFunctionAfterDelay(enterStoryMode(allEnemiesDead), 5000);
+      await runFunctionAfterDelay(() => leaveBattleMode(allEnemiesDead), 10000);
+      return;
     }
 
     // First, find the current player, min, and max turnOrder

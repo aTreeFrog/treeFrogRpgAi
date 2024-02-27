@@ -1665,7 +1665,10 @@ export default function Home() {
   };
 
   return (
-    <div className="flex justify-center items-start h-screen bg-gray-900 overflow-hidden">
+    <div
+      className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
+        players[userName]?.backgroundColor ? players[userName].backgroundColor : "bg-gray-900"
+      }`}>
       {/* Left Box */}
       <div className="flex-1 max-w-[30%] border border-white">
         {awayMode ? (
@@ -1734,7 +1737,7 @@ export default function Home() {
             Story
           </h1>
           {/* Conditional DALL·E Image */}
-          {isImageLoaded && (players[userName]?.mode == "story" || players[userName]?.mode == "dice") && (
+          {isImageLoaded && (players[userName]?.mode == "story" || players[userName]?.mode == "dice" || players[userName]?.mode == "postBattle") && (
             <img
               src={dalleImageUrl}
               alt="DALL·E Generated"
@@ -1882,7 +1885,10 @@ export default function Home() {
         </div>
       </div>
       {/* Right Box */}
-      <div className="flex-1 max-w-[30%] bg-gray-800 p-4 relative flex flex-col h-[100vh] border border-white">
+      <div
+        className={`flex-1 max-w-[30%] p-4 relative flex flex-col h-[100vh] border border-white ${
+          players[userName]?.backgroundColor ? "transition-bg-color " + players[userName].backgroundColor : "transition-bg-color bg-gray-800"
+        }`}>
         {/* Sticky Header */}
         <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">
           Game Master
