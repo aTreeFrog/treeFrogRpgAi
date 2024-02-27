@@ -115,6 +115,7 @@ let msgActivityCount = 1;
 let processingMessage = false;
 let activePlayers = 0;
 let mapDescription = "";
+let playerCountForGame = 1;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -166,6 +167,54 @@ app.prepare().then(() => {
         console.error("Error in getting dominant color:", error);
         return null;
       }
+    }
+
+    function startOfGame() {
+      const dateStamp = new Date().toISOString();
+      game.mode = "startOfGame";
+      game.battleGrid = null;
+      game.image = null;
+      game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+      for (let user in players) {
+        if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+          console.log("deleting player", user);
+          delete players[user];
+        }
+        if (players.hasOwnProperty(user) && players[user].type == "player") {
+          players[user].diceStates = cloneDeep(defaultDiceStates);
+          players[user].battleMode = { ...defaultBattleMode };
+          players[user].pingXPosition = null;
+          players[user].pingYPosition = null;
+          players[user].mode = "startOfGame";
+          players[user].backgroundColor = "bg-black";
+          players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
+          players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+        }
+      }
+
+      message = `you are a dungeon master and i am a player named aTreeFrog. I am a wizard male elf. 
+      You will narrate the story. Every once in a while, ask me to roll a d20 dice with some modifier. 
+      But don't ask all the time. Keep the story open for me to make my own decisions on what to do as well. 
+      And anytime i respond with the answer to a dice roll, don't mention the roll in your response. 
+      just continue with the story and adjust the outcome of the story based on my role. Have the story start with 
+      me at an elf village walking inside a tavern on a cold dim night. Have danger emerge somewhere in the story involving goblins. 
+      Start the story slow. Let the player get a feel for the environment. The danger will be goblins that start invading the village. 
+      Include the bartender as a non player character who helps me get to a good fighting position in a secret upstairs location at the bar.
+      Also, if you ask me to roll, dont continue the story, instead stop and wait for me to respond with my roll. 
+      Also, only ask me to roll with modifiers of nature, perception or stealth. always ensure you say the words 
+      roll and d20 when you want me to roll. Keep your responses less than 300 characters.  If I am about to engage 
+      in battle, first ask me to do an initiative roll in order to get the turn order for the battle. Ensure you always 
+      say the words roll and d20 if your asking me to roll. Always say roll and d20 in the same sentence when asking me 
+      to roll everytime. At the start of your output, great me the player by my name, and say the name of the game we
+      are playing, which is called Wizards and Goblins, an AI based Role Playing Game.`;
+
+      const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
+      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      activityCount++;
+      //send message to ai
+      chatMessages.push(serverData);
+      io.to(serverRoomName).emit("enter battle mode", game); //not sure i need game object at all yet
+      io.to(serverRoomName).emit("players objects", players);
     }
 
     // toDo make this function
@@ -400,7 +449,7 @@ app.prepare().then(() => {
       });
 
       const data = {
-        model: "gpt-4",
+        model: "gpt-3.5-turbo-1106",
         messages: messagesFilteredForApi,
         stream: true,
       };
@@ -743,7 +792,7 @@ app.prepare().then(() => {
         });
         console.log("latestAssistantMessage", latestAssistantMessage);
         const data = {
-          model: "gpt-4",
+          model: "gpt-3.5-turbo-1106",
           messages: latestAssistantMessage,
           stream: false,
           tools: [
@@ -768,7 +817,7 @@ app.prepare().then(() => {
                     },
                     users: {
                       type: "array",
-                      enum: Object.keys(clients),
+                      enum: ["aTreeFrog"],
                       description:
                         "Based on the latest conversation history. the Assistant or bot says exactly which players should roll the d20. look for all the players that need to role and add them to this array.",
                     },
@@ -807,7 +856,7 @@ app.prepare().then(() => {
         content: "Based on this prompt history, has a new scenery change just been made? If so, call the function createDallEImage.",
       });
       const dallEdata = {
-        model: "gpt-4",
+        model: "gpt-3.5-turbo-1106",
         messages: messagesFilteredForFunction,
         stream: false,
         tools: [
@@ -866,7 +915,7 @@ app.prepare().then(() => {
         });
         console.log("enterBattleMode latestAssistantMessage", latestAssistantMessage);
         const data = {
-          model: "gpt-4",
+          model: "gpt-3.5-turbo-1106",
           messages: messagesFilteredForFunction,
           stream: false,
           tools: [
@@ -1032,7 +1081,16 @@ app.prepare().then(() => {
       console.log("arrayBuffer: ", arrayBuffer);
       const buffer = Buffer.from(arrayBuffer);
       console.log("buffer: ", buffer);
-      const filePath = "src/temp/input.webm";
+
+      const directoryPath = path.join(__dirname, "src", "temp");
+      const filePath = path.join(directoryPath, "input.webm");
+
+      // Ensure directory exists
+      if (!fs.existsSync(directoryPath)) {
+        fs.mkdirSync(directoryPath, { recursive: true });
+      }
+
+      // Write file
       fs.writeFileSync(filePath, buffer);
       const readStream = fs.createReadStream(filePath);
 
@@ -1047,7 +1105,7 @@ app.prepare().then(() => {
       fs.unlinkSync(filePath); // deletes file
     });
 
-    socket.on("user name", (userName) => {
+    socket.on("user name", async (userName) => {
       console.log("user name");
 
       if (clients[userName] && clients[userName] !== socket.id) {
@@ -1147,7 +1205,12 @@ app.prepare().then(() => {
 
       io.to(serverRoomName).emit("players objects", players);
 
-      enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
+      // lets setup the game
+      if (Object.keys(players).length >= playerCountForGame) {
+        await runFunctionAfterDelay(() => startOfGame(), 10000);
+      }
+
+      //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
 
     socket.on("obtain all users", () => {

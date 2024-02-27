@@ -1169,6 +1169,11 @@ export default function Home() {
   const updateDiceStates = (data) => {
     console.log("updateDiceStates: ", data);
 
+    //open skills tab if not in battle so player can see the highlighted roll modifier
+    if (players[userName].mode != "battle") {
+      setActiveTab("Skills");
+    }
+
     latestDiceMsg.current = data;
     setDiceRollId(data.activityId);
 
@@ -1737,14 +1742,18 @@ export default function Home() {
             Story
           </h1>
           {/* Conditional DALL·E Image */}
-          {isImageLoaded && (players[userName]?.mode == "story" || players[userName]?.mode == "dice" || players[userName]?.mode == "postBattle") && (
-            <img
-              src={dalleImageUrl}
-              alt="DALL·E Generated"
-              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
-              style={boxShadowStyle}
-            />
-          )}
+          {isImageLoaded &&
+            (players[userName]?.mode == "story" ||
+              players[userName]?.mode == "dice" ||
+              players[userName]?.mode == "postBattle" ||
+              players[userName]?.mode == "startOfGame") && (
+              <img
+                src={dalleImageUrl}
+                alt="DALL·E Generated"
+                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+                style={boxShadowStyle}
+              />
+            )}
           {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
             <div className="fade-in">
               <img
