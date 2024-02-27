@@ -76,6 +76,29 @@ const defaultDiceStates = {
   },
 };
 
+const defaultBattleMode = {
+  initiativeRoll: 0,
+  attackRoll: 0,
+  attackRollSucceeded: null,
+  turnOrder: null,
+  yourTurn: false,
+  distanceMoved: null,
+  attackUsed: null,
+  actionAttempted: false,
+  damageRollRequested: false,
+  damageDelt: null,
+  usersTargeted: [],
+  turnCompleted: false,
+  mapUrl: null,
+  gridDataUrl: null,
+  initiativeImageUrl: null,
+  initiativeImageShadow: null,
+  targeted: false,
+  enemyAttackAttempt: "INIT",
+  attackSound: null,
+  deathSound: null,
+};
+
 let shouldContinue = {};
 let activityCount = 1;
 let chatMessages = [];
@@ -146,7 +169,65 @@ app.prepare().then(() => {
     }
 
     // toDo make this function
-    function enterStoryMode() {}
+    function leaveBattleMode(success = true) {
+      const dateStamp = new Date().toISOString();
+      //setup post battle mode for the battle object
+      game.mode = "postBattle";
+      game.battleGrid = null;
+      game.image = null;
+      game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+
+      for (let user in players) {
+        // delete any enemies that may still exist
+        if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+          console.log("deleting player", user);
+          delete players[user];
+        }
+        if (players.hasOwnProperty(user) && players[user].type == "player") {
+          players[user].diceStates = cloneDeep(defaultDiceStates);
+          players[user].battleMode = { ...defaultBattleMode };
+          players[user].currentHealth = players[user].maxHealth;
+          players[user].pingXPosition = null;
+          players[user].pingYPosition = null;
+          players[user].mode = "postBattle";
+          players[user].backgroundColor = "black";
+          players[user].backgroundAudio = `http://localhost:3000/audio/Dhaka.mp3`;
+        }
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+      }
+
+      let message = "";
+      if (success) {
+        message = `Game master, the team just won the battle. You need to recall 
+        where the players were during the fighting and describe in detail how the players recompose themselves
+        and prepare to continue on with their journey. They may not want to leave the current scene, but set it
+        up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
+        constitution modifier. They won this battle, so explain in vivid detail the battle ending scene in 600
+        characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
+        group as a whole (asking each player to roll and determining the outcome) will determine how likely players
+        sense good loot nearby or if there is any special treasure to be found.`;
+      } else {
+        message = `Game master, the team just lost the battle. You need to recall 
+        where the players were during the fighting and describe in detail a scenario that allowed the players
+        to somehow survive this battle. For example, say a dragon flew overhead and unleashed a ray of flames killing
+        all the enemies. Or a mystical fairy blessed the team and brought them to safety. Come up with what happened
+        thats believable based on the fighting that had occurred such as the landscape and type of enemies they were facing.
+        then prepare the players to continue on with their journey. They may not want to leave the current scene, but set it
+        up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
+        constitution modifier. They survived this battle as a miracle, so explain in vivid detail the battle ending scene in 600
+        characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
+        group as a whole (asking each player to roll and determining the outcome) will determine how likely players
+        sense good loot nearby or if there is any special treasure to be found.`;
+      }
+
+      const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
+      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      activityCount++;
+      //send message to ai
+      chatMessages.push(serverData);
+      io.to(serverRoomName).emit("enter battle mode", game); //not sure i need game object at all yet
+      io.to(serverRoomName).emit("players objects", players);
+    }
 
     async function enterBattleMode(mapName, backgroundMusic, enemyType, enemyCount) {
       const mapUrl = `http://localhost:3000/battlemaps/${mapName}.png`;
@@ -1160,6 +1241,7 @@ app.prepare().then(() => {
 
         // after attack, see if all enemies are dead, if so go to story mode
         let allEnemiesDead = true;
+        let allPlayersDead = true;
         Object.values(players).forEach((player) => {
           if (player.type == "enemy") {
             if (player.currentHealth > 0) {
@@ -1167,11 +1249,14 @@ app.prepare().then(() => {
             } else {
               battleRoundData[player.name].died = true;
             }
+          } else if (player.currentHealth > 0) {
+            allPlayersDead = false;
           }
         });
 
-        if (allEnemiesDead) {
-          await runFunctionAfterDelay(enterStoryMode, 5000);
+        // if all enemies dead, call story mode with true for successful battle
+        if (allEnemiesDead || allPlayersDead) {
+          await runFunctionAfterDelay(leaveBattleMode(allEnemiesDead), 5000);
         }
       }
 
@@ -1506,12 +1591,25 @@ app.prepare().then(() => {
     });
 
     //first go through all players and remove any dead enemies
+    let allEnemiesDead = true;
+    let allPlayersDead = true;
     Object.values(players).forEach((player) => {
-      if (player.currentHealth <= 0 && player.type == "enemy") {
-        battleRoundData[player.name].died = true;
-        delete players[player.name];
+      if (player.type == "enemy") {
+        if (player.currentHealth > 0) {
+          allEnemiesDead = false;
+        } else {
+          battleRoundData[player.name].died = true;
+          delete players[player.name];
+        }
+      } else if (player.currentHealth > 0) {
+        allPlayersDead = false;
       }
     });
+
+    // if pass true to storymode function, it means successful battle. otherwise players all died and failed.
+    if (allEnemiesDead || allPlayersDead) {
+      await runFunctionAfterDelay(enterStoryMode(allEnemiesDead), 5000);
+    }
 
     // First, find the current player, min, and max turnOrder
     Object.values(players).forEach((player) => {
