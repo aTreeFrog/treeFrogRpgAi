@@ -117,6 +117,10 @@ let activePlayers = 0;
 let mapDescription = "";
 let playerCountForGame = 1;
 let settingUpNextScene = false;
+let dallECallModifier = false; //alternate to cut dall e calls in half
+let storyFile;
+let currentAct = "";
+let currentScene = "";
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -170,6 +174,32 @@ app.prepare().then(() => {
       }
     }
 
+    function findNextScene(currentAct, currentScene, story) {
+      const actKeys = Object.keys(story).sort(); // Sort acts to ensure order
+      const currentActIndex = actKeys.indexOf(currentAct);
+      const sceneKeys = Object.keys(story[currentAct]).sort(); // Sort scenes to ensure order
+      const currentSceneIndex = sceneKeys.indexOf(currentScene);
+
+      if (currentSceneIndex < sceneKeys.length - 1) {
+        // Next scene in the current act
+        return {
+          nextAct: currentAct,
+          nextScene: sceneKeys[currentSceneIndex + 1],
+        };
+      } else if (currentActIndex < actKeys.length - 1) {
+        // Move to the first scene of the next act
+        const nextAct = actKeys[currentActIndex + 1];
+        const nextActScenes = Object.keys(story[nextAct]).sort();
+        return {
+          nextAct: nextAct,
+          nextScene: nextActScenes[0],
+        };
+      } else {
+        // End of the story
+        return null;
+      }
+    }
+
     function startOfGame() {
       const dateStamp = new Date().toISOString();
       game.mode = "startOfGame";
@@ -193,21 +223,33 @@ app.prepare().then(() => {
         }
       }
 
-      message = `As the Dungeon Master in "Wizards and Goblins, an AI-based Role Playing Game", you will guide me, aTreeFrog, a wizard male elf, 
-      through an interactive story. Begin with me entering a tavern in an elf village on a cold, dim night. 
-      Allow me to immerse in the environment before progressing the story.
+      currentAct = "Act1";
+      currentScene = "Scene1";
+
+      message = `${storyFile[currentAct][currentScene].Header}
+
+      Proactive Storytelling: Begin with a detailed description of the tavern setting to engage the senses, 
+      then continue to describe events, environments, and NPC actions. Offer narrative hints or clues that suggest 
+      possible actions or decisions, avoiding direct queries about the player's next move.
       
-      1. **Proactive Storytelling**: Continuously move the story forward by describing events, environments, and NPC actions. Avoid repeatedly asking what I wish to do next. Instead, weave hints or clues into the narrative that suggest possible actions or decisions.
-      2. **Narration**: Lead the story, incorporating open-ended scenarios that require my input or decisions. Occasionally prompt me to roll a d20 with modifiers for nature, perception, or stealth. Use the exact phrase "roll a d20" when requesting a roll.
-      3. **Dice Rolls**: After requesting a roll, pause the story until I provide a roll result. Do not reference the result directly in your narrative; adjust the story's outcome based on my input.
-      4. **Character Interaction**: Introduce a bartender NPC who will interact with me in first person. He's concerned about a rumored goblin takeover and aims to guide me to a bunker where fighters are preparing for an attack.
-      5. **Story Advancement**: Once I follow the bartender downstairs, conclude the scene with "END OF SCENE".
-      6. **Combat Preparation**: If a battle is imminent, request an initiative roll for turn order before engaging.
-      7. **Dialogue**: Ensure all NPC interactions are in first person to maintain a consistent dialogue flow.
+      Narration: Incorporate scenarios that require player input, occasionally prompting for a d20 roll with nature, 
+      perception, or stealth modifiers. Always explicitly use the phrase "roll a d20" for such requests.
       
+      Dice Rolls: After a roll request, pause the story for the player's result. Subtly adjust the narrative's 
+      direction based on the outcome without explicitly mentioning the dice roll.
       
-      Keep responses concise, under 50 words, and structured to facilitate an engaging and interactive role-playing experience. Greet me by my player name, aTreeFrog, and reference the game title at the start. This setup is designed for a dynamic storytelling journey in the "Wizards and Goblins" game.
-      `;
+      Character Interaction: ${storyFile[currentAct][currentScene].CharacterInteraction}
+      
+      Story Advancement: ${storyFile[currentAct][currentScene].StoryAdvancement}
+      
+      Combat Preparation: Before any battle scenario, request an initiative roll to determine combat order.
+      
+      Dialogue: Ensure all NPC dialogues are immersive and consistent, conducted in the first person to maintain 
+      a natural interaction flow.
+      
+      Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
+      to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
+      to create a dynamic and interactive role-playing experience.`;
 
       const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
       let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
@@ -246,44 +288,40 @@ app.prepare().then(() => {
       activityCount++;
       io.to(serverRoomName).emit("players objects", players);
 
+      const nextSceneInfo = findNextScene(currentAct, currentScene, storyFile);
+      currentAct = nextSceneInfo.nextAct;
+      currentScene = nextSceneInfo.nextScene;
+
       message = `Last Scene Summary: [${summaryMsg}]
       
-      As the Dungeon Master in 'Wizards and Goblins, an AI-based Role Playing Game,' 
-      you are now guiding aTreeFrog, a wizard male elf, through the next chapter of our adventure. 
-      Building upon the last scene's summary, continue the story, ensuring a seamless transition and immediate engagement.
+      ${storyFile[currentAct][currentScene].Header}
 
-      Proactive Storytelling: Drive the narrative forward with vivid descriptions of events, environments, 
-      and interactions based on the previous summary. Use this context to enrich the setting and present new 
-      challenges without explicitly asking what the player wishes to do next. Instead, incorporate narrative 
-      cues for potential actions or decisions.
+      Proactive Storytelling: Begin the scene with up to 100 words detailing the environment, 
+      using the context from the last summary to enrich the setting and introduce new challenges. 
+      Offer narrative cues embedded within these descriptions for potential player actions, 
+      avoiding direct questions about their next move.
+
+      Narration: Incorporate scenarios that prompt player input, subtly guided by the last scene's developments. 
+      When necessary, request a d20 roll with modifiers for nature, perception, or stealth, clearly stating 
+      "roll a d20" for these moments.
+
+      Dice Rolls: After a roll is requested, continue the story based on the player's result, subtly integrating 
+      the outcome into the ongoing narrative without overt reference.
+
+      Character Interaction: ${storyFile[currentAct][currentScene].CharacterInteraction}
       
-      Narration: Lead the story by integrating scenarios that demand player input, informed by the last summary. 
-      Occasionally, prompt for a d20 roll with modifiers for nature, perception, or stealth. Always include the 
-      phrase "roll a d20" explicitly when such an action is required.
-      
-      Dice Rolls: Wait for a roll result after prompting, without directly referencing it in your response. 
-      Adjust the narrative's course according to the outcome, enhancing the story's dynamic flow.
-      
-      Character Interaction: Utilize the summary to understand which characters are actively involved. 
-      Ensure their roles are integral to the story's progression, especially focusing on any NPCs mentioned 
-      in the summary. Their actions and interactions should align with the new goal of uncovering a 
-      conspiracy against the elf land.
-      
-      Story Advancement: Reflecting the summary's location details, weave a plot where players uncover rumors 
-      of the king's possible collusion with goblins. Guide them to investigate this by navigating through a 
-      secret tunnel leading to the village sewers. Upon hearing goblins preparing for an attack, heighten the 
-      suspense and conclude with "END OF SCENE."
-      
-      Combat Preparation: Should a confrontation loom, ask for an initiative roll to establish the combat order, 
-      preparing for a potential battle scenario.
-      
-      Dialogue: Maintain first-person NPC dialogues for immersive interactions, ensuring the narrative remains 
-      engaging and coherent.
-      
-      Keep your narrative responses concise, aiming for less than 50 words to maintain an engaging, 
-      interactive experience. Begin by acknowledging the player, aTreeFrog, and the game's context, 
-      moving forward from the previously summarized events to create a dynamic, evolving story."
-      `;
+      Story Advancement: ${storyFile[currentAct][currentScene].StoryAdvancement}
+
+      Combat Preparation: In anticipation of combat, request an initiative roll to determine the sequence of 
+      action, preparing all parties for the encounter.
+
+      Dialogue: Ensure NPC conversations are conducted in first person for an immersive and continuous narrative 
+      experience, reflecting the characters' intentions and emotions without accelerating the player through the story.
+
+      Responses should be detailed yet concise, particularly at the start, to draw the player into the scene, 
+      with subsequent interactions kept under 50 words for a dynamic and engaging role-playing experience. 
+      The narrative should flow directly from the accumulated story, enhancing the sense of immersion and 
+      adventure for aTreeFrog.`;
 
       const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
       let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
@@ -1062,7 +1100,10 @@ app.prepare().then(() => {
         if (functionData.name == "createDallEImage") {
           argumentsJson = JSON.parse(functionData.arguments);
           promptValue = argumentsJson.prompt;
-          createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
+          if (!dallECallModifier) {
+            createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
+          }
+          dallECallModifier = !dallECallModifier; //toggle modifier back and forth to cut dall e image calls in half
         }
       }
 
@@ -1374,6 +1415,9 @@ app.prepare().then(() => {
       console.log("new players joined: ", players);
 
       io.to(serverRoomName).emit("players objects", players);
+
+      const storyData = path.join(__dirname, `lib/story.json`);
+      storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
 
       // lets setup the game
       if (Object.keys(players).length >= playerCountForGame) {
@@ -1809,8 +1853,8 @@ app.prepare().then(() => {
 
     console.log("battleRoundAISummary message ", message);
 
-    const uniqueId = `user${"System"} -activity${activityCount} -${new Date().toISOString()} `;
-    let serverData = { role: "System", content: message, processed: false, id: uniqueId, mode: "All" };
+    const uniqueId = `user${"system"} -activity${activityCount} -${new Date().toISOString()} `;
+    let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
     activityCount++;
     //send message to ai
     chatMessages.push(serverData);
@@ -1927,6 +1971,7 @@ app.prepare().then(() => {
     let roundCompleted = true; // Assuming this is declared somewhere in your scope
     const playersArray = Object.values(players);
     for (const player of playersArray) {
+      console.log("player turn completed? ", player.name, " ", player?.battleMode?.turnCompleted);
       if (!player?.battleMode?.turnCompleted) {
         roundCompleted = false;
         break; // This will exit the loop if the condition is met
