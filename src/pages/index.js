@@ -17,6 +17,7 @@ import CustomSelect from "../components/CustomSelect"; // Import the above creat
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import IconSelect from "../components/IconSelect";
 import MoveOnPopup from "../components/MoveOnPopup";
+import NewScenePopup from "../components/NewScenePopup";
 import BattleMap from "../components/BattleMap";
 import { io } from "socket.io-client";
 import { CountdownCircleTimer } from "react-countdown-circle-timer";
@@ -841,7 +842,7 @@ export default function Home() {
 
   const handleKeyDown = (e) => {
     // dont allow enter key text submission if theres a pendingDiceUpdate meaning were gonna roll soon.
-    if (!pendingDiceUpdate) {
+    if (!pendingDiceUpdate && !players[userName]?.settingUpNewScene) {
       resumeAudioContext();
       // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
       if (e.key === "Enter" && !e.shiftKey) {
@@ -1533,19 +1534,20 @@ export default function Home() {
 
   // if speech to text panel opened or closed, close or resume background audio.
   // But only resume audio if this panel was the thing that paused it
-  useEffect(() => {
-    let currentVolumeDb = 0;
-    console.log("made it to speech recording");
-    if (isRecording && backgroundTone?.current?.state === "started") {
-      console.log("speech recording hi");
-      currentVolumeDb = backgroundTone.current.volume.value;
-      backgroundTone.current.volume.value = -40;
-      speechTurnedOffMusic.current = true;
-    } else if (!isRecording && speechTurnedOffMusic.current) {
-      speechTurnedOffMusic.current = false;
-      backgroundTone.current.volume.value = currentVolumeDb;
-    }
-  }, [isRecording]);
+  //turn back on when ready
+  // useEffect(() => {
+  //   let currentVolumeDb = 0;
+  //   console.log("made it to speech recording");
+  //   if (isRecording && backgroundTone?.current?.state === "started") {
+  //     console.log("speech recording hi");
+  //     currentVolumeDb = backgroundTone.current.volume.value;
+  //     backgroundTone.current.volume.value = -40;
+  //     speechTurnedOffMusic.current = true;
+  //   } else if (!isRecording && speechTurnedOffMusic.current) {
+  //     speechTurnedOffMusic.current = false;
+  //     backgroundTone.current.volume.value = currentVolumeDb;
+  //   }
+  // }, [isRecording]);
 
   useEffect(() => {
     if (players && players[userName]?.timers.enabled) {
@@ -1584,6 +1586,11 @@ export default function Home() {
 
     cleanUpDiceStates();
     setShowMoveOnPopup(false);
+  };
+
+  const newSceneReady = (playerName) => {
+    // Perform the action
+    chatSocket.emit("new scene ready", playerName);
   };
 
   const handleImBack = () => {
@@ -1724,6 +1731,9 @@ export default function Home() {
                 {moveOnButtonText}
               </button>
               {showMoveOnPopup && <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />}
+              {players[userName]?.settingUpNewScene && messageQueue.current.length <= 0 && (
+                <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />
+              )}
             </div>
             {/* Floating Jitsi Meeting Panel */}
             <div
@@ -2062,7 +2072,7 @@ export default function Home() {
                       style={{ minHeight: "10px" }}
                       rows={1}
                       ref={textareaRef}
-                      disabled={pendingDiceUpdate}></textarea>
+                      disabled={pendingDiceUpdate || players[userName]?.settingUpNewScene}></textarea>
                   </>
                 )}
               </div>
