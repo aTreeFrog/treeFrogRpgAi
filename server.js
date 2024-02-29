@@ -121,6 +121,8 @@ let dallECallModifier = false; //alternate to cut dall e calls in half
 let storyFile;
 let currentAct = "";
 let currentScene = "";
+let newSceneData = "";
+let endOfSceneSummary = "";
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -174,32 +176,6 @@ app.prepare().then(() => {
       }
     }
 
-    function findNextScene(currentAct, currentScene, story) {
-      const actKeys = Object.keys(story).sort(); // Sort acts to ensure order
-      const currentActIndex = actKeys.indexOf(currentAct);
-      const sceneKeys = Object.keys(story[currentAct]).sort(); // Sort scenes to ensure order
-      const currentSceneIndex = sceneKeys.indexOf(currentScene);
-
-      if (currentSceneIndex < sceneKeys.length - 1) {
-        // Next scene in the current act
-        return {
-          nextAct: currentAct,
-          nextScene: sceneKeys[currentSceneIndex + 1],
-        };
-      } else if (currentActIndex < actKeys.length - 1) {
-        // Move to the first scene of the next act
-        const nextAct = actKeys[currentActIndex + 1];
-        const nextActScenes = Object.keys(story[nextAct]).sort();
-        return {
-          nextAct: nextAct,
-          nextScene: nextActScenes[0],
-        };
-      } else {
-        // End of the story
-        return null;
-      }
-    }
-
     function startOfGame() {
       const dateStamp = new Date().toISOString();
       game.mode = "startOfGame";
@@ -228,28 +204,31 @@ app.prepare().then(() => {
 
       message = `${storyFile[currentAct][currentScene].Header}
 
-      Proactive Storytelling: Begin with a detailed description of the tavern setting to engage the senses, 
-      then continue to describe events, environments, and NPC actions. Offer narrative hints or clues that suggest 
-      possible actions or decisions, avoiding direct queries about the player's next move.
+              Proactive Storytelling: "Use the environment to suggest actions aTreeFrog might take, avoiding direct prompts for his next move."
+
+              Narration: "Involve aTreeFrog in scenarios requiring his input. Whenever aTreeFrog requests to do something, determine if the move should require a dice roll and initiate one if so. Prompt for d20 rolls with modifiers like stealth or perception as needed. Use 'roll a d20 with [modifier]' to instruct."
+
+              Dice Rolls: "After a roll, subtly weave the result into the story, affecting the narrative flow based on the outcome."
+
+              Character Interaction: ${storyFile[currentAct][currentScene].CharacterInteraction}
       
-      Narration: Incorporate scenarios that require player input, occasionally prompting for a d20 roll with nature, 
-      perception, or stealth modifiers. Always explicitly use the phrase "roll a d20" for such requests.
-      
-      Dice Rolls: After a roll request, pause the story for the player's result. Subtly adjust the narrative's 
-      direction based on the outcome without explicitly mentioning the dice roll.
-      
-      Character Interaction: ${storyFile[currentAct][currentScene].CharacterInteraction}
-      
-      Story Advancement: ${storyFile[currentAct][currentScene].StoryAdvancement}
-      
-      Combat Preparation: Before any battle scenario, request an initiative roll to determine combat order.
-      
-      Dialogue: Ensure all NPC dialogues are immersive and consistent, conducted in the first person to maintain 
-      a natural interaction flow.
-      
-      Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
-      to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
-      to create a dynamic and interactive role-playing experience.`;
+              Story Advancement: ${storyFile[currentAct][currentScene].StoryAdvancement}
+        
+              Combat Preparation: Before any battle scenario, request an initiative roll to determine combat order.
+
+              Dialogue: "Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story."
+
+              Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable."
+                    
+              Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
+              to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
+              to create a dynamic and interactive role-playing experience.
+              
+              "Please note: All responses must adhere to a strict maximum of 50 words to ensure concise and engaging storytelling. 
+              This includes descriptions, character interactions, and narrative advancements. Each output, whether setting a scene, 
+              the story, or during character exchanges, should be succinct, not exceeding the 50-word limit. Remember to prompt for 
+              d20 roll with modifiers where appropriate, and conclude significant segments with 'END OF SCENE' once actions transition 
+              the next narrative phase."`;
 
       const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
       let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
@@ -258,78 +237,6 @@ app.prepare().then(() => {
       chatMessages.push(serverData);
       io.to(serverRoomName).emit("enter battle mode", game); //not sure i need game object at all yet
       io.to(serverRoomName).emit("players objects", players);
-    }
-
-    function startOfNextScene(summaryMsg = "") {
-      settingUpNextScene = true;
-      const dateStamp = new Date().toISOString();
-      game.mode = "nextScene";
-      game.battleGrid = null;
-      game.image = null;
-      game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
-      for (let user in players) {
-        if (players.hasOwnProperty(user) && players[user].type == "enemy") {
-          console.log("deleting player", user);
-          delete players[user];
-        }
-        if (players.hasOwnProperty(user) && players[user].type == "player") {
-          players[user].diceStates = cloneDeep(defaultDiceStates);
-          players[user].battleMode = { ...defaultBattleMode };
-          players[user].pingXPosition = null;
-          players[user].pingYPosition = null;
-          players[user].mode = "story";
-          players[user].settingUpNewScene = true;
-          players[user].backgroundColor = "bg-black";
-          players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
-          players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
-        }
-      }
-
-      activityCount++;
-      io.to(serverRoomName).emit("players objects", players);
-
-      const nextSceneInfo = findNextScene(currentAct, currentScene, storyFile);
-      currentAct = nextSceneInfo.nextAct;
-      currentScene = nextSceneInfo.nextScene;
-
-      message = `Last Scene Summary: [${summaryMsg}]
-      
-      ${storyFile[currentAct][currentScene].Header}
-
-      Proactive Storytelling: Begin the scene with up to 100 words detailing the environment, 
-      using the context from the last summary to enrich the setting and introduce new challenges. 
-      Offer narrative cues embedded within these descriptions for potential player actions, 
-      avoiding direct questions about their next move.
-
-      Narration: Incorporate scenarios that prompt player input, subtly guided by the last scene's developments. 
-      When necessary, request a d20 roll with modifiers for nature, perception, or stealth, clearly stating 
-      "roll a d20" for these moments.
-
-      Dice Rolls: After a roll is requested, continue the story based on the player's result, subtly integrating 
-      the outcome into the ongoing narrative without overt reference.
-
-      Character Interaction: ${storyFile[currentAct][currentScene].CharacterInteraction}
-      
-      Story Advancement: ${storyFile[currentAct][currentScene].StoryAdvancement}
-
-      Combat Preparation: In anticipation of combat, request an initiative roll to determine the sequence of 
-      action, preparing all parties for the encounter.
-
-      Dialogue: Ensure NPC conversations are conducted in first person for an immersive and continuous narrative 
-      experience, reflecting the characters' intentions and emotions without accelerating the player through the story.
-
-      Responses should be detailed yet concise, particularly at the start, to draw the player into the scene, 
-      with subsequent interactions kept under 50 words for a dynamic and engaging role-playing experience. 
-      The narrative should flow directly from the accumulated story, enhancing the sense of immersion and 
-      adventure for aTreeFrog.`;
-
-      const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
-      let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
-      activityCount++;
-      //send message to ai
-      chatMessages = [];
-      chatMessages.push(serverData);
-      settingUpNextScene = false;
     }
 
     // toDo make this function
@@ -362,28 +269,30 @@ app.prepare().then(() => {
 
       let message = "";
       if (success) {
-        message = `Game master, the team just won the battle. You need to recall 
-        where the players were during the fighting and describe in detail how the players recompose themselves
-        and prepare to continue on with their journey. They may not want to leave the current scene, but set it
-        up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
-        constitution modifier. They won this battle, so explain in vivid detail the battle ending scene in 400
-        characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
-        group as a whole (asking each player to roll and determining the outcome) will determine how likely players
-        sense good loot nearby or if there is any special treasure to be found. The players will respond with their dice
-        rolls. Remember, keep your output less then 400 characters`;
+        message = `Game Master, following the team's victory in the recent battle, please guide the story forward, 
+                  maintaining the continuity and essence of the adventure. 
+
+                  The conclusion of this segment should not leave the story open-ended but should 
+                  instead prepare the characters and the audience for the next chapter of their journey, marking a clear and impactful 
+                  'END OF SCENE.
+                  
+                  Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. 
+                  `;
       } else {
-        message = `Game master, the team just lost the battle. You need to recall 
-        where the players were during the fighting and describe in detail a scenario that allowed the players
-        to somehow survive this battle. For example, say a dragon flew overhead and unleashed a ray of flames killing
-        all the enemies. Or a mystical fairy blessed the team and brought them to safety. Come up with what happened
-        thats believable based on the fighting that had occurred such as the landscape and type of enemies they were facing.
-        then prepare the players to continue on with their journey. They may not want to leave the current scene, but set it
-        up allowing them to continue if they so choose. Then, request each player to do a d20 roll check with their
-        constitution modifier. They survived this battle as a miracle, so explain in vivid detail the battle ending scene in 600
-        characters or less. And ensure you ask to do a d20 roll with a constituation check modifier. The roll for the entire
-        group as a whole (asking each player to roll and determining the outcome) will determine how likely players
-        sense good loot nearby or if there is any special treasure to be found. The players will respond with their dice
-        rolls. Remember, keep your output less then 400 characters`;
+        message = `Game Master, the team has faced a setback in the recent battle, but fate intervened to ensure their journey continues. 
+        As we steer the narrative forward from this pivotal moment, creatively weave a rational explanation for the team's survival despite the 
+        loss. This could involve an unexpected event, such as a mysterious ally's intervention, a sudden change in the environment that 
+        disrupts the battle, or any other serendipitous occurrence that turns the tide in the team's favor at the critical moment.
+
+        Incorporate this twist into the storyline as a natural progression of the plot, allowing it to influence future character development 
+        and story arcs. 
+        
+        The conclusion of this segment should not leave the story open-ended but should 
+        instead prepare the characters and the audience for the next chapter of their journey, marking a clear and impactful 
+        'END OF SCENE.
+        
+        Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. 
+        `;
       }
 
       const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
@@ -621,7 +530,7 @@ app.prepare().then(() => {
             console.log("messagesFilteredForApi", messagesFilteredForApi);
 
             const data = {
-              model: "gpt-3.5-turbo-0125",
+              model: "gpt-4-0125-preview",
               messages: messagesFilteredForApi,
               stream: true,
             };
@@ -649,22 +558,6 @@ app.prepare().then(() => {
             }
 
             msgActivityCount++;
-
-            const dateStamp = new Date().toISOString();
-            if (game.mode == "nextScene") {
-              game.mode = "story";
-              game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
-            }
-            for (let user in players) {
-              if (players.hasOwnProperty(user) && players[user]?.type == "player" && players[user]?.settingUpNewScene) {
-                players[user].settingUpNewScene = false;
-                players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
-              }
-            }
-
-            activityCount++;
-            //ToDO: figure out if you need to emit game object too
-            io.to(serverRoomName).emit("players objects", players);
 
             console.log("made it to chat complete");
             io.to(serverRoomName).emit("chat complete", serverMessageId);
@@ -716,6 +609,7 @@ app.prepare().then(() => {
             players[user].pingYPosition = null;
             players[user].mode = "story";
             players[user].settingUpNewScene = true;
+            players[user].newSceneReady = false;
             players[user].backgroundColor = "bg-black";
             players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
             players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
@@ -747,14 +641,13 @@ app.prepare().then(() => {
           content: msg,
         });
         const data = {
-          model: "gpt-3.5-turbo-0125",
+          model: "gpt-4-0125-preview",
           messages: msgsFltrdForEndScene,
           stream: false,
         };
         const completion = await openai.chat.completions.create(data);
-        const content = completion.choices[0].message.content;
+        endOfSceneSummary = completion.choices[0].message.content;
         console.log("end of scene summary: ", completion.choices[0].message.content);
-        startOfNextScene(content);
       }
     }
 
@@ -976,6 +869,15 @@ app.prepare().then(() => {
       sequenceNumber = 0;
     });
 
+    socket.on("new scene ready", async (playerName) => {
+      if (players.hasOwnProperty(playerName)) {
+        players[playerName].newSceneReady = true;
+        players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        activityCount++;
+        io.to(serverRoomName).emit("players objects", players);
+      }
+    });
+
     async function checkForFunctionCall() {
       let diceRollCalled = false;
 
@@ -1141,8 +1043,8 @@ app.prepare().then(() => {
                   properties: {
                     mapName: {
                       type: "string",
-                      enum: ["ForestRiver"],
-                      description: "map that should be used for the battle. ForestRiver is a forest map.",
+                      enum: [storyFile[currentAct][currentScene]?.BattleMap],
+                      description: "map that should be used for the battle.",
                     },
                     backgroundMusic: {
                       type: "string",
@@ -1378,6 +1280,7 @@ app.prepare().then(() => {
         diceStates: cloneDeep(defaultDiceStates),
         mode: "story",
         settingUpNewScene: false,
+        newSceneReady: false,
         timers: {
           duration: 30, //seconds
           enabled: false,
@@ -1877,11 +1780,13 @@ app.prepare().then(() => {
     //first go through all players and remove any dead enemies
     let allEnemiesDead = true;
     let allPlayersDead = true;
+    let someoneDied = false;
     Object.values(players).forEach((player) => {
       if (player.type == "enemy") {
         if (player.currentHealth > 0) {
           allEnemiesDead = false;
         } else {
+          someoneDied = true;
           battleRoundData[player.name].died = true;
           delete players[player.name];
         }
@@ -1979,7 +1884,7 @@ app.prepare().then(() => {
     }
 
     // first reset all the turn Completed so it will trigger again next round
-    if (roundCompleted) {
+    if (roundCompleted && someoneDied) {
       //ToDo: Tell AI what happened and call DallE
       await battleRoundAISummary();
 
@@ -2328,10 +2233,128 @@ app.prepare().then(() => {
     }
   }
 
+  function findNextScene(currentAct, currentScene, story) {
+    const actKeys = Object.keys(story).sort(); // Sort acts to ensure order
+    const currentActIndex = actKeys.indexOf(currentAct);
+    const sceneKeys = Object.keys(story[currentAct]).sort(); // Sort scenes to ensure order
+    const currentSceneIndex = sceneKeys.indexOf(currentScene);
+
+    if (currentSceneIndex < sceneKeys.length - 1) {
+      // Next scene in the current act
+      return {
+        nextAct: currentAct,
+        nextScene: sceneKeys[currentSceneIndex + 1],
+      };
+    } else if (currentActIndex < actKeys.length - 1) {
+      // Move to the first scene of the next act
+      const nextAct = actKeys[currentActIndex + 1];
+      const nextActScenes = Object.keys(story[nextAct]).sort();
+      return {
+        nextAct: nextAct,
+        nextScene: nextActScenes[0],
+      };
+    } else {
+      // End of the story
+      return null;
+    }
+  }
+
+  function startOfNextScene(summaryMsg = "") {
+    const dateStamp = new Date().toISOString();
+    game.mode = "nextScene";
+    game.battleGrid = null;
+    game.image = null;
+    game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+    for (let user in players) {
+      if (players.hasOwnProperty(user) && players[user].type == "enemy") {
+        console.log("deleting player", user);
+        delete players[user];
+      }
+      if (players.hasOwnProperty(user) && players[user].type == "player") {
+        players[user].diceStates = cloneDeep(defaultDiceStates);
+        players[user].battleMode = { ...defaultBattleMode };
+        players[user].pingXPosition = null;
+        players[user].pingYPosition = null;
+        players[user].mode = "story";
+        players[user].settingUpNewScene = true;
+        players[user].backgroundColor = "bg-black";
+        players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+      }
+    }
+
+    activityCount++;
+    io.to(serverRoomName).emit("players objects", players);
+
+    const nextSceneInfo = findNextScene(currentAct, currentScene, storyFile);
+    currentAct = nextSceneInfo.nextAct;
+    currentScene = nextSceneInfo.nextScene;
+
+    message = `Last Scene Summary: [${summaryMsg}]
+    
+    ${storyFile[currentAct][currentScene].Header}
+
+    Proactive Storytelling: Begin the scene with up to 100 words detailing the environment, 
+    using the context from the last summary to enrich the setting and introduce new challenges. 
+    Offer narrative cues embedded within these descriptions for potential player actions, 
+    avoiding direct questions about their next move.
+
+    Narration: "Involve aTreeFrog in scenarios requiring his input. Whenever aTreeFrog requests to do something, determine if the move should require a dice roll and initiate one if so. Prompt for d20 rolls with modifiers like stealth or perception as needed. Use 'roll a d20 with [modifier]' to instruct."
+
+    Dice Rolls: After a roll, subtly weave the result into the story, affecting the narrative flow based on the outcome.
+
+    Character Interaction: ${storyFile[currentAct][currentScene].CharacterInteraction}
+    
+    Story Advancement: ${storyFile[currentAct][currentScene].StoryAdvancement}
+
+    Combat Preparation: Before any battle scenario, request an initiative roll to determine combat order.
+
+    Dialogue: Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story.
+
+    Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable.
+
+    Responses should be detailed yet concise, particularly at the start, to draw the player into the scene, 
+    with subsequent interactions kept under 50 words for a dynamic and engaging role-playing experience. 
+    The narrative should flow directly from the accumulated story, enhancing the sense of immersion and 
+    adventure for aTreeFrog.
+    
+    "Please note: All responses must adhere to a strict maximum of 50 words to ensure concise and engaging storytelling. 
+    This includes descriptions, character interactions, and narrative advancements. Each output, whether setting a scene, 
+    the story, or during character exchanges, should be succinct, not exceeding the 50-word limit. Remember to prompt for 
+    d20 roll with modifiers where appropriate, and conclude significant segments with 'END OF SCENE' once actions transition 
+    the next narrative phase."`;
+
+    const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
+    newSceneData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+    activityCount++;
+    //send message to ai
+    setTimeout(() => {
+      chatMessages = [];
+      chatMessages.push(newSceneData);
+      settingUpNextScene = false;
+    }, 1000);
+
+    game.mode = "story";
+    game.activityId = `game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+
+    for (let user in players) {
+      if (players.hasOwnProperty(user) && players[user]?.type == "player") {
+        players[user].settingUpNewScene = false;
+        players[user].newSceneReady = false;
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+      }
+    }
+
+    activityCount++;
+    //ToDO: figure out if you need to emit game object too
+    io.to(serverRoomName).emit("players objects", players);
+  }
+
   async function checkPlayersState() {
     let anyPlayerRoll = false;
     let anyPlayerInitiativeRoll = false;
     let inInitiativeMode = false;
+    let allPlayersReadyNewScene = true;
     Object.entries(players).forEach(async ([userName, playerData]) => {
       // check if any player is in iniative mode, means game is in iniative mode
       if (playerData?.type == "player" && playerData?.mode == "initiative") {
@@ -2356,12 +2379,22 @@ app.prepare().then(() => {
       ) {
         await handleEnemyTurn(playerData); // call async function without awaiting so its non blocking.
       }
+
+      // if a new scene is ready and all active players said there ready for the new scene, go to next scene.
+      if ((settingUpNextScene && playerData?.type == "player" && !playerData.away && !playerData.newSceneReady) || !playerData.settingUpNewScene) {
+        allPlayersReadyNewScene = false;
+      }
     });
 
     if (anyPlayerRoll || anyPlayerInitiativeRoll) {
       waitingForRolls = true;
     } else {
       waitingForRolls = false;
+    }
+
+    if (settingUpNextScene && allPlayersReadyNewScene) {
+      settingUpNextScene = false; // so the player process every x second call doesnt call this function again when its still computing
+      startOfNextScene(endOfSceneSummary);
     }
 
     //if everyone has done there initiative roll, put everyone in battle mode, and setup battle
