@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import SkillSheet from "./SkillSheet";
 import AttackSheet from "./AttackSheet";
+import EquipmentSheet from "./EquipmentSheet";
 
 export default function CharacterSheet({
   name,
@@ -96,7 +97,7 @@ export default function CharacterSheet({
       <div
         className="relative block p-3 mt-7 text-white text-2xl font-bold text-medieval rounded wavy-edges"
         style={{ height: "37rem", width: "95%" }}>
-        {activeTab != "Attacks/Spells" && (
+        {activeTab == "Skills" && (
           <div>
             {/* Level Circle (Left and towards the top) */}
             <div className="absolute top-0 left-0 ml-3 mt-3">
@@ -238,105 +239,109 @@ export default function CharacterSheet({
             </div>
           </div>
         )}
-        {/* Shield-shaped box */}
-        <div
-          className="shield-box rounded"
-          style={{
-            position: "absolute",
-            top: "10%",
-            left: "38%", // Adjusted left positioning
-            transform: "translate(-62%, -50%)",
-            width: "60px",
-            height: "100px",
-            backgroundColor: "purple",
-            clipPath: "polygon(50% 0%, 100% 0, 100% 75%, 50% 100%, 0 75%, 0 0)" /* Adjust this to refine shape */,
-            display: "flex", // Added for inner text alignment
-            flexDirection: "column", // Added for inner text alignment
-            justifyContent: "flex-end", // Aligns the content to the bottom
-            alignItems: "center", // Centers the content horizontally
-            padding: "4px", // Padding to ensure text doesn't touch the edges
-          }}>
-          {/* ... Other content inside the shield ... */}
-          <div
-            style={{
-              color: "white",
-              fontSize: "24px", // Adjust as needed
-              textAlign: "center",
-              width: "100%", // Ensure it's centered
-              marginBottom: "4px", // Space between the number and the text
-            }}>
-            16
+        {activeTab != "Equipment" && (
+          <div>
+            {/* Shield-shaped box */}
+            <div
+              className="shield-box rounded"
+              style={{
+                position: "absolute",
+                top: "10%",
+                left: "38%", // Adjusted left positioning
+                transform: "translate(-62%, -50%)",
+                width: "60px",
+                height: "100px",
+                backgroundColor: "purple",
+                clipPath: "polygon(50% 0%, 100% 0, 100% 75%, 50% 100%, 0 75%, 0 0)" /* Adjust this to refine shape */,
+                display: "flex", // Added for inner text alignment
+                flexDirection: "column", // Added for inner text alignment
+                justifyContent: "flex-end", // Aligns the content to the bottom
+                alignItems: "center", // Centers the content horizontally
+                padding: "4px", // Padding to ensure text doesn't touch the edges
+              }}>
+              {/* ... Other content inside the shield ... */}
+              <div
+                style={{
+                  color: "white",
+                  fontSize: "24px", // Adjust as needed
+                  textAlign: "center",
+                  width: "100%", // Ensure it's centered
+                  marginBottom: "4px", // Space between the number and the text
+                }}>
+                16
+              </div>
+              <div
+                style={{
+                  color: "white",
+                  fontSize: "14px", // Adjust as needed
+                  textAlign: "center",
+                  lineHeight: "18px",
+                  marginBottom: "12px", // Adjust as needed to position the text from the bottom
+                }}>
+                Armor Class
+              </div>
+            </div>
+            {/* New Initiative Box */}
+            <div
+              className="initiative-box rounded"
+              style={{
+                position: "absolute",
+                top: "2%",
+                left: "calc(30% + 70px)", // Positioned to the right of the shield
+                width: "80px",
+                height: "90px",
+                backgroundColor: "rgba(200, 115, 45, 0.774)",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "4px",
+              }}>
+              <div
+                style={{
+                  color: "white",
+                  fontSize: "24px",
+                  textAlign: "center",
+                  marginBottom: "4px", // Space between the number and the text
+                }}>
+                + 4
+              </div>
+              {/* "Initiative" text */}
+              <div
+                style={{
+                  color: "white",
+                  fontSize: "16px",
+                  textAlign: "center",
+                }}>
+                Initiative
+              </div>
+            </div>
+            {/* Heart-shaped icon container */}
+            <div
+              style={{
+                position: "absolute",
+                top: "1%", // Adjust as needed
+                left: "calc(42% + 120px)", // Adjust as needed
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}>
+              {/* Text "Max: 35" above the heart */}
+              <div
+                style={{
+                  fontSize: "20px",
+                  color: "white",
+                  marginBottom: "4px",
+                }}>
+                Max: 35
+              </div>
+              {/* Heart Shape with number "30" inside */}
+              <div className="heart">
+                <div className="heart-text">30</div>
+              </div>
+            </div>
           </div>
-          <div
-            style={{
-              color: "white",
-              fontSize: "14px", // Adjust as needed
-              textAlign: "center",
-              lineHeight: "18px",
-              marginBottom: "12px", // Adjust as needed to position the text from the bottom
-            }}>
-            Armor Class
-          </div>
-        </div>
-        {/* New Initiative Box */}
-        <div
-          className="initiative-box rounded"
-          style={{
-            position: "absolute",
-            top: "2%",
-            left: "calc(30% + 70px)", // Positioned to the right of the shield
-            width: "80px",
-            height: "90px",
-            backgroundColor: "rgba(200, 115, 45, 0.774)",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "4px",
-          }}>
-          <div
-            style={{
-              color: "white",
-              fontSize: "24px",
-              textAlign: "center",
-              marginBottom: "4px", // Space between the number and the text
-            }}>
-            + 4
-          </div>
-          {/* "Initiative" text */}
-          <div
-            style={{
-              color: "white",
-              fontSize: "16px",
-              textAlign: "center",
-            }}>
-            Initiative
-          </div>
-        </div>
-        {/* Heart-shaped icon container */}
-        <div
-          style={{
-            position: "absolute",
-            top: "1%", // Adjust as needed
-            left: "calc(42% + 120px)", // Adjust as needed
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}>
-          {/* Text "Max: 35" above the heart */}
-          <div
-            style={{
-              fontSize: "20px",
-              color: "white",
-              marginBottom: "4px",
-            }}>
-            Max: 35
-          </div>
-          {/* Heart Shape with number "30" inside */}
-          <div className="heart">
-            <div className="heart-text">30</div>
-          </div>
-        </div>
+        )}
         <div
           className="flex align-self-end justify-end space-x-0.5 mt-70"
           style={{
@@ -363,6 +368,11 @@ export default function CharacterSheet({
         {activeTab === "Attacks/Spells" && (
           <div>
             <AttackSheet player={player} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
+          </div>
+        )}
+        {activeTab === "Equipment" && (
+          <div>
+            <EquipmentSheet player={player} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
           </div>
         )}
       </div>

@@ -2,17 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 
 // Mock data for testing
 const yourDataArray = [
-  { name: "staff", distance: "7ft", atkBonus: "+5", type: "1d6" },
-  { name: "ice blast", distance: "28ft", atkBonus: "+2", type: "1d8+2" },
-  { name: "Item 3", distance: "7ft", atkBonus: "+7", type: "Type C" },
-  { name: "Item 1", distance: "7ft", atkBonus: "+5", type: "Type A" },
-  { name: "Item 2", distance: "7ft", atkBonus: "+2", type: "Type B" },
-  { name: "Item 3", distance: "7ft", atkBonus: "+7", type: "Type C" },
+  { name: "Health Potion", icon: "icons/healthpotion.svg", quantity: "3", duration: "n/a", impact: "+5" },
 
   // Add more mock data as needed
 ];
 
-export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20Spinning }) {
+export default function EquipmentSheet({ player, selectedRow, setSelectedRow, isD20Spinning }) {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [headerGlow, setHeaderGlow] = useState(false);
 
@@ -77,13 +72,13 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
             Name
           </button>
           <button onClick={() => handleSelectRow(null)} className={`p-3 text-sm attack-header-border`}>
-            Distance
+            Qty
           </button>
           <button onClick={() => handleSelectRow(null)} className={`p-3 text-sm attack-header-border`} style={{ paddingLeft: "5px" }}>
-            ATK Bonus
+            Duration
           </button>
           <button onClick={() => handleSelectRow(null)} className={`p-3 text-sm attack-header-border`}>
-            Damage
+            Impact
           </button>
           {/* Dynamic data cells */}
           {/* Use a mapping function to generate the data cells dynamically */}
@@ -101,7 +96,7 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
                 className={`p-3 text-base mt-1 ${getClassName(item, "Distance")}`}
                 onMouseEnter={() => setHoveredRow(item)}
                 onMouseLeave={() => setHoveredRow(null)}>
-                {item.distance}
+                {item.quantity}
               </button>
               <button
                 onClick={() => handleSelectRow(item)}
@@ -109,14 +104,14 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
                 onMouseEnter={() => setHoveredRow(item)}
                 onMouseLeave={() => setHoveredRow(null)}>
                 {" "}
-                {item.atkBonus}
+                {item.duration}
               </button>
               <button
                 onClick={() => handleSelectRow(item)}
                 className={`p-3 text-base mt-1 ${getClassName(item, "Right")}`}
                 onMouseEnter={() => setHoveredRow(item)}
                 onMouseLeave={() => setHoveredRow(null)}>
-                {item.type}
+                {item.impact}
               </button>
             </React.Fragment>
           ))}
