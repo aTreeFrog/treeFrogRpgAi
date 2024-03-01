@@ -1945,7 +1945,7 @@ export default function Home() {
                     <img
                       src={message.message}
                       alt="DALL·E Generated"
-                      className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+                      className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
                       style={boxShadowStyle}
                     />
                   )

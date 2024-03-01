@@ -165,17 +165,6 @@ app.prepare().then(() => {
   });
 
   io.on("connection", (socket) => {
-    async function getDominantColor(imagePath) {
-      try {
-        const dominantColor = await ColorThief.getColor(imagePath);
-        // Convert RGB to RGBA (assuming 0.8 opacity)
-        return `rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`;
-      } catch (error) {
-        console.error("Error in getting dominant color:", error);
-        return null;
-      }
-    }
-
     function startOfGame() {
       const dateStamp = new Date().toISOString();
       game.mode = "startOfGame";
@@ -787,33 +776,6 @@ app.prepare().then(() => {
       io.to(serverRoomName).emit("players objects", players);
     }
 
-    async function createDallEImage(prompt) {
-      //const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
-
-      const data = {
-        model: "dall-e-3",
-        prompt: ("a dungeons and dragons like book image with the following specification: ", prompt),
-        n: 1,
-        size: "1024x1024",
-        quality: "hd",
-      };
-
-      let image = await openai.images.generate(data);
-
-      let shadowColor = await getDominantColor(image.data[0].url);
-
-      console.log("shadowColor", shadowColor);
-
-      let dallEObject = {
-        imageUrl: image.data[0].url,
-        shadowColor: shadowColor,
-      };
-
-      io.to(serverRoomName).emit("dall e image", dallEObject);
-
-      console.log("image: ", image.data);
-    }
-
     // socket.on('chat message', async (msg) => {
     //     try {
     //         playBackgroundAudio();////////////////////////for testing//////////
@@ -959,6 +921,18 @@ app.prepare().then(() => {
         }
       }
 
+      // if not in battle mode, see if dalle image should be called.
+      const keys = Object.keys(players);
+
+      if (keys.length > 0 && players[keys[0]].mode != "battle") {
+        await askAiIfDalleCall(messagesFilteredForFunction);
+      }
+
+      // check if initiative roll should be called
+      await askAiIfInitiative(messagesFilteredForFunction, diceRollCalled);
+    }
+
+    async function askAiIfDalleCall(messagesFilteredForFunction) {
       //check if dall e function should be called
       messagesFilteredForFunction.push({
         role: "user",
@@ -1008,8 +982,6 @@ app.prepare().then(() => {
           dallECallModifier = !dallECallModifier; //toggle modifier back and forth to cut dall e image calls in half
         }
       }
-
-      await askAiIfInitiative(messagesFilteredForFunction, diceRollCalled);
     }
 
     async function askAiIfInitiative(messagesFilteredForFunction, diceRollCalled) {
@@ -1746,13 +1718,15 @@ app.prepare().then(() => {
   }
 
   async function battleRoundAISummary() {
-    let message = `Game master, the team just had a round in battle. Please summarize this battle round 
-    scene with vivid detail. Keep your response to 600 characters or less. the battlefield 
+    let message = `"Game master, the team just had a round in battle. Please summarize this battle round 
+    scene with vivid detail. Keep your response to 300 characters or less. the battlefield 
     has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each players battle round: `;
 
     Object.entries(battleRoundData).forEach(([player, data]) => {
       message += `name: ${player}, type:${data.type}, race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
     });
+
+    message += "summarize this for a dall e image prompt for a dungeons and dragons style game";
 
     console.log("battleRoundAISummary message ", message);
 
@@ -1760,7 +1734,23 @@ app.prepare().then(() => {
     let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
     activityCount++;
     //send message to ai
-    chatMessages.push(serverData);
+    //chatMessages.push(serverData);
+
+    const msgEndOfRound = [
+      {
+        role: "system",
+        content: message,
+      },
+    ];
+    const data = {
+      model: "gpt-4-0125-preview",
+      messages: msgEndOfRound,
+      stream: false,
+    };
+    const completion = await openai.chat.completions.create(data);
+    dalleSummaryMsg = completion.choices[0].message.content;
+    console.log("dalle summary msg: ", dalleSummaryMsg);
+    createDallEImage(dalleSummaryMsg);
   }
 
   async function nextInLine() {
@@ -1883,10 +1873,10 @@ app.prepare().then(() => {
       }
     }
 
-    // first reset all the turn Completed so it will trigger again next round
-    if (roundCompleted && someoneDied) {
-      //ToDo: Tell AI what happened and call DallE
-      await battleRoundAISummary();
+    // if someone died, call round AI summary for dall e image
+    if (someoneDied) {
+      // dont wait this, so it can move forward quick
+      battleRoundAISummary();
 
       Object.values(players).forEach((player) => {
         player.battleMode.turnCompleted = false;
@@ -2348,6 +2338,44 @@ app.prepare().then(() => {
     activityCount++;
     //ToDO: figure out if you need to emit game object too
     io.to(serverRoomName).emit("players objects", players);
+  }
+
+  async function getDominantColor(imagePath) {
+    try {
+      const dominantColor = await ColorThief.getColor(imagePath);
+      // Convert RGB to RGBA (assuming 0.8 opacity)
+      return `rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`;
+    } catch (error) {
+      console.error("Error in getting dominant color:", error);
+      return null;
+    }
+  }
+
+  async function createDallEImage(prompt) {
+    //const ogprompt = "a dungeons and dragons like book image of a rogue and a wizard about to enter a tavern on a dark snowy night";
+
+    const data = {
+      model: "dall-e-3",
+      prompt: ("a dungeons and dragons like book image with the following specification: ", prompt),
+      n: 1,
+      size: "1024x1024",
+      quality: "hd",
+    };
+
+    let image = await openai.images.generate(data);
+
+    let shadowColor = await getDominantColor(image.data[0].url);
+
+    console.log("shadowColor", shadowColor);
+
+    let dallEObject = {
+      imageUrl: image.data[0].url,
+      shadowColor: shadowColor,
+    };
+
+    io.to(serverRoomName).emit("dall e image", dallEObject);
+
+    console.log("image: ", image.data);
   }
 
   async function checkPlayersState() {
