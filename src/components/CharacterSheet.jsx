@@ -19,6 +19,7 @@ export default function CharacterSheet({
   const classRef = useRef(null);
   const [raceLineWidth, setRaceLineWidth] = useState("0px");
   const [classLineWidth, setClassLineWidth] = useState("0px");
+  const frameCircle = "/icons/framecircle.svg";
 
   useEffect(() => {
     // Calculating for Race
@@ -35,10 +36,7 @@ export default function CharacterSheet({
 
   useEffect(() => {
     //if moved to another tab and didn't already select attack on target, clear out attack.
-    if (
-      activeTab != "Attacks/Spells" &&
-      player?.battleMode?.usersTargeted?.length < 1
-    ) {
+    if (activeTab != "Attacks/Spells" && player?.battleMode?.usersTargeted?.length < 1) {
       setSelectedRow(null);
     }
   }, [activeTab]);
@@ -56,26 +54,20 @@ export default function CharacterSheet({
           <div className="mb-1 mt-5">
             {" "}
             {/* Wrapper for Name box and label */}
-            <div className="bg-gray-800 relative inline-block p-3 text-white text-2xl font-bold rounded wavy-edges">
-              {name}
-            </div>
+            <div className="bg-gray-800 relative inline-block p-3 text-white text-2xl font-bold rounded wavy-edges">{name}</div>
             <div className="text-white text-base ml-1 mt-[-4px]">Name</div>
           </div>
         </div>
         {/* Right Section */}
         <div
           style={{ flex: "1 1 auto", minWidth: "40%", marginRight: "20px" }}
-          className="wavy-detail-box ml-0 mr-2 bg-gray-800 p-2 rounded flex flex-col justify-start items-start text-white h-[calc(2*3rem)] w-64 relative"
-        >
+          className="wavy-detail-box ml-0 mr-2 bg-gray-800 p-2 rounded flex flex-col justify-start items-start text-white h-[calc(2*3rem)] w-64 relative">
           {/* Dynamic Text for Race */}
           <div className="flex flex-col items-start mb-2">
             <span ref={raceRef} className="text-white text-base">
               {race}
             </span>
-            <hr
-              className="border-purple-800"
-              style={{ width: raceLineWidth }}
-            />
+            <hr className="border-purple-800" style={{ width: raceLineWidth }} />
             <div className="text-white text-base">Race</div>
           </div>
           {/* Dynamic Text for Class */}
@@ -83,10 +75,7 @@ export default function CharacterSheet({
             <span ref={classRef} className="text-white text-base">
               {characterClass}
             </span>
-            <hr
-              className="border-purple-800"
-              style={{ width: classLineWidth }}
-            />
+            <hr className="border-purple-800" style={{ width: classLineWidth }} />
             <div className="text-white text-base">Class</div>
           </div>
           {/* Level Circle (Center-aligned) */}
@@ -94,11 +83,9 @@ export default function CharacterSheet({
             <div
               className="rounded-full h-16 w-16 ml-1 flex items-center justify-center border-2"
               style={{
-                backgroundColor:
-                  "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
                 borderColor: "rgb(217, 119, 6)" /* Solid amber border */,
-              }}
-            >
+              }}>
               <span className="text-white text-3xl">{level}</span>
             </div>
             <div className="text-white text-base text-center mt-2">Level</div>
@@ -108,133 +95,123 @@ export default function CharacterSheet({
       {/* New Rectangle below both sections */}
       <div
         className="relative block p-3 mt-7 text-white text-2xl font-bold text-medieval rounded wavy-edges"
-        style={{ height: "37rem", width: "95%" }}
-      >
+        style={{ height: "37rem", width: "95%" }}>
         {activeTab != "Attacks/Spells" && (
           <div>
             {/* Level Circle (Left and towards the top) */}
             <div className="absolute top-0 left-0 ml-3 mt-3">
+              <img
+                src={frameCircle}
+                alt=""
+                style={{ position: "absolute", zIndex: "2", marginLeft: "0px", marginTop: "0px", width: "60px", height: "60px" }}
+                className="spin-icon"
+              />
               <div
-                className="rounded-full flex items-center justify-center border-2"
+                className="rounded-full flex items-center justify-center"
                 style={{
                   height: "60px",
                   width: "60px",
-                  borderWidth: "3px",
-                  backgroundColor:
-                    "rgba(45, 55, 72, 0.9)" /* Semi-transparent amber background */,
-                  borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-                }}
-              >
+                  backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                }}>
                 <span className="text-white text-3xl">{level}</span>
               </div>
-              <div className="text-white text-base text-center mt-1 ">
-                Strength
-              </div>
+              <div className="text-white text-base text-center mt-1 ">Strength</div>
             </div>
-            <div
-              className="absolute top-0 left-0 ml-3 mt-3"
-              style={{ marginTop: "calc(6rem + 12px)" }}
-            >
+
+            <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: "calc(6rem + 12px)" }}>
+              <img
+                src={frameCircle}
+                alt=""
+                style={{ position: "absolute", zIndex: "2", marginLeft: "0px", marginTop: "0px", width: "60px", height: "60px" }}
+                className="spin-icon"
+              />
               <div
-                className="rounded-full flex items-center justify-center border-2"
+                className="rounded-full flex items-center justify-center"
                 style={{
                   height: "60px",
                   width: "60px",
-                  borderWidth: "3px",
-                  backgroundColor:
-                    "rgba(45, 55, 72, 0.9)" /* Semi-transparent amber background */,
-                  borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-                }}
-              >
+                  zIndex: "1",
+                  backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                }}>
                 <span className="text-white text-3xl">{level}</span>
               </div>
-              <div className="text-white text-base text-center mt-1">
-                Dexterity
-              </div>
+              <div className="text-white text-base text-center mt-1">Dexterity</div>
             </div>
-            <div
-              className="absolute top-0 left-0 ml-3 mt-3"
-              style={{ marginTop: "calc(12rem + 12px)" }}
-            >
+            <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: "calc(12rem + 12px)" }}>
+              <img
+                src={frameCircle}
+                alt=""
+                style={{ position: "absolute", zIndex: "2", marginLeft: "0px", marginTop: "0px", width: "60px", height: "60px" }}
+                className="spin-icon"
+              />
               <div
-                className="rounded-full flex items-center justify-center border-2"
+                className="rounded-full flex items-center justify-center"
                 style={{
                   height: "60px",
                   width: "60px",
-                  borderWidth: "3px",
-                  backgroundColor:
-                    "rgba(45, 55, 72, 0.9)" /* Semi-transparent amber background */,
-                  borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-                }}
-              >
+                  zIndex: "1",
+                  backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                }}>
                 <span className="text-white text-3xl">{level}</span>
               </div>
-              <div className="text-white text-base text-center mt-1">
-                Constitution
-              </div>
+              <div className="text-white text-base text-center mt-1">Constitution</div>
             </div>
-            <div
-              className="absolute top-0 left-0 ml-3 mt-3"
-              style={{ marginTop: "calc(18rem + 12px)" }}
-            >
+            <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: "calc(18rem + 12px)" }}>
+              <img
+                src={frameCircle}
+                alt=""
+                style={{ position: "absolute", zIndex: "2", marginLeft: "0px", marginTop: "0px", width: "60px", height: "60px" }}
+                className="spin-icon"
+              />
               <div
-                className="rounded-full flex items-center justify-center border-2"
+                className="rounded-full flex items-center justify-center"
                 style={{
                   height: "60px",
                   width: "60px",
-                  borderWidth: "3px",
-                  backgroundColor:
-                    "rgba(45, 55, 72, 0.9)" /* Semi-transparent amber background */,
-                  borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-                }}
-              >
+                  zIndex: "1",
+                  backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                }}>
                 <span className="text-white text-3xl">{level}</span>
               </div>
-              <div className="text-white text-base text-center mt-1">
-                Intelligence
-              </div>
+              <div className="text-white text-base text-center mt-1">Intelligence</div>
             </div>
-            <div
-              className="absolute top-0 left-0 ml-3 mt-3"
-              style={{ marginTop: "calc(24rem + 12px)" }}
-            >
+            <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: "calc(24rem + 12px)" }}>
+              <img
+                src={frameCircle}
+                alt=""
+                style={{ position: "absolute", zIndex: "2", marginLeft: "0px", marginTop: "0px", width: "60px", height: "60px" }}
+                className="spin-icon"
+              />
               <div
-                className="rounded-full flex items-center justify-center border-2"
+                className="rounded-full flex items-center justify-center"
                 style={{
                   height: "60px",
                   width: "60px",
-                  borderWidth: "3px",
-                  backgroundColor:
-                    "rgba(45, 55, 72, 0.9)" /* Semi-transparent amber background */,
-                  borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-                }}
-              >
+                  zIndex: "1",
+                  backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                }}>
                 <span className="text-white text-3xl">{level}</span>
               </div>
-              <div className="text-white text-base text-center mt-1">
-                Wisdom
-              </div>
+              <div className="text-white text-base text-center mt-1">Wisdom</div>
             </div>
-            <div
-              className="absolute top-0 left-0 ml-3 mt-3"
-              style={{ marginTop: "calc(30rem + 12px)" }}
-            >
+            <div className="absolute top-0 left-0 ml-3 mt-3" style={{ marginTop: "calc(30rem + 12px)" }}>
+              <img
+                src={frameCircle}
+                alt=""
+                style={{ position: "absolute", zIndex: "2", marginLeft: "0px", marginTop: "0px", width: "60px", height: "60px" }}
+                className="spin-icon"
+              />
               <div
-                className="rounded-full flex items-center justify-center border-2"
+                className="rounded-full flex items-center justify-center"
                 style={{
                   height: "60px",
                   width: "60px",
-                  borderWidth: "3px",
-                  backgroundColor:
-                    "rgba(45, 55, 72, 0.9)" /* Semi-transparent amber background */,
-                  borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-                }}
-              >
+                  zIndex: "1",
+                  backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
+                }}>
                 <span className="text-white text-3xl">{level}</span>
               </div>
-              <div className="text-white text-base text-center mt-1">
-                Charisma
-              </div>
+              <div className="text-white text-base text-center mt-1">Charisma</div>
             </div>
           </div>
         )}
@@ -253,8 +230,7 @@ export default function CharacterSheet({
                     ? "red"
                     : "rgb(0, 204, 215)",
                 borderColor: "rgb(49, 46, 129)" /* Solid amber border */,
-              }}
-            >
+              }}>
               <img src="/icons/sword.svg" />
             </div>
             <div className="text-white text-base text-center mt-1 ">
@@ -262,8 +238,7 @@ export default function CharacterSheet({
                 ? "Success"
                 : player.battleMode.attackRollSucceeded === false
                 ? "Fail"
-                : player.battleMode.attackRollSucceeded === null &&
-                  selectedRow !== null
+                : player.battleMode.attackRollSucceeded === null && selectedRow !== null
                 ? "Selected"
                 : ""}
             </div>
@@ -280,15 +255,13 @@ export default function CharacterSheet({
             width: "60px",
             height: "100px",
             backgroundColor: "purple",
-            clipPath:
-              "polygon(50% 0%, 100% 0, 100% 75%, 50% 100%, 0 75%, 0 0)" /* Adjust this to refine shape */,
+            clipPath: "polygon(50% 0%, 100% 0, 100% 75%, 50% 100%, 0 75%, 0 0)" /* Adjust this to refine shape */,
             display: "flex", // Added for inner text alignment
             flexDirection: "column", // Added for inner text alignment
             justifyContent: "flex-end", // Aligns the content to the bottom
             alignItems: "center", // Centers the content horizontally
             padding: "4px", // Padding to ensure text doesn't touch the edges
-          }}
-        >
+          }}>
           {/* ... Other content inside the shield ... */}
           <div
             style={{
@@ -297,8 +270,7 @@ export default function CharacterSheet({
               textAlign: "center",
               width: "100%", // Ensure it's centered
               marginBottom: "4px", // Space between the number and the text
-            }}
-          >
+            }}>
             16
           </div>
           <div
@@ -308,8 +280,7 @@ export default function CharacterSheet({
               textAlign: "center",
               lineHeight: "18px",
               marginBottom: "12px", // Adjust as needed to position the text from the bottom
-            }}
-          >
+            }}>
             Armor Class
           </div>
         </div>
@@ -328,16 +299,14 @@ export default function CharacterSheet({
             justifyContent: "center",
             alignItems: "center",
             padding: "4px",
-          }}
-        >
+          }}>
           <div
             style={{
               color: "white",
               fontSize: "24px",
               textAlign: "center",
               marginBottom: "4px", // Space between the number and the text
-            }}
-          >
+            }}>
             + 4
           </div>
           {/* "Initiative" text */}
@@ -346,8 +315,7 @@ export default function CharacterSheet({
               color: "white",
               fontSize: "16px",
               textAlign: "center",
-            }}
-          >
+            }}>
             Initiative
           </div>
         </div>
@@ -360,16 +328,14 @@ export default function CharacterSheet({
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-          }}
-        >
+          }}>
           {/* Text "Max: 35" above the heart */}
           <div
             style={{
               fontSize: "20px",
               color: "white",
               marginBottom: "4px",
-            }}
-          >
+            }}>
             Max: 35
           </div>
           {/* Heart Shape with number "30" inside */}
@@ -383,19 +349,13 @@ export default function CharacterSheet({
             position: "absolute",
             top: "20%",
             left: "29%",
-          }}
-        >
+          }}>
           {["Skills", "Attacks/Spells", "Equipment"].map((tabName) => (
             <button
               key={tabName}
               className={`tab-button px-2 py-1 text-sm font-semibold border-2 border-transparent rounded-full transition-colors duration-300
-                                ${
-                                  activeTab === tabName
-                                    ? "bg-purple-800"
-                                    : "hover:bg-slate-800 opacity-90"
-                                }`}
-              onClick={() => setActiveTab(tabName)}
-            >
+                                ${activeTab === tabName ? "bg-purple-800" : "hover:bg-slate-800 opacity-90"}`}
+              onClick={() => setActiveTab(tabName)}>
               {tabName}
             </button>
           ))}
@@ -408,12 +368,12 @@ export default function CharacterSheet({
         )}
         {activeTab === "Attacks/Spells" && (
           <div>
-            <AttackSheet
-              player={player}
-              selectedRow={selectedRow}
-              setSelectedRow={setSelectedRow}
-              isD20Spinning={isD20Spinning}
-            />
+            <AttackSheet player={player} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
+          </div>
+        )}
+        {activeTab === "Equipment" && (
+          <div>
+            <SkillSheet highlight={activeSkill} />
           </div>
         )}
       </div>

@@ -1092,4 +1092,31 @@ textarea {
     transition-property: background-color;
     transition-duration: 10s; /* Adjust the duration as needed */
   }
+
+
+  @keyframes moveFlames {
+  0% {
+    filter: url(#flameFilter);
+  }
+  100% {
+    filter: url(#flameFilter) hue-rotate(360deg);
+  }
+}
+
+svg circle {
+  animation: moveFlames 5s infinite linear;
+}
   
+@keyframes circleFrameSpin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Class to apply the spinning animation */
+  .spin-icon {
+    /*animation: circleFrameSpin 60s linear infinite; */
+  }
