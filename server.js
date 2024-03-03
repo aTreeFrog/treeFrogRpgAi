@@ -85,6 +85,7 @@ const defaultBattleMode = {
   distanceMoved: null,
   attackUsed: null,
   actionAttempted: false,
+  usedPotion: false,
   damageRollRequested: false,
   damageDelt: null,
   usersTargeted: [],
@@ -358,6 +359,7 @@ app.prepare().then(() => {
           players[user].battleMode.attackRoll = 0;
           players[user].battleMode.attackRollSucceeded = null;
           players[user].battleMode.actionAttempted = false;
+          players[user].battleMode.usedPotion = false;
           players[user].battleMode.damageRollRequested = false;
           players[user].battleMode.damageDelt = null;
           players[user].battleMode.usersTargeted = [];
@@ -435,6 +437,9 @@ app.prepare().then(() => {
 
       io.to(serverRoomName).emit("enter battle mode", game); //not sure i need game object at all yet
       io.to(serverRoomName).emit("players objects", players);
+
+      // create a dalle image illustrating the begining of a battle.
+      battleRoundAISummary(true);
     }
 
     async function summarizeAndMoveOn() {
@@ -1240,6 +1245,26 @@ app.prepare().then(() => {
             yWidth: 14,
           },
         },
+        equipment: {
+          healthPotion: {
+            name: "Health Potion",
+            icon: "icons/healthpotion.svg",
+            quantity: 7,
+            duration: "n/a",
+            type: "potion",
+            impact: "+10",
+            description: "Mystical red liquid to heal your wounds",
+          },
+          healthPotion: {
+            name: "Random Teleport",
+            icon: "icons/healthpotion.svg",
+            quantity: 1,
+            duration: "n/a",
+            type: "scroll",
+            impact: "n/a",
+            description: "Transports you to a random nearby location",
+          },
+        },
         initiative: 5,
         armorClass: 14,
         maxHealth: 30,
@@ -1268,6 +1293,7 @@ app.prepare().then(() => {
           distanceMoved: null,
           attackUsed: null,
           actionAttempted: false,
+          usedPotion: false,
           damageRollRequested: false,
           damageDelt: null,
           usersTargeted: [],
@@ -1674,6 +1700,7 @@ app.prepare().then(() => {
     players[userName].battleMode.distanceMoved = null;
     players[userName].battleMode.actionAttempted = false;
     players[userName].battleMode.damageRollRequested = false;
+    players[userName].battleMode.usedPotion = false;
     players[userName].battleMode.damageDelt = null;
     players[userName].battleMode.usersTargeted = [];
     players[userName].battleMode.turnCompleted = false;
@@ -1717,14 +1744,23 @@ app.prepare().then(() => {
     io.to(serverRoomName).emit("players objects", players);
   }
 
-  async function battleRoundAISummary() {
-    let message = `"Game master, the team just had a round in battle. Please summarize this battle round 
+  async function battleRoundAISummary(starting = false) {
+    if (starting) {
+      let message = `"Game master, the team is just starting a battle. Please summarize this opening before the battle
+      begins with vivid detail. the battlefield has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each player: `;
+
+      Object.entries(battleRoundData).forEach(([player, data]) => {
+        message += `name: ${player}, type:${data.type}, race: ${data.race}, class: ${data.class}`;
+      });
+    } else {
+      let message = `"Game master, the team just had a round in battle. Please summarize this battle round 
     scene with vivid detail. Keep your response to 300 characters or less. the battlefield 
     has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each players battle round: `;
 
-    Object.entries(battleRoundData).forEach(([player, data]) => {
-      message += `name: ${player}, type:${data.type}, race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
-    });
+      Object.entries(battleRoundData).forEach(([player, data]) => {
+        message += `name: ${player}, type:${data.type}, race: ${data.race}, class: ${data.class}, AttackAttempted: ${data.attackAttempt}, AttackSuccess: ${data.attackHit}, AttackUsed: ${data.attackUsed}, MovedOnMap: ${data.moved}, Got Hit: ${data.gotHit}, died: ${data.died}. `;
+      });
+    }
 
     message += "summarize this for a dall e image prompt for a dungeons and dragons style game";
 
@@ -1821,6 +1857,7 @@ app.prepare().then(() => {
         player.battleMode.attackRollSucceeded = null;
         player.battleMode.actionAttempted = false;
         player.battleMode.damageRollRequested = false;
+        player.battleMode.usedPotion = false;
         player.battleMode.damageDelt = null;
         player.battleMode.usersTargeted = [];
         player.battleMode.enemyAttackAttempt = AttackAttempt.INIT;
@@ -1894,6 +1931,7 @@ app.prepare().then(() => {
         player.battleMode.attackUsed = null;
         player.battleMode.attackRollSucceeded = null;
         player.battleMode.actionAttempted = false;
+        player.battleMode.usedPotion = false;
         player.battleMode.damageRollRequested = false;
         player.battleMode.damageDelt = null;
         player.battleMode.usersTargeted = [];

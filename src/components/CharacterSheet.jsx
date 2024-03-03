@@ -15,6 +15,8 @@ export default function CharacterSheet({
   selectedRow,
   setSelectedRow,
   isD20Spinning,
+  equipmentRow,
+  setEquipmentRow,
 }) {
   const raceRef = useRef(null);
   const classRef = useRef(null);
@@ -39,6 +41,11 @@ export default function CharacterSheet({
     //if moved to another tab and didn't already select attack on target, clear out attack.
     if (activeTab != "Attacks/Spells" && player?.battleMode?.usersTargeted?.length < 1) {
       setSelectedRow(null);
+    }
+
+    //if didnt drink potion on battle turn, go ahead and set the row value to null when moving away
+    if (activeTab != "Equipment" && !player?.battleMode?.drankPotion) {
+      setEquipmentRow(null);
     }
   }, [activeTab]);
 
@@ -239,6 +246,24 @@ export default function CharacterSheet({
             </div>
           </div>
         )}
+        {activeTab == "Equipment" && (
+          <div className="absolute top-0 left-0 ml-4 mt-3">
+            <div className="flex items-start">
+              <div>
+                <div className="ml-12">Description</div>
+                <div className="rounded-md w-[200px] flex items-center justify-center bg-gray-800 border-2 p-2 text-white text-sm overflow-hidden">
+                  {equipmentRow?.description}
+                </div>
+              </div>
+              <div className="flex space-x-3 ml-4 mt-4">
+                <button className="bg-cyan-800 hover:bg-cyan-900 transition-colors duration-300 text-white font-bold py-1 px-3 rounded">Drink</button>
+                <button className="bg-purple-600 hover:bg-purple-800 transition-colors duration-300 text-white font-bold py-1 px-5 rounded">
+                  Give
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {activeTab != "Equipment" && (
           <div>
             {/* Shield-shaped box */}
@@ -372,7 +397,7 @@ export default function CharacterSheet({
         )}
         {activeTab === "Equipment" && (
           <div>
-            <EquipmentSheet player={player} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
+            <EquipmentSheet player={player} equipmentRow={equipmentRow} setEquipmentRow={setEquipmentRow} isD20Spinning={isD20Spinning} />
           </div>
         )}
       </div>

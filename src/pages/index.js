@@ -215,6 +215,7 @@ export default function Home() {
   const [showOverlayText, setShowOverlayText] = useState(false);
   const [activeTab, setActiveTab] = useState("Skills");
   const [selectedRow, setSelectedRow] = useState(null);
+  const [equipmentRow, setEquipmentRow] = useState(null);
   const latestUserServer = useRef();
   const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
   const [showPlayerName, setShowPlayerName] = useState({});
@@ -1712,6 +1713,8 @@ export default function Home() {
                   player={players[userName]}
                   selectedRow={selectedRow}
                   setSelectedRow={setSelectedRow}
+                  equipmentRow={equipmentRow}
+                  setEquipmentRow={setEquipmentRow}
                   isD20Spinning={isD20Spinning}
                 />
               </div>
