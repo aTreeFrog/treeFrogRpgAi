@@ -17,6 +17,8 @@ export default function CharacterSheet({
   isD20Spinning,
   equipmentRow,
   setEquipmentRow,
+  usedEquipment,
+  setUsedEquipment,
 }) {
   const raceRef = useRef(null);
   const classRef = useRef(null);
@@ -48,6 +50,12 @@ export default function CharacterSheet({
       setEquipmentRow(null);
     }
   }, [activeTab]);
+
+  const handleUseClick = () => {
+    if (equipmentRow?.name) {
+      setUsedEquipment(equipmentRow); // Update the state to true when the button is clicked
+    }
+  };
 
   return (
     <div className="mt-1 ml-4 text-left ">
@@ -256,7 +264,17 @@ export default function CharacterSheet({
                 </div>
               </div>
               <div className="flex space-x-3 ml-4 mt-4">
-                <button className="bg-cyan-800 hover:bg-cyan-900 transition-colors duration-300 text-white font-bold py-1 px-3 rounded">Drink</button>
+                <button
+                  className={`bg-cyan-800 hover:bg-cyan-900 transition-colors duration-300 text-white font-bold py-1 px-6 rounded ${
+                    !equipmentRow || (player.mode == "battle" && (!player.battleMode.yourTurn || player.battleMode.usedPotion))
+                      ? "opacity-50"
+                      : "hover:bg-cyan-900"
+                  }`}
+                  onClick={handleUseClick}
+                  disabled={!equipmentRow || (player.mode == "battle" && (!player.battleMode.yourTurn || player.battleMode.usedPotion))}>
+                  Use
+                </button>
+
                 <button className="bg-purple-600 hover:bg-purple-800 transition-colors duration-300 text-white font-bold py-1 px-5 rounded">
                   Give
                 </button>

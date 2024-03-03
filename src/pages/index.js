@@ -225,6 +225,7 @@ export default function Home() {
   const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning
   const [iconSelection, setIconSelection] = useState({});
   const lastImageUrlRef = useRef(null);
+  const [usedEquipment, setUsedEquipment] = useState(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1558,6 +1559,17 @@ export default function Home() {
     }
   }, [players]);
 
+  useEffect(() => {
+    if (usedEquipment && usedEquipment?.name?.length > 0) {
+      const data = {
+        equipmentData: usedEquipment,
+        name: userName,
+      };
+      chatSocket.emit("equipment used", data);
+      setUsedEquipment(null);
+    }
+  }, [usedEquipment]);
+
   const MoveOnClick = () => {
     setShowMoveOnPopup((prevState) => !prevState);
   };
@@ -1716,6 +1728,8 @@ export default function Home() {
                   equipmentRow={equipmentRow}
                   setEquipmentRow={setEquipmentRow}
                   isD20Spinning={isD20Spinning}
+                  usedEquipment={usedEquipment}
+                  setUsedEquipment={setUsedEquipment}
                 />
               </div>
             </div>
