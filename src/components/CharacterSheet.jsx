@@ -15,6 +15,10 @@ export default function CharacterSheet({
   selectedRow,
   setSelectedRow,
   isD20Spinning,
+  equipmentRow,
+  setEquipmentRow,
+  usedEquipment,
+  setUsedEquipment,
 }) {
   const raceRef = useRef(null);
   const classRef = useRef(null);
@@ -40,7 +44,19 @@ export default function CharacterSheet({
     if (activeTab != "Attacks/Spells" && player?.battleMode?.usersTargeted?.length < 1) {
       setSelectedRow(null);
     }
+
+    //if didnt drink potion on battle turn, go ahead and set the row value to null when moving away
+    if (activeTab != "Equipment" && !player?.battleMode?.drankPotion) {
+      setEquipmentRow(null);
+    }
   }, [activeTab]);
+
+  const handleUseClick = () => {
+    if (equipmentRow?.name) {
+      console.log("equipmentRow.name", equipmentRow.name);
+      setUsedEquipment(equipmentRow); // Update the state to true when the button is clicked
+    }
+  };
 
   return (
     <div className="mt-1 ml-4 text-left ">
@@ -82,14 +98,19 @@ export default function CharacterSheet({
           {/* Level Circle (Center-aligned) */}
           <div className="absolute top-1/2 transform -translate-y-1/2 right-8">
             <div
-              className="rounded-full h-16 w-16 ml-1 flex items-center justify-center border-2"
+              className={`rounded-full h-16 w-16 ml-1 flex items-center justify-center border-2`}
               style={{
-                backgroundColor: "rgba(139, 0, 0, 0.3)" /* Semi-transparent amber background */,
-                borderColor: "rgb(217, 119, 6)" /* Solid amber border */,
+                backgroundColor: "rgba(139, 0, 0, 0.3)", // Semi-transparent amber background
+                borderColor: "rgb(217, 119, 6)", // Solid amber border
               }}>
-              <span className="text-white text-3xl">{level}</span>
+              <img
+                src={player?.userImageUrl}
+                className="rounded-full object-cover w-full h-full" // Adjusted classes here
+                alt="Player" // Always include an alt attribute for accessibility
+              />
             </div>
-            <div className="text-white text-base text-center mt-2">Level</div>
+
+            <div className="text-white text-base text-center mt-2">Level {level}</div>
           </div>
         </div>
       </div>
@@ -235,7 +256,37 @@ export default function CharacterSheet({
                 ? "Fail"
                 : player.battleMode.attackRollSucceeded === null && selectedRow !== null
                 ? "Selected"
+                : player.battleMode.actionAttempted
+                ? "Action Made"
                 : ""}
+            </div>
+          </div>
+        )}
+        {activeTab == "Equipment" && (
+          <div className="absolute top-0 left-0 ml-4 mt-3">
+            <div className="flex items-start">
+              <div>
+                <div className="ml-12">Description</div>
+                <div className="rounded-md w-[200px] flex items-center justify-center bg-gray-800 border-2 p-2 text-white text-sm overflow-hidden">
+                  {equipmentRow?.description}
+                </div>
+              </div>
+              <div className="flex space-x-3 ml-4 mt-4">
+                <button
+                  className={`bg-cyan-800 hover:bg-cyan-900 transition-colors duration-300 text-white font-bold py-1 px-6 rounded ${
+                    !equipmentRow || (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))
+                      ? "opacity-50"
+                      : "hover:bg-cyan-900"
+                  }`}
+                  onClick={handleUseClick}
+                  disabled={!equipmentRow || (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))}>
+                  Use
+                </button>
+
+                <button className="bg-purple-600 hover:bg-purple-800 transition-colors duration-300 text-white font-bold py-1 px-5 rounded">
+                  Give
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -372,7 +423,7 @@ export default function CharacterSheet({
         )}
         {activeTab === "Equipment" && (
           <div>
-            <EquipmentSheet player={player} selectedRow={selectedRow} setSelectedRow={setSelectedRow} isD20Spinning={isD20Spinning} />
+            <EquipmentSheet player={player} equipmentRow={equipmentRow} setEquipmentRow={setEquipmentRow} isD20Spinning={isD20Spinning} />
           </div>
         )}
       </div>

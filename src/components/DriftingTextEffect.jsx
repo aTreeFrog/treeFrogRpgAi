@@ -57,6 +57,7 @@ const DriftingTextEffect = ({ playerData, gridSpacing, showHealthChange }) => {
         floatingText.current = `-${showHealthChange.current[playerData.name].amount.toString()}`; // Ensure string representation
         animationRef.current = requestAnimationFrame(animate);
       } else if (showHealthChange.current[playerData.name]?.type === "INCREASE") {
+        console.log("increased health showhealthchange");
         floatingText.current = `+${showHealthChange.current[playerData.name].amount.toString()}`; // Ensure string representation
         animationRef.current = requestAnimationFrame(animate);
       }
@@ -77,7 +78,7 @@ const DriftingTextEffect = ({ playerData, gridSpacing, showHealthChange }) => {
       y={textY}
       text={floatingText.current}
       fontSize={20}
-      fill="white"
+      fill={showHealthChange.current[playerData.name]?.type === "INCREASE" ? "green" : "white"}
       opacity={opacity}
     />
   );

@@ -90,7 +90,6 @@ body,
 }
 
 
-
 @keyframes playerGlowAnimation {
 
     0%,
@@ -1092,4 +1091,9 @@ textarea {
     transition-property: background-color;
     transition-duration: 10s; /* Adjust the duration as needed */
   }
+
+  .drank-potion {
+    animation: drift 5s ease-in-out;
+}
+
   

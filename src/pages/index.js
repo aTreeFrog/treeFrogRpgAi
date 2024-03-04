@@ -215,6 +215,7 @@ export default function Home() {
   const [showOverlayText, setShowOverlayText] = useState(false);
   const [activeTab, setActiveTab] = useState("Skills");
   const [selectedRow, setSelectedRow] = useState(null);
+  const [equipmentRow, setEquipmentRow] = useState(null);
   const latestUserServer = useRef();
   const [loadBattlePlayerImages, setLoadBattlePlayerImages] = useState({});
   const [showPlayerName, setShowPlayerName] = useState({});
@@ -224,6 +225,7 @@ export default function Home() {
   const [isD20Spinning, setIsD20Spinning] = useState(false); // Initialize spinning
   const [iconSelection, setIconSelection] = useState({});
   const lastImageUrlRef = useRef(null);
+  const [usedEquipment, setUsedEquipment] = useState(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1557,6 +1559,36 @@ export default function Home() {
     }
   }, [players]);
 
+  useEffect(() => {
+    if (usedEquipment && usedEquipment?.name?.length > 0) {
+      console.log("usedEquipment useEffect", usedEquipment);
+      const data = {
+        equipmentData: usedEquipment,
+        name: userName,
+      };
+      chatSocket.emit("equipment used", data);
+
+      if (usedEquipment.type == "potion") {
+        const potionTone = new Tone.Player({
+          url: "/audio/health_potion.wav",
+        }).toDestination();
+
+        potionTone.autostart = true;
+
+        potionTone.onended = () => {
+          console.log("potion playback ended");
+          potionTone.disconnect(); // Disconnect the player
+        };
+
+        potionTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
+      }
+
+      setUsedEquipment(null);
+    }
+  }, [usedEquipment]);
+
   const MoveOnClick = () => {
     setShowMoveOnPopup((prevState) => !prevState);
   };
@@ -1712,7 +1744,11 @@ export default function Home() {
                   player={players[userName]}
                   selectedRow={selectedRow}
                   setSelectedRow={setSelectedRow}
+                  equipmentRow={equipmentRow}
+                  setEquipmentRow={setEquipmentRow}
                   isD20Spinning={isD20Spinning}
+                  usedEquipment={usedEquipment}
+                  setUsedEquipment={setUsedEquipment}
                 />
               </div>
             </div>
