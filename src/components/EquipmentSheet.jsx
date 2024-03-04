@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import * as Tone from "tone";
 
 // Mock data for testing
 const yourDataArray = [
@@ -9,6 +10,7 @@ const yourDataArray = [
     duration: "n/a",
     impact: "+5",
     description: "Mystical red liquid to heal your wounds",
+    type: "potion",
   },
 
   // Add more mock data as needed
@@ -44,6 +46,23 @@ export default function EquipmentSheet({ player, equipmentRow, setEquipmentRow, 
 
     // If action has not been attempted, allow changing the selected row
     setEquipmentRow(equipmentRow === item ? null : item);
+
+    if (!(equipmentRow === item || item == null)) {
+      const clickedTone = new Tone.Player({
+        url: "/audio/selected.wav",
+      }).toDestination();
+
+      clickedTone.autostart = true;
+
+      clickedTone.onended = () => {
+        console.log("selected playback ended");
+        clickedTone.disconnect(); // Disconnect the player
+      };
+
+      clickedTone.onerror = (error) => {
+        console.error("Error with audio playback", error);
+      };
+    }
   };
 
   return (

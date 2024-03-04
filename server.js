@@ -982,7 +982,7 @@ app.prepare().then(() => {
           argumentsJson = JSON.parse(functionData.arguments);
           promptValue = argumentsJson.prompt;
           if (!dallECallModifier) {
-            createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
+            //createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
           }
           dallECallModifier = !dallECallModifier; //toggle modifier back and forth to cut dall e image calls in half
         }
@@ -1253,6 +1253,7 @@ app.prepare().then(() => {
             duration: "n/a",
             type: "potion",
             impact: "+10",
+            property: "currentHealth",
             description: "Mystical red liquid to heal your wounds",
           },
           healthPotion: {
@@ -1262,12 +1263,13 @@ app.prepare().then(() => {
             duration: "n/a",
             type: "scroll",
             impact: "n/a",
+            property: "currentHealth",
             description: "Transports you to a random nearby location",
           },
         },
         initiative: 5,
         armorClass: 14,
-        maxHealth: 30,
+        maxHealth: 35,
         currentHealth: 30,
         xPosition: 0,
         yPosition: 0,
@@ -1321,11 +1323,11 @@ app.prepare().then(() => {
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
 
       // lets setup the game
-      if (Object.keys(players).length >= playerCountForGame) {
-        await runFunctionAfterDelay(() => startOfGame(), 10000);
-      }
+      // if (Object.keys(players).length >= playerCountForGame) {
+      //   await runFunctionAfterDelay(() => startOfGame(), 10000);
+      // }
 
-      //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
+      enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
 
     socket.on("obtain all users", () => {
@@ -1333,6 +1335,23 @@ app.prepare().then(() => {
 
       io.emit("connected users", Object.keys(clients));
 
+      io.emit("players objects", players);
+    });
+
+    socket.on("equipment used", (data) => {
+      console.log("equipment used ", data);
+      internalDate = new Date().toISOString();
+      if (data.equipmentData.type == "potion") {
+        if (data.equipmentData.name == "Health") {
+          const impactNumber = parseInt(data.equipmentData.impact, 10);
+          players[data.name].currentHealth = Math.min(players[data.name].maxHealth, players[data.name].currentHealth + impactNumber);
+          players[data.name].battleMode.usedPotion = true;
+          players[data.name].battleMode.actionAttempted = true;
+        }
+      }
+      players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${internalDate}`;
+      activityCount++;
+      console.log("player equipment used ", players[data.name]);
       io.emit("players objects", players);
     });
 
@@ -1745,8 +1764,9 @@ app.prepare().then(() => {
   }
 
   async function battleRoundAISummary(starting = false) {
+    let message = "";
     if (starting) {
-      let message = `"Game master, the team is just starting a battle. Please summarize this opening before the battle
+      message = `"Game master, the team is just starting a battle. Please summarize this opening before the battle
       begins with vivid detail. the battlefield has the following description: ${mapDescription}. The players type "player" are versing the players type "enemy". Here is summary of each player: `;
 
       Object.entries(battleRoundData).forEach(([player, data]) => {
@@ -1786,7 +1806,7 @@ app.prepare().then(() => {
     const completion = await openai.chat.completions.create(data);
     dalleSummaryMsg = completion.choices[0].message.content;
     console.log("dalle summary msg: ", dalleSummaryMsg);
-    createDallEImage(dalleSummaryMsg);
+    //createDallEImage(dalleSummaryMsg);   /////////////////TURN BACK ON!!!/////////////////////////////////////
   }
 
   async function nextInLine() {

@@ -507,6 +507,22 @@ const BattleMap = ({
           type: "INCREASE",
           amount: playerData.currentHealth - prevPlayersBattleData.current[playerName]?.currentHealth,
         };
+
+        const healthTone = new Tone.Player({
+          url: "/audio/ever_vingelance.wav",
+        }).toDestination();
+
+        healthTone.autostart = true;
+
+        healthTone.onended = () => {
+          console.log("health playback ended");
+          healthTone.disconnect(); // Disconnect the player
+        };
+
+        healthTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
+
         setTimeout(() => {
           showHealthChange.current[playerName] = {
             type: "",
@@ -899,9 +915,10 @@ const BattleMap = ({
                     {playerData?.battleMode?.enemyAttackAttempt === "SUCCESS" && (
                       <BlurredLineEffect playerData={playerData} gridSpacing={gridSpacing} />
                     )}
-                    {playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT" && (
+                    {(playerData?.battleMode?.enemyAttackAttempt && playerData?.battleMode?.enemyAttackAttempt !== "INIT") ||
+                    playerData?.battleMode?.usedPotion ? (
                       <DriftingTextEffect playerData={playerData} gridSpacing={gridSpacing} showHealthChange={showHealthChange} />
-                    )}
+                    ) : null}
                   </Group>
                 </>
               </React.Fragment>

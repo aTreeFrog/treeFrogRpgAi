@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import * as Tone from "tone";
 
 // Mock data for testing
 const yourDataArray = [
@@ -55,6 +56,23 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
 
     // If action has not been attempted, allow changing the selected row
     setSelectedRow(selectedRow === item ? null : item);
+
+    if (!(selectedRow === item || item == null)) {
+      const clickedTone = new Tone.Player({
+        url: "/audio/selected.wav",
+      }).toDestination();
+
+      clickedTone.autostart = true;
+
+      clickedTone.onended = () => {
+        console.log("selected playback ended");
+        clickedTone.disconnect(); // Disconnect the player
+      };
+
+      clickedTone.onerror = (error) => {
+        console.error("Error with audio playback", error);
+      };
+    }
   };
 
   return (

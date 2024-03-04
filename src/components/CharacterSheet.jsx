@@ -53,6 +53,7 @@ export default function CharacterSheet({
 
   const handleUseClick = () => {
     if (equipmentRow?.name) {
+      console.log("equipmentRow.name", equipmentRow.name);
       setUsedEquipment(equipmentRow); // Update the state to true when the button is clicked
     }
   };
@@ -97,7 +98,7 @@ export default function CharacterSheet({
           {/* Level Circle (Center-aligned) */}
           <div className="absolute top-1/2 transform -translate-y-1/2 right-8">
             <div
-              className="rounded-full h-16 w-16 ml-1 flex items-center justify-center border-2"
+              className={`rounded-full h-16 w-16 ml-1 flex items-center justify-center border-2`}
               style={{
                 backgroundColor: "rgba(139, 0, 0, 0.3)", // Semi-transparent amber background
                 borderColor: "rgb(217, 119, 6)", // Solid amber border
@@ -255,6 +256,8 @@ export default function CharacterSheet({
                 ? "Fail"
                 : player.battleMode.attackRollSucceeded === null && selectedRow !== null
                 ? "Selected"
+                : player.battleMode.actionAttempted
+                ? "Action Made"
                 : ""}
             </div>
           </div>

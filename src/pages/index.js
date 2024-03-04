@@ -1561,11 +1561,30 @@ export default function Home() {
 
   useEffect(() => {
     if (usedEquipment && usedEquipment?.name?.length > 0) {
+      console.log("usedEquipment useEffect", usedEquipment);
       const data = {
         equipmentData: usedEquipment,
         name: userName,
       };
       chatSocket.emit("equipment used", data);
+
+      if (usedEquipment.type == "potion") {
+        const potionTone = new Tone.Player({
+          url: "/audio/health_potion.wav",
+        }).toDestination();
+
+        potionTone.autostart = true;
+
+        potionTone.onended = () => {
+          console.log("potion playback ended");
+          potionTone.disconnect(); // Disconnect the player
+        };
+
+        potionTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
+      }
+
       setUsedEquipment(null);
     }
   }, [usedEquipment]);
