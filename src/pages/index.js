@@ -325,7 +325,7 @@ export default function Home() {
         audio.current = false;
       };
 
-      newAudio.current.onended = () => {
+      newAudio.current.onstop = () => {
         newAudio.current.disconnect(); // Disconnect the player
         newAudio.current.dispose();
       };
@@ -610,7 +610,7 @@ export default function Home() {
     } else if (
       players[userName]?.mode == "battle" &&
       players[userName]?.battleMode?.yourTurn &&
-      players[userName]?.equipment["healthPotion"]?.quantity > 0
+      players[userName]?.equipment["Health"]?.quantity > 0
     ) {
       playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
 
@@ -632,11 +632,11 @@ export default function Home() {
       }
     }
 
-    if (!players[userName]?.equipment["healthPotion"] || players[userName]?.equipment["healthPotion"]?.quantity < 1) {
+    if (!players[userName]?.equipment["Health"] || players[userName]?.equipment["Health"]?.quantity < 1) {
       playerIconList.current = [];
     }
 
-    if (players[userName]?.mode != "battle" && players[userName]?.equipment["healthPotion"]?.quantity > 0) {
+    if (players[userName]?.mode != "battle" && players[userName]?.equipment["Health"]?.quantity > 0) {
       playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
     }
 
@@ -656,7 +656,7 @@ export default function Home() {
 
         pingTone.autostart = true;
 
-        pingTone.onended = () => {
+        pingTone.onstop = () => {
           console.log("ping playback ended");
           pingTone.disconnect(); // Disconnect the player
         };
@@ -1325,7 +1325,7 @@ export default function Home() {
 
           diceTone.current.autostart = true;
 
-          diceTone.current.onended = () => {
+          diceTone.current.onstop = () => {
             console.log("Playback ended");
             diceTone.current.disconnect(); // Disconnect the player
           };
@@ -1336,7 +1336,7 @@ export default function Home() {
 
           diceTone.current.autostart = true;
 
-          diceTone.current.onended = () => {
+          diceTone.current.onstop = () => {
             console.log("Playback ended");
             diceTone.current.disconnect(); // Disconnect the player
           };
@@ -1547,7 +1547,7 @@ export default function Home() {
     if (option?.selectedOption?.value?.toLowerCase() == "endturn") {
       handleEndTurn(option.player);
     } else if (option?.selectedOption?.value?.toLowerCase() == "givehealth") {
-      handleGiveEquipement("healthPotion", 1, option.player, userName);
+      handleGiveEquipement("Health", 1, option.player, userName);
     }
   };
 
@@ -1592,7 +1592,7 @@ export default function Home() {
 
         potionTone.autostart = true;
 
-        potionTone.onended = () => {
+        potionTone.onstop = () => {
           console.log("potion playback ended");
           potionTone.disconnect(); // Disconnect the player
         };
@@ -1726,6 +1726,36 @@ export default function Home() {
     };
     console.log("handleGiveEquipement", data);
     chatSocket.emit("give equipment", data);
+
+    const whooshTone = new Tone.Player({
+      url: "/audio/whoosh.wav",
+    }).toDestination();
+
+    whooshTone.autostart = true;
+
+    whooshTone.onstop = () => {
+      console.log("whoosh playback ended");
+
+      const thankYouTone = new Tone.Player({
+        url: "/audio/thank_you.wav",
+      }).toDestination();
+
+      thankYouTone.autostart = true;
+
+      thankYouTone.onstop = () => {
+        console.log("potion playback ended");
+        thankYouTone.disconnect(); // Disconnect the player
+      };
+
+      thankYouTone.onerror = (error) => {
+        console.error("Error with audio playback", error);
+      };
+      whooshTone.disconnect(); // Disconnect the player
+    };
+
+    whooshTone.onerror = (error) => {
+      console.error("Error with audio playback", error);
+    };
   };
 
   const toggleIconSelectVisibility = (player) => {
