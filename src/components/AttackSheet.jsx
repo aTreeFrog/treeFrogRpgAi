@@ -64,7 +64,7 @@ export default function AttackSheet({ player, selectedRow, setSelectedRow, isD20
 
       clickedTone.autostart = true;
 
-      clickedTone.onended = () => {
+      clickedTone.onstop = () => {
         console.log("selected playback ended");
         clickedTone.disconnect(); // Disconnect the player
       };
