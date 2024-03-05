@@ -22,16 +22,18 @@ export default function NewScenePopup({ newSceneReady, players, userName }) {
       </div>
       {/* Display other players' selections */}
       <div className="mt-4">
-        {Object.keys(players).map((name) => (
-          <div key={name} className="mt-2">
-            {players[name].name}: {players[name].newSceneReady ? "Ready" : "Waiting"}
-            {!players[name].newSceneReady && (
-              <button className="ml-2 px-2 py-1 bg-red-500 text-white rounded-md" onClick={() => newSceneReady(name)}>
-                Force Ready
-              </button>
-            )}
-          </div>
-        ))}
+        {Object.keys(players)
+          .filter((name) => players[name].mode === "player") // Filter players with mode "player"
+          .map((name) => (
+            <div key={name} className="mt-2">
+              {players[name].name}: {players[name].newSceneReady ? "Ready" : "Waiting"}
+              {!players[name].newSceneReady && (
+                <button className="ml-2 px-2 py-1 bg-red-500 text-white rounded-md" onClick={() => newSceneReady(name)}>
+                  Force Ready
+                </button>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );

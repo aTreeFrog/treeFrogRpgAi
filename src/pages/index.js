@@ -226,6 +226,7 @@ export default function Home() {
   const [iconSelection, setIconSelection] = useState({});
   const lastImageUrlRef = useRef(null);
   const [usedEquipment, setUsedEquipment] = useState(null);
+  let playerIconList = useRef([]);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -606,6 +607,8 @@ export default function Home() {
         img.onload = () => setIsInitiativeImageLoaded(true);
       }
     } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn) {
+      playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
+
       //roll attackRoll or attack amount dice if its your turn and you selected targets.
       if (players[userName]?.battleMode?.attackRoll < 1 && !players[userName]?.battleMode?.actionAttempted) {
         console.log("battle dice ready");
@@ -622,6 +625,14 @@ export default function Home() {
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
+    }
+
+    if (players[userName]?.mode != "battle") {
+      playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
+    }
+
+    if (players[userName]?.mode == "battle" && !players[userName]?.battleMode?.yourTurn) {
+      playerIconList.current = [];
     }
 
     Object.entries(players).forEach(([playerName, playerData]) => {
@@ -1517,11 +1528,6 @@ export default function Home() {
     { value: "Team", label: "Team" },
   ];
 
-  const playerIconList = [
-    { value: "endTurn", label: "End Turn" },
-    { value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" },
-  ];
-
   const handleIconSelection = (option) => {
     console.log("handleIconSelection ", option);
     setIconSelection((prevState) => ({
@@ -1832,79 +1838,84 @@ export default function Home() {
             </>
           )}
           {/* Row of Player Images in Battle Mode */}
-          {players[userName]?.mode == "battle" && !floatingValue && (
-            <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? "invisible" : ""}`}>
-              {Object.values(players)
-                .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
-                .filter((player) => player.userImageUrl)
-                .map((player, index) => (
-                  <div key={index} className="player-container relative flex flex-col items-center mx-1 w-12">
-                    {" "}
-                    {/* Adjusted line */}
-                    <div
-                      className={`w-10 h-10 rounded-full overflow-hidden ${
-                        player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt != "COMPLETE" ? "player-glow-active" : ""
-                      }`}>
-                      <img
-                        src={player.userImageUrl}
-                        alt={player.name}
-                        onLoad={() => handlePlayerImageLoaded(index)}
-                        className={`w-full h-full object-cover rounded-full ${
-                          player.name === userName && player.battleMode.yourTurn ? "userpicture-effect" : ""
-                        }`}
-                        style={{
-                          border:
-                            player.name === userName && player.battleMode.yourTurn
-                              ? "2px solid yellow"
-                              : player.battleMode.yourTurn
-                              ? "2px solid white"
-                              : "none",
-                          opacity: loadBattlePlayerImages[index] ? "1" : "0",
-                        }}
-                      />
+          {(players[userName]?.mode == "battle" ||
+            players[userName]?.mode == "story" ||
+            players[userName]?.mode == "dice" ||
+            players[userName]?.mode == "startOfGame") &&
+            !floatingValue && (
+              <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? "invisible" : ""}`}>
+                {Object.values(players)
+                  .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
+                  .filter((player) => player.userImageUrl)
+                  .map((player, index) => (
+                    <div key={index} className="player-container relative flex flex-col items-center mx-1 w-12">
+                      {" "}
+                      {/* Adjusted line */}
                       <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? 0 : 4,
-                          width: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? "100%" : "82%",
-                          height: Object.values(iconSelection).some((value) => value === true) ? "80%" : "100%",
-                          borderRadius: "50%",
-                          backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
-                            100 - (100 * player.currentHealth) / player.maxHealth
-                          }%, transparent ${100 - (100 * player.currentHealth) / player.maxHealth}%)`,
-                          zIndex: 2,
-                          cursor: "pointer",
-                        }}
-                        onMouseOver={() => handleMouseOver(player)}
-                        onMouseOut={() => handleMouseOut(player)}
-                        onClick={() => toggleIconSelectVisibility(player)}></div>
-                    </div>
-                    {showPlayerName[player.name] === true && !iconSelection[player.name] === true && (
-                      <div
-                        className="player-name-tooltip absolute bottom-full mb-2"
-                        style={{
-                          backgroundColor: player.type === "enemy" ? "red" : "green",
-                        }}>
-                        {" "}
-                        {/* Adjusted line for tooltip */}
-                        {player.name}
-                      </div>
-                    )}
-                    {iconSelection[player.name] === true && (
-                      <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
-                        <IconSelect
-                          options={playerIconList}
-                          onChange={handleIconSelection}
-                          player={player.name}
-                          setIconSelection={setIconSelection}
+                        className={`w-10 h-10 rounded-full overflow-hidden ${
+                          player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt != "COMPLETE" ? "player-glow-active" : ""
+                        }`}>
+                        <img
+                          src={player.userImageUrl}
+                          alt={player.name}
+                          onLoad={() => handlePlayerImageLoaded(index)}
+                          className={`w-full h-full object-cover rounded-full ${
+                            player.name === userName && player.battleMode.yourTurn ? "userpicture-effect" : ""
+                          }`}
+                          style={{
+                            border:
+                              player.name === userName && player.battleMode.yourTurn
+                                ? "4px solid yellow"
+                                : player.battleMode.yourTurn
+                                ? "2px solid white"
+                                : "none",
+                            opacity: loadBattlePlayerImages[index] ? "1" : "0",
+                          }}
                         />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? 0 : 4,
+                            width: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? "100%" : "82%",
+                            height: Object.values(iconSelection).some((value) => value === true) ? "80%" : "100%",
+                            borderRadius: "50%",
+                            backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
+                              100 - (100 * player.currentHealth) / player.maxHealth
+                            }%, transparent ${100 - (100 * player.currentHealth) / player.maxHealth}%)`,
+                            zIndex: 2,
+                            cursor: "pointer",
+                          }}
+                          onMouseOver={() => handleMouseOver(player)}
+                          onMouseOut={() => handleMouseOut(player)}
+                          onClick={() => toggleIconSelectVisibility(player)}></div>
                       </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
+                      {showPlayerName[player.name] === true && !iconSelection[player.name] === true && (
+                        <div
+                          className="player-name-tooltip absolute bottom-full mb-2"
+                          style={{
+                            backgroundColor: player.type === "enemy" ? "red" : "green",
+                          }}>
+                          {" "}
+                          {/* Adjusted line for tooltip */}
+                          {player.name}
+                        </div>
+                      )}
+                      {iconSelection[player.name] === true && (
+                        <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
+                          <IconSelect
+                            options={playerIconList.current}
+                            onChange={handleIconSelection}
+                            yourTurn={player?.battleMode?.yourTurn}
+                            player={player?.name}
+                            setIconSelection={setIconSelection}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
