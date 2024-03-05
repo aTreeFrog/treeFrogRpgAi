@@ -1,41 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
 import Select, { components } from "react-select";
 
-const { Option } = components;
-
 // Custom Dropdown Indicator
 const DropdownIndicator = (props) => {
   return null;
 };
 
-const IconOption = (props) => (
-  <Option {...props}>
-    <div style={{ display: "flex", alignItems: "center", width: "auto" }}>
-      {props.data.label}
-      {props.data.iconPath && <img src={props.data.iconPath} alt="" style={{ marginLeft: "5px", width: "24px", height: "24px" }} />}
-    </div>
-  </Option>
-);
+// const IconOption = (props) => (
+//   <Option {...props}>
+//     <div style={{ display: "flex", alignItems: "center", width: "auto" }}>
+//       {props.data.label}
+//       {props.data.iconPath && <img src={props.data.iconPath} alt="" style={{ marginLeft: "5px", width: "24px", height: "24px" }} />}
+//     </div>
+//   </Option>
+// );
 
-const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) => {
+const GiveSelect = ({ options, onChange, setGiveSelection }) => {
   const [menuIsOpen, setMenuIsOpen] = useState(true);
   const selectRef = useRef(null);
 
-  // control the users options based on which characters turn it is
-  if (yourTurn && !options.some((option) => option.value === "endTurn")) {
-    options.push({ value: "endTurn", label: "End Turn" });
-  } else if (!yourTurn && options.some((option) => option.value === "endTurn")) {
-    options = options.filter((option) => option.value !== "endTurn");
-  }
-
   //this adds the player name to the onChange event for parent
-  const internalOnChange = (selectedOption) => {
-    // Assuming 'player' is available in this scope, prepare the data to send back
-    const extraInfo = { selectedOption, player };
+  //   const internalOnChange = (selectedOption) => {
+  //     // Assuming 'player' is available in this scope, prepare the data to send back
+  //     const extraInfo = { selectedOption };
 
-    // Call the parent's callback function with the prepared data
-    onChange(extraInfo);
-  };
+  //     // Call the parent's callback function with the prepared data
+  //     onChange(extraInfo);
+  //   };
 
   const customStyles = {
     control: (provided) => ({
@@ -58,8 +49,8 @@ const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) =
       width: "135px",
       fontSize: "16px",
       borderRadius: "8px",
-      marginLeft: "-27px",
-      marginBottom: "2px",
+      marginLeft: "-115px",
+      marginBottom: "13px",
     }),
     menuList: (provided) => ({
       ...provided,
@@ -69,7 +60,7 @@ const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) =
     option: (provided) => ({
       ...provided,
       textAlign: "center", // Centering text
-      backgroundColor: "rgba(75, 0, 130, 1)", // Background of options
+      backgroundColor: "rgba(75, 0, 110, 1)", // Background of options
       color: "white", // Text color of options
       fontSize: "16px",
       "&:hover": {
@@ -90,10 +81,7 @@ const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) =
       if (selectRef.current && !selectRef.current.contains(event.target)) {
         setMenuIsOpen(false);
         setTimeout(() => {
-          setIconSelection((prevState) => ({
-            ...prevState, // Spread the previous state to retain the values of other entries
-            [player]: false, // Only toggle the state for the specific player's name
-          }));
+          setGiveSelection(false);
         }, 500); //giving delay to give index.js to update state if user clicks on icon which changes state
       }
     };
@@ -109,10 +97,10 @@ const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) =
       <Select
         styles={customStyles}
         options={options}
-        onChange={internalOnChange}
+        onChange={onChange}
         menuPlacement="top"
         menuPosition="fixed"
-        components={{ DropdownIndicator, Option: IconOption }}
+        components={{ DropdownIndicator }}
         menuIsOpen={menuIsOpen}
         onMenuOpen={() => setMenuIsOpen(true)}
         onMenuClose={() => setMenuIsOpen(false)}
@@ -121,4 +109,4 @@ const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) =
   );
 };
 
-export default IconSelect;
+export default GiveSelect;

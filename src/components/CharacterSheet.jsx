@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import SkillSheet from "./SkillSheet";
 import AttackSheet from "./AttackSheet";
 import EquipmentSheet from "./EquipmentSheet";
+import GiveSelect from "./GiveSelect";
 
 export default function CharacterSheet({
   name,
@@ -17,14 +18,27 @@ export default function CharacterSheet({
   isD20Spinning,
   equipmentRow,
   setEquipmentRow,
-  usedEquipment,
   setUsedEquipment,
+  players,
+  setGaveEquipment,
 }) {
   const raceRef = useRef(null);
   const classRef = useRef(null);
   const [raceLineWidth, setRaceLineWidth] = useState("0px");
   const [classLineWidth, setClassLineWidth] = useState("0px");
   const frameCircle = "icons/framecircle.svg";
+  const [giveSelection, setGiveSelection] = useState(false);
+  const options = useRef([]);
+
+  useEffect(() => {
+    options.current = [];
+    // go through each player and add the players (non enemies / npcs) as options to select from
+    Object.values(players).forEach((data) => {
+      // if (data.type == "player") {
+      options.current.push({ value: data.name, label: data.name });
+      // }
+    });
+  }, [players]);
 
   useEffect(() => {
     // Calculating for Race
@@ -55,6 +69,19 @@ export default function CharacterSheet({
     if (equipmentRow?.name) {
       console.log("equipmentRow.name", equipmentRow.name);
       setUsedEquipment(equipmentRow); // Update the state to true when the button is clicked
+    }
+  };
+
+  const handleGiveSelection = (option) => {
+    console.log("handleGiveSelection ", option);
+    if (equipmentRow?.name) {
+      const data = {
+        itemName: equipmentRow.name,
+        quantity: 1,
+        playerGive: option.value,
+        playerSent: player.name,
+      };
+      setGaveEquipment(data); // Update the state to true when the button is clicked
     }
   };
 
@@ -274,18 +301,41 @@ export default function CharacterSheet({
               <div className="flex space-x-3 ml-4 mt-4">
                 <button
                   className={`bg-cyan-800 hover:bg-cyan-900 transition-colors duration-300 text-white font-bold py-1 px-6 rounded ${
-                    !equipmentRow || (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))
+                    !equipmentRow ||
+                    equipmentRow?.quantity < 1 ||
+                    (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))
                       ? "opacity-50"
-                      : "hover:bg-cyan-900"
+                      : ""
                   }`}
                   onClick={handleUseClick}
-                  disabled={!equipmentRow || (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))}>
+                  disabled={
+                    !equipmentRow ||
+                    equipmentRow?.quantity < 1 ||
+                    (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))
+                  }>
                   Use
                 </button>
-
-                <button className="bg-purple-600 hover:bg-purple-800 transition-colors duration-300 text-white font-bold py-1 px-5 rounded">
+                <button
+                  className={`bg-purple-600 hover:bg-purple-800 transition-colors duration-300 text-white font-bold py-1 px-5 rounded ${
+                    !equipmentRow ||
+                    equipmentRow?.quantity < 1 ||
+                    (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))
+                      ? "opacity-50"
+                      : ""
+                  }`}
+                  onClick={() => setGiveSelection((prevGiveSelection) => !prevGiveSelection)}
+                  disabled={
+                    !equipmentRow ||
+                    equipmentRow?.quantity < 1 ||
+                    (player?.mode == "battle" && (!player?.battleMode?.yourTurn || player?.battleMode?.usedPotion))
+                  }>
                   Give
                 </button>
+                {giveSelection === true && (
+                  <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
+                    <GiveSelect options={options.current} onChange={handleGiveSelection} setGiveSelection={setGiveSelection} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
