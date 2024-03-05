@@ -610,7 +610,7 @@ export default function Home() {
     } else if (
       players[userName]?.mode == "battle" &&
       players[userName]?.battleMode?.yourTurn &&
-      players[userName]?.equipment["healthPotion"]?.quantity > 0
+      players[userName]?.equipment["Health"]?.quantity > 0
     ) {
       playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
 
@@ -632,11 +632,11 @@ export default function Home() {
       }
     }
 
-    if (!players[userName]?.equipment["healthPotion"] || players[userName]?.equipment["healthPotion"]?.quantity < 1) {
+    if (!players[userName]?.equipment["Health"] || players[userName]?.equipment["Health"]?.quantity < 1) {
       playerIconList.current = [];
     }
 
-    if (players[userName]?.mode != "battle" && players[userName]?.equipment["healthPotion"]?.quantity > 0) {
+    if (players[userName]?.mode != "battle" && players[userName]?.equipment["Health"]?.quantity > 0) {
       playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
     }
 
