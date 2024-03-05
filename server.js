@@ -11,6 +11,7 @@ const FormData = require("form-data");
 // Dynamically import 'node-fetch'
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const { player } = require("./lib/objects/player");
+const { equipment } = require("./lib/objects/equipment");
 const { game } = require("./lib/objects/game");
 const { battleRound } = require("./lib/objects/battleRound");
 const enemies = require("./lib/enemies");
@@ -1246,17 +1247,17 @@ app.prepare().then(() => {
           },
         },
         equipment: {
-          healthPotion: {
+          Health: {
             name: "Health Potion",
             icon: "icons/healthpotion.svg",
-            quantity: 7,
+            quantity: 1,
             duration: "n/a",
             type: "potion",
             impact: "+10",
             property: "currentHealth",
             description: "Mystical red liquid to heal your wounds",
           },
-          healthPotion: {
+          randomTeleport: {
             name: "Random Teleport",
             icon: "icons/healthpotion.svg",
             quantity: 1,
@@ -1704,6 +1705,38 @@ app.prepare().then(() => {
         }
       } catch (error) {
         console.error("Error handling end turn:", error);
+        // Handle error appropriately
+      }
+    });
+
+    socket.on("give equipment", async (data) => {
+      try {
+        console.log("give equipment data", data);
+        const activityDate = new Date().toISOString();
+        if (players.hasOwnProperty(data.giveName)) {
+          if (players.hasOwnProperty(data.sentName) && players[data.sentName]?.equipment[data.item]) {
+            players[data.sentName].equipment[data.item].quantity = Math.min(0, players[data.sentName].equipment[data.item].quantity - data.quantity);
+            players[data.sentName].activityId = `user${data.sentName}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
+          }
+          if (players[data.giveName]?.equipment[data.item]) {
+            // Increase the quantity of the existing equipment item
+            players[data.giveName].equipment[data.item].quantity += data.quantity;
+          } else {
+            // Add the equipment item with the initial quantity set to data.quantity
+            players[data.giveName].equipment[data.item] = {
+              ...equipment[data.item],
+              quantity: data.quantity,
+            };
+          }
+          players[data.giveName].activityId = `user${data.giveName}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
+        }
+
+        console.log("give equipment player", players[data.giveName]);
+
+        activityCount++;
+        io.to(serverRoomName).emit("players objects", players);
+      } catch (error) {
+        console.error("Error handling give equipment:", error);
         // Handle error appropriately
       }
     });

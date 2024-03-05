@@ -227,6 +227,7 @@ export default function Home() {
   const lastImageUrlRef = useRef(null);
   const [usedEquipment, setUsedEquipment] = useState(null);
   let playerIconList = useRef([]);
+  const [gaveEquipment, setGaveEquipment] = useState();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -606,7 +607,11 @@ export default function Home() {
         img.src = players[userName].battleMode.initiativeImageUrl;
         img.onload = () => setIsInitiativeImageLoaded(true);
       }
-    } else if (players[userName]?.mode == "battle" && players[userName]?.battleMode?.yourTurn) {
+    } else if (
+      players[userName]?.mode == "battle" &&
+      players[userName]?.battleMode?.yourTurn &&
+      players[userName]?.equipment["healthPotion"]?.quantity > 0
+    ) {
       playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
 
       //roll attackRoll or attack amount dice if its your turn and you selected targets.
@@ -627,7 +632,11 @@ export default function Home() {
       }
     }
 
-    if (players[userName]?.mode != "battle") {
+    if (!players[userName]?.equipment["healthPotion"] || players[userName]?.equipment["healthPotion"]?.quantity < 1) {
+      playerIconList.current = [];
+    }
+
+    if (players[userName]?.mode != "battle" && players[userName]?.equipment["healthPotion"]?.quantity > 0) {
       playerIconList.current = [{ value: "giveHealth", label: "Give Health", iconPath: "/icons/healthpotion.svg" }];
     }
 
@@ -1537,6 +1546,8 @@ export default function Home() {
 
     if (option?.selectedOption?.value?.toLowerCase() == "endturn") {
       handleEndTurn(option.player);
+    } else if (option?.selectedOption?.value?.toLowerCase() == "givehealth") {
+      handleGiveEquipement("healthPotion", 1, option.player, userName);
     }
   };
 
@@ -1594,6 +1605,13 @@ export default function Home() {
       setUsedEquipment(null);
     }
   }, [usedEquipment]);
+
+  useEffect(() => {
+    if (gaveEquipment && gaveEquipment.itemName.length > 0) {
+      handleGiveEquipement(gaveEquipment.itemName, gaveEquipment.quantity, gaveEquipment.playerGive, gaveEquipment.playerSent);
+      setGaveEquipment(null);
+    }
+  }, [gaveEquipment]);
 
   const MoveOnClick = () => {
     setShowMoveOnPopup((prevState) => !prevState);
@@ -1699,6 +1717,17 @@ export default function Home() {
     chatSocket.emit("end turn", name);
   };
 
+  const handleGiveEquipement = (itemName, quantity, playerGive, playerSent) => {
+    const data = {
+      item: itemName,
+      quantity: quantity,
+      giveName: playerGive,
+      sentName: playerSent,
+    };
+    console.log("handleGiveEquipement", data);
+    chatSocket.emit("give equipment", data);
+  };
+
   const toggleIconSelectVisibility = (player) => {
     setIconSelection((prevState) => {
       // Create a new state object, initializing all player names to false
@@ -1753,8 +1782,9 @@ export default function Home() {
                   equipmentRow={equipmentRow}
                   setEquipmentRow={setEquipmentRow}
                   isD20Spinning={isD20Spinning}
-                  usedEquipment={usedEquipment}
                   setUsedEquipment={setUsedEquipment}
+                  players={players}
+                  setGaveEquipment={setGaveEquipment}
                 />
               </div>
             </div>
