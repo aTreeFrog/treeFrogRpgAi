@@ -211,6 +211,8 @@ app.prepare().then(() => {
               Dialogue: "Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story."
 
               Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable."
+
+              Finding items: "If anytime in the game you want to provide the player with a found item, such as secret equipment, potions, scrolls. Anything the player could potentially find, or be given if necessary. First ask to do a dice roll, and if the player is successful, simply respond with "you have found an item" without providing more information.
                     
               Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
               to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
@@ -965,8 +967,60 @@ app.prepare().then(() => {
         await askAiIfDalleCall(messagesFilteredForFunction);
       }
 
+      if (latestAssistantMessage[0].content.toLowerCase().includes("found an item") && !diceRollCalled) {
+        await requestAiForEquipment(messagesFilteredForFunction);
+      }
       // check if initiative roll should be called
       await askAiIfInitiative(messagesFilteredForFunction, diceRollCalled);
+    }
+
+    async function requestAiForEquipment(messagesFilteredForFunction) {
+      messagesFilteredForFunction.push({
+        role: "system",
+        content:
+          "Based on the recent text from this history. Some players found some equipment. Call the function giveRandomEquipment with the players that should have received items",
+      });
+      const equipmentData = {
+        model: "gpt-3.5-turbo-1106",
+        messages: messagesFilteredForFunction,
+        stream: false,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "giveRandomEquipment",
+              description: "this function will provide each needed player with obtained equipment from the game",
+              parameters: {
+                type: "object",
+                properties: {
+                  users: {
+                    type: "array",
+                    enum: ["aTreeFrog"],
+                    description: "Based on the recent conversation history. the Assistant or bot says exactly which players should receive an item.",
+                  },
+                },
+                required: ["users"],
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "giveRandomEquipment" } }, //forces model to call this function
+      };
+
+      messagesFilteredForFunction.pop(); //remove what i just added
+      const equipmentCompletion = await openai.chat.completions.create(equipmentData);
+      console.log("checking equipmentCompletion function call completion: ", equipmentCompletion.choices[0].finish_reason);
+
+      if (equipmentCompletion.choices[0].finish_reason == "tool_calls") {
+        functionData = equipmentCompletion.choices[0].message.tool_calls[0].function;
+        console.log("checking equipmentCompletion function call data : ", functionData);
+
+        if (functionData.name == "giveRandomEquipment") {
+          argumentsJson = JSON.parse(functionData.arguments);
+          promptValue = argumentsJson.prompt;
+          giveRandomEquipment(promptValue); 
+        }
+      }
     }
 
     async function askAiIfDalleCall(messagesFilteredForFunction) {
@@ -1361,7 +1415,7 @@ app.prepare().then(() => {
       //   await runFunctionAfterDelay(() => startOfGame(), 10000);
       // }
 
-      giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
+      //giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
 
       //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
@@ -2561,7 +2615,16 @@ app.prepare().then(() => {
     equipmentFoundData = {};
     let amount = 1;
     const activityDate = new Date().toISOString();
-    for (let user of playerNames) {
+
+    if (typeof playerNames === "string") {
+      //ai sent the users as a string with , seperated. instead of an array. So need to filter
+      var namesArray = playerNames.split(",");
+    } else {
+      var namesArray = playerNames;
+    }
+
+    for (var i = 0; i < namesArray.length; i++) {
+      let user = namesArray[i].trim();
       if (players.hasOwnProperty(user)) {
         const chosenEquipment = selectRandomEquipment();
 
@@ -2571,13 +2634,6 @@ app.prepare().then(() => {
         if (chosenEquipment.name == "Health") {
           amount = 5;
         }
-
-        // equipmentFoundData[user] = {
-        //   item: chosenEquipment,
-        //   quantity: amount,
-        //   icon: equipment[chosenEquipment].icon,
-
-        // };
 
         equipmentFoundData[user] = {
           role: "assistant",
