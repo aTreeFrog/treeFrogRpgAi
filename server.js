@@ -212,7 +212,7 @@ app.prepare().then(() => {
 
               Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable."
 
-              Finding items: "If anytime in the game you want to provide the player with a found item, such as secret equipment, potions, scrolls. Anything the player could potentially find, or be given if necessary. First ask to do a dice roll, and if the player is successful, simply respond with "you have found an item" without providing more information.
+              Finding items: "If anytime in the game you want to provide the player with a found item, such as secret equipment, potions, scrolls. Anything the player could potentially find, or be given if necessary. First ask to do a dice roll, and if the player is successful, only respond with "you have found an item". Ensure you only respond with "you have found an item".
                     
               Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
               to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
@@ -978,7 +978,7 @@ app.prepare().then(() => {
       messagesFilteredForFunction.push({
         role: "system",
         content:
-          "Based on the recent text from this history. Some players found some equipment. Call the function giveRandomEquipment with the players that should have received items",
+          "Based on the recent chat. Some players found some equipment. Call the function giveRandomEquipment with the players that should have received items",
       });
       const equipmentData = {
         model: "gpt-3.5-turbo-1106",
@@ -1004,11 +1004,12 @@ app.prepare().then(() => {
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "giveRandomEquipment" } }, //forces model to call this function
+        //tool_choice: { type: "function", function: { name: "giveRandomEquipment" } }, //forces model to call this function
       };
 
       messagesFilteredForFunction.pop(); //remove what i just added
       const equipmentCompletion = await openai.chat.completions.create(equipmentData);
+      console.log("equipmentCompletion data", equipmentCompletion);
       console.log("checking equipmentCompletion function call completion: ", equipmentCompletion.choices[0].finish_reason);
 
       if (equipmentCompletion.choices[0].finish_reason == "tool_calls") {
@@ -1411,9 +1412,9 @@ app.prepare().then(() => {
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
 
       // lets setup the game
-      // if (Object.keys(players).length >= playerCountForGame) {
-      //   await runFunctionAfterDelay(() => startOfGame(), 10000);
-      // }
+      if (Object.keys(players).length >= playerCountForGame) {
+        await runFunctionAfterDelay(() => startOfGame(), 10000);
+      }
 
       //giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
 
@@ -2503,6 +2504,7 @@ app.prepare().then(() => {
 
     Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable.
 
+    Finding items: "If anytime in the game you want to provide the player with a found item, such as secret equipment, potions, scrolls. Anything the player could potentially find, or be given if necessary. First ask to do a dice roll, and if the player is successful, only respond with "you have found an item". Ensure you only respond with "you have found an item".
     Responses should be detailed yet concise, particularly at the start, to draw the player into the scene, 
     with subsequent interactions kept under 50 words for a dynamic and engaging role-playing experience. 
     The narrative should flow directly from the accumulated story, enhancing the sense of immersion and 
