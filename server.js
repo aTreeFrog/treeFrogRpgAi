@@ -125,6 +125,7 @@ let currentAct = "";
 let currentScene = "";
 let newSceneData = "";
 let endOfSceneSummary = "";
+let equipmentFoundData = {};
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -222,7 +223,13 @@ app.prepare().then(() => {
               the next narrative phase."`;
 
       const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
-      let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+      let serverData = {
+        role: "system",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
       activityCount++;
       //send message to ai
       chatMessages.push(serverData);
@@ -287,7 +294,13 @@ app.prepare().then(() => {
       }
 
       const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
-      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      let serverData = {
+        role: "user",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
       activityCount++;
       //send message to ai
       chatMessages.push(serverData);
@@ -486,7 +499,11 @@ app.prepare().then(() => {
 
       //start chatMessages over again. But dont forget to add instructions to this list.
       chatMessages = [];
-      chatMessages.push({ role: "assistant", content: outputMsg, processed: true });
+      chatMessages.push({
+        role: "assistant",
+        content: outputMsg,
+        processed: true,
+      });
 
       settingUpNewScene = false;
 
@@ -556,7 +573,11 @@ app.prepare().then(() => {
 
             console.log("made it to chat complete");
             io.to(serverRoomName).emit("chat complete", serverMessageId);
-            let completeOutput = { role: "assistant", content: outputMsg, processed: true };
+            let completeOutput = {
+              role: "assistant",
+              content: outputMsg,
+              processed: true,
+            };
             aiInOrderChatMessage.push(completeOutput);
             chatMessages.push(completeOutput);
 
@@ -755,7 +776,13 @@ app.prepare().then(() => {
 
         let message = "Game master, I stepped away from the game. Please do not include me in your story until I return.";
         const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
-        let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+        let serverData = {
+          role: "user",
+          content: message,
+          processed: false,
+          id: uniqueId,
+          mode: "All",
+        };
         awayPlayerCount++;
         //send message to users and ai
         chatMessages.push(serverData);
@@ -814,7 +841,11 @@ app.prepare().then(() => {
             const mp3 = await openai.audio.speech.create(data);
             const buffer = Buffer.from(await mp3.arrayBuffer());
             // Emit the buffer to the client
-            socket.emit("play audio", { audio: buffer.toString("base64"), sequence: currentSequence, messageId: msg.messageId }); //ToDo. for specific user
+            socket.emit("play audio", {
+              audio: buffer.toString("base64"),
+              sequence: currentSequence,
+              messageId: msg.messageId,
+            }); //ToDo. for specific user
           } catch (error) {
             console.error("Error:", error);
             socket.emit("error", "Error processing your audio message: ", "sequence", currentSequence);
@@ -1069,7 +1100,9 @@ app.prepare().then(() => {
     }
 
     async function playBackgroundAudio(song) {
-      io.to(serverRoomName).emit("background music", { url: `http://localhost:3000/audio/${song}.mp3` });
+      io.to(serverRoomName).emit("background music", {
+        url: `http://localhost:3000/audio/${song}.mp3`,
+      });
     }
 
     socket.on("my user message", (msg) => {
@@ -1257,7 +1290,7 @@ app.prepare().then(() => {
             property: "currentHealth",
             description: "Mystical red liquid to heal your wounds",
           },
-          randomTeleport: {
+          RandomTeleport: {
             name: "Random Teleport",
             icon: "icons/healthpotion.svg",
             quantity: 1,
@@ -1328,7 +1361,9 @@ app.prepare().then(() => {
       //   await runFunctionAfterDelay(() => startOfGame(), 10000);
       // }
 
-      enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
+      giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
+
+      //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
 
     socket.on("obtain all users", () => {
@@ -1580,7 +1615,13 @@ app.prepare().then(() => {
     socket.on("story move on", () => {
       let message = "Activated move to next scene sequence";
       const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
-      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      let serverData = {
+        role: "user",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
       io.to(serverRoomName).emit("latest user message", serverData);
 
       summarizeAndMoveOn();
@@ -1820,7 +1861,13 @@ app.prepare().then(() => {
     console.log("battleRoundAISummary message ", message);
 
     const uniqueId = `user${"system"} -activity${activityCount} -${new Date().toISOString()} `;
-    let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+    let serverData = {
+      role: "system",
+      content: message,
+      processed: false,
+      id: uniqueId,
+      mode: "All",
+    };
     activityCount++;
     //send message to ai
     //chatMessages.push(serverData);
@@ -2097,7 +2144,11 @@ app.prepare().then(() => {
     if (playersWithinMeleeDistance.length > 0) {
       // If one or more players are within sword distance, randomly select one and attack
       const target = playersWithinMeleeDistance[Math.floor(Math.random() * playersWithinMeleeDistance.length)];
-      return { action: "meleeAttack", target, moveTo: { x: enemy.xPosition, y: enemy.yPosition } };
+      return {
+        action: "meleeAttack",
+        target,
+        moveTo: { x: enemy.xPosition, y: enemy.yPosition },
+      };
     } else {
       // Select a random player to target for potential bow attack or movement
       const target = playersArray[Math.floor(Math.random() * playersArray.length)];
@@ -2108,7 +2159,11 @@ app.prepare().then(() => {
       // When deciding to move closer within bow range, pass true for withinBowRange
       if (distance <= 56 && distance > 7) {
         // Within bow range but not adjacent, randomly decide to move closer or stay
-        return { action: "rangeAttack", target, moveTo: moveCloser(enemy, target, true) };
+        return {
+          action: "rangeAttack",
+          target,
+          moveTo: moveCloser(enemy, target, true),
+        };
       } else if (distance > 60) {
         // Too far for either attack, move closer up to 28 feet
         const moveTo = moveCloser(enemy, target);
@@ -2406,7 +2461,13 @@ app.prepare().then(() => {
     the next narrative phase."`;
 
     const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
-    newSceneData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+    newSceneData = {
+      role: "system",
+      content: message,
+      processed: false,
+      id: uniqueId,
+      mode: "All",
+    };
     activityCount++;
     //send message to ai
     setTimeout(() => {
@@ -2468,6 +2529,92 @@ app.prepare().then(() => {
 
     console.log("image: ", image.data);
   }
+
+  function selectRandomEquipment() {
+    let equipmentScene = ["Health"]; // Default value
+    if (storyFile && storyFile[currentAct] && storyFile[currentAct][currentScene]) {
+      equipmentScene = storyFile[currentAct][currentScene].DiscoverableEquipment || ["Health"];
+    }
+    const randomIndex = Math.floor(Math.random() * equipmentScene.length);
+    const randomKey = equipmentScene[randomIndex];
+    return equipment[randomKey];
+  }
+
+  // function summarizeEquipmentFound(equipmentData) {
+
+  //   let msg = ``;
+
+  //   // no players received equipment, so don't say anything
+  //   if (Object.keys(equipmentData).length < 1) {
+  //     return;
+  //   }
+
+  //   Object.entries(equipmentData).forEach(([player, data]) => {
+
+  //     msg += `${player} received ${data.quantity} ${data.item} `;
+
+  //   });
+
+  // }
+
+  async function giveRandomEquipment(playerNames) {
+    equipmentFoundData = {};
+    let amount = 1;
+    const activityDate = new Date().toISOString();
+    for (let user of playerNames) {
+      if (players.hasOwnProperty(user)) {
+        const chosenEquipment = selectRandomEquipment();
+
+        console.log("chosenEquipment", chosenEquipment);
+
+        // always give a bunch of health potions
+        if (chosenEquipment.name == "Health") {
+          amount = 5;
+        }
+
+        // equipmentFoundData[user] = {
+        //   item: chosenEquipment,
+        //   quantity: amount,
+        //   icon: equipment[chosenEquipment].icon,
+
+        // };
+
+        equipmentFoundData[user] = {
+          role: "assistant",
+          message: `${user} received ${amount} ${chosenEquipment.name}`,
+          clickableWord: chosenEquipment.name,
+          iconPath: chosenEquipment.icon,
+          mode: "All",
+          type: "equipment",
+        };
+
+        console.log("equipmentFoundData ", equipmentFoundData);
+
+        if (players[user]?.equipment[chosenEquipment.name]) {
+          // Increase the quantity of the existing equipment item
+          players[user].equipment[chosenEquipment.name].quantity += amount;
+        } else {
+          // Add the equipment item with the needed quantity
+          players[user].equipment[chosenEquipment.name] = {
+            ...equipment[chosenEquipment],
+            quantity: amount,
+          };
+        }
+
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
+      }
+    }
+
+    activityCount++;
+    io.to(serverRoomName).emit("players objects", players);
+
+    if (Object.keys(equipmentFoundData).length > 0) {
+      io.to(serverRoomName).emit("equipment found", equipmentFoundData);
+    }
+  }
+
+  //toDo: figure out when and how to give health potions
+  async function giveHealthPotion(playerNames) {}
 
   async function checkPlayersState() {
     let anyPlayerRoll = false;

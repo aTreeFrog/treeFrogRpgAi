@@ -16,7 +16,7 @@ import SocketContext from "../context/SocketContext";
 import CustomSelect from "../components/CustomSelect"; // Import the above created component
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import IconSelect from "../components/IconSelect";
-import MoveOnPopup from "../components/MoveOnPopup";
+import GenericPopup from "../components/GenericPopup";
 import NewScenePopup from "../components/NewScenePopup";
 import BattleMap from "../components/BattleMap";
 import { io } from "socket.io-client";
@@ -228,6 +228,7 @@ export default function Home() {
   const [usedEquipment, setUsedEquipment] = useState(null);
   let playerIconList = useRef([]);
   const [gaveEquipment, setGaveEquipment] = useState();
+  const [equipmentText, setEquipmentText] = useState();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -532,6 +533,11 @@ export default function Home() {
         setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: dallEObject.imageUrl, mode: "All", type: "image" }]);
         setUpdatingChatLog(false);
       }
+    });
+
+    chatSocket.on("equipment found", (data) => {
+      console.log("equipment found data", data);
+      //setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: data.content, mode: "All", type: "equipment" }]);
     });
 
     chatSocket.on("enter battle mode", (data) => {
@@ -1832,7 +1838,9 @@ export default function Home() {
                 className="absolute bottom-0 left-60 mb-6 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded">
                 {moveOnButtonText}
               </button>
-              {showMoveOnPopup && <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />}
+              {showMoveOnPopup && (
+                <GenericPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} leftText={"Yes"} rightText={"Cancel"} />
+              )}
               {players[userName]?.settingUpNewScene && messageQueue.current.length <= 0 && (
                 <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />
               )}
