@@ -295,7 +295,7 @@ const BattleMap = ({
       }
 
       // move icon to new clicked position.
-    } else if (!selectedRow && !pingReady && players[userName]?.battleMode?.yourTurn) {
+    } else if (!selectedRow && (!pingReady || (pingReady && pingStop)) && players[userName]?.battleMode?.yourTurn) {
       // Calculate the pixel position of the center of the clicked grid cell
       const clickedPixelX = clickedGridX * gridSpacing + gridSpacing / 2 - playerSize.current / 2;
       const clickedPixelY = clickedGridY * gridSpacing + gridSpacing / 2 - playerSize.current / 2;
@@ -479,7 +479,7 @@ const BattleMap = ({
 
         failedTone.onstop = () => {
           console.log("ping playback ended");
-          spellTone.disconnect(); // Disconnect the player
+          failedTone.disconnect(); // Disconnect the player
         };
 
         failedTone.onerror = (error) => {

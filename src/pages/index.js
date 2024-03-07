@@ -231,6 +231,7 @@ export default function Home() {
   const [gaveEquipment, setGaveEquipment] = useState();
   const [equipmentText, setEquipmentText] = useState();
   const lastEqmntFoundActId = useRef();
+  const [equipmentInfo, setEquipmentInfo] = useState();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -1670,6 +1671,10 @@ export default function Home() {
     setShowMoveOnPopup(false);
   };
 
+  const handleEquipmentClick = (equipmentName) => {
+    setEquipmentInfo(equipmentName);
+  }
+
   const newSceneReady = (playerName) => {
     // Perform the action
     chatSocket.emit("new scene ready", playerName);
@@ -1861,7 +1866,10 @@ export default function Home() {
               {showMoveOnPopup && (
                 <GenericPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} leftText={"Yes"} rightText={"Cancel"} />
               )}
-              {players[userName]?.settingUpNewScene && messageQueue.current.length <= 0 && (
+              {equipmentInfo?.length > 0 && (
+                <GenericPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} leftText={"Yes"} rightText={"Cancel"} />
+              )}
+              {players[userName]?.settingUpNewScene && (players[userName]?.mode != "battle" && players[userName]?.mode != "initiative") && messageQueue.current.length <= 0 && (
                 <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />
               )}
             </div>
@@ -2088,7 +2096,7 @@ export default function Home() {
                     {message.message.split(" ").map((word, wordIndex) => (
                       <span
                         key={wordIndex}
-                        onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.type) : null)}
+                        onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.clickableWord) : null)}
                         className={`${word === message.clickableWord ? "underline cursor-pointer" : ""} mr-1`}>
                         {word}
                       </span>

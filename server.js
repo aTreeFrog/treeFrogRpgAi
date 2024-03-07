@@ -126,6 +126,7 @@ let currentScene = "";
 let newSceneData = "";
 let endOfSceneSummary = "";
 let equipmentFoundData = {};
+let sceneRules = "";
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -195,8 +196,8 @@ app.prepare().then(() => {
       currentScene = "Scene1";
 
       message = `${storyFile[currentAct][currentScene].Header}
-
-              Beginning: "Ease into the story. Ensure the players settle into the story before jumping into the story advancement.
+      
+              Pace: "Ease into the story. Ensure the players settle into the story before jumping into the story advancement. Allow the players to freely decide on actions before wrapping up the scene. Start the setting a happy cheery place, an allow the players to interact with the environment before setting the main sequence of the story."
 
               Proactive Storytelling: "Use the environment to suggest actions aTreeFrog might take, avoiding direct prompts for his next move."
 
@@ -210,7 +211,7 @@ app.prepare().then(() => {
         
               Combat Preparation: Before any battle scenario, request an initiative roll to determine combat order.
 
-              Dialogue: "Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story."
+              Dialogue: "Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story. For example: Theo responds 'Well done. lets move on'."
 
               Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable."
 
@@ -222,7 +223,37 @@ app.prepare().then(() => {
               This includes descriptions, character interactions, and narrative advancements. Each output, whether setting a scene, 
               the story, or during character exchanges, should be succinct, not exceeding the 50-word limit. Remember to prompt for 
               d20 roll with modifiers where appropriate, and conclude significant segments with 'END OF SCENE' once actions transition 
-              the next narrative phase."`;
+              the next narrative phase. AND START THE SCENE SLOW for a balanced flow of the story."`;
+
+      // message = `Header: "You're the Dungeon Master in 'Wizards and Goblins,' guiding aTreeFrog, a wizard elf, through an adventure. It starts one cold night as aTreeFrog enters a tavern in an elf village, seeking warmth and company."
+
+      // Beginning: "Let the players settle in. Start with a happy, cozy tavern scene to get comfortable."
+      
+      // Pace: "Players choose their actions. Keep the mood light and let them explore the tavern first."
+      
+      // Proactive Storytelling: "Suggest possible actions through the environment without direct prompts."
+      
+      // Narration: "Include aTreeFrog in decisions. For actions, decide if a dice roll is needed. Use 'roll a d20 with [modifier]' when necessary."
+      
+      // Dice Rolls: "Incorporate the dice roll outcomes into the story to influence what happens next."
+      
+      // Character Interaction: "aTreeFrog meets Theo, the bartender with a secret assassin life. They chat and bond until villagers report a goblin threat. Theo reveals his assassin skills and proposes a stealth mission to aTreeFrog."
+      
+      // Story Advancement: "The quiet of the tavern breaks with news of goblins. Theo and aTreeFrog plan a stealth attack, sneaking out to confront the threat, marking a key story shift. End the scene with 'END OF SCENE.'"
+      
+      // Combat Preparation: "Request an initiative roll for battle order before fights."
+      
+      // Dialogue: "Use first-person for NPC conversations to deepen engagement. Keep aTreeFrog's interactions rich but concise."
+      
+      // Guideline for Responses: "Keep all responses under 50 words for pace and engagement. Every part should lead to the next scene, including necessary dice rolls."
+      
+      // Finding Items: Regardless of what aTreeFrog is searching for, if there's an opportunity to discover an item, prompt for a dice roll. Upon a successful roll, uniformly respond with "You have found an item" without specifying the item's nature. This ensures consistency and suspense, as the actual item will be determined externally. This approach maintains gameplay integrity and allows for seamless integration with your external item generation mechanism.
+
+      // Session Start: "Welcome players to the game, keeping the introduction brief and inviting."
+      
+      // Note: "All responses should be under 50 words to keep the storytelling engaging and direct. Prompt for dice rolls as needed and end significant scenes with 'END OF SCENE' to smoothly transition."`;
+
+      sceneRules = message;
 
       const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
       let serverData = {
@@ -541,12 +572,19 @@ app.prepare().then(() => {
               content: item.content,
             }));
 
+            const tempContent = `Before responding, Remember to follow the prompt instructions given at the start of this chat history.`;
+
+            messagesFilteredForApi.push({
+              role: "system",
+              content: tempContent
+            })
+
             console.log("messagesFilteredForApi", messagesFilteredForApi);
 
             const data = {
-              model: "gpt-3.5-turbo-0125",
+              model: "gpt-4-0125-preview",
               messages: messagesFilteredForApi,
-              temperature: 0,
+              temperature: 0.2,
               stream: true,
             };
 
@@ -581,6 +619,7 @@ app.prepare().then(() => {
               content: outputMsg,
               processed: true,
             };
+            messagesFilteredForApi.pop(); //remove the follow prompt instructions reminder. 
             aiInOrderChatMessage.push(completeOutput);
             chatMessages.push(completeOutput);
 
@@ -2501,7 +2540,7 @@ app.prepare().then(() => {
 
     Combat Preparation: Before any battle scenario, request an initiative roll to determine combat order.
 
-    Dialogue: Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story.
+    Dialogue: "Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story. For example: Theo responds 'Well done. lets move on'."
 
     Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable.
 
