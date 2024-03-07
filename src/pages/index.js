@@ -25,6 +25,8 @@ import { CountdownCircleTimer } from "react-countdown-circle-timer";
 import KnifeCutText from "../components/KnifeCutText";
 import player from "../../lib/objects/player";
 import { cloneDeep } from "lodash";
+import { equipment } from "../../lib/objects/equipment";
+import EquipmentPopup from "@/components/equipmentPopup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -231,6 +233,7 @@ export default function Home() {
   const [gaveEquipment, setGaveEquipment] = useState();
   const [equipmentText, setEquipmentText] = useState();
   const lastEqmntFoundActId = useRef();
+  const [equipmentInfo, setEquipmentInfo] = useState();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -538,7 +541,6 @@ export default function Home() {
     });
 
     chatSocket.on("equipment found", (data) => {
-
       let sameMsg = false;
       let actId = 0;
       for (let user in data) {
@@ -547,17 +549,16 @@ export default function Home() {
         }
         actId = data[user]?.activityId;
         break;
-      };
+      }
 
       if (!sameMsg) {
-      console.log("equipment found data", data);
-      setChatLog((prevChatLog) => [
-        ...prevChatLog,
-        ...Object.values(data), // Spread the array of values from the dictionary
-      ]);
-      lastEqmntFoundActId.current = actId;
-    }
-
+        console.log("equipment found data", data);
+        setChatLog((prevChatLog) => [
+          ...prevChatLog,
+          ...Object.values(data), // Spread the array of values from the dictionary
+        ]);
+        lastEqmntFoundActId.current = actId;
+      }
     });
 
     chatSocket.on("enter battle mode", (data) => {
@@ -1670,6 +1671,11 @@ export default function Home() {
     setShowMoveOnPopup(false);
   };
 
+  const handleEquipmentClick = (equipmentName) => {
+    console.log("handleEquipmentClick ", equipmentName);
+    setEquipmentInfo(equipmentName);
+  };
+
   const newSceneReady = (playerName) => {
     // Perform the action
     chatSocket.emit("new scene ready", playerName);
@@ -1861,9 +1867,13 @@ export default function Home() {
               {showMoveOnPopup && (
                 <GenericPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} leftText={"Yes"} rightText={"Cancel"} />
               )}
-              {players[userName]?.settingUpNewScene && messageQueue.current.length <= 0 && (
-                <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />
+              {equipmentInfo?.length > 0 && (
+                <EquipmentPopup equipment={equipment} equipmentInfo={equipmentInfo} setEquipmentInfo={setEquipmentInfo} />
               )}
+              {players[userName]?.settingUpNewScene &&
+                players[userName]?.mode != "battle" &&
+                players[userName]?.mode != "initiative" &&
+                messageQueue.current.length <= 0 && <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />}
             </div>
             {/* Floating Jitsi Meeting Panel */}
             <div
@@ -2088,8 +2098,8 @@ export default function Home() {
                     {message.message.split(" ").map((word, wordIndex) => (
                       <span
                         key={wordIndex}
-                        onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.type) : null)}
-                        className={`${word === message.clickableWord ? "underline cursor-pointer" : ""} mr-1`}>
+                        onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.clickableWord) : null)}
+                        className={`${word === message.clickableWord ? "underline cursor-pointer" : ""} mr-1 font-semibold`}>
                         {word}
                       </span>
                     ))}
