@@ -54,7 +54,7 @@ export default function EquipmentSheet({ player, equipmentRow, setEquipmentRow, 
 
       clickedTone.autostart = true;
 
-      clickedTone.onended = () => {
+      clickedTone.onstop = () => {
         console.log("selected playback ended");
         clickedTone.disconnect(); // Disconnect the player
       };

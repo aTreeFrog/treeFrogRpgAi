@@ -448,9 +448,9 @@ const BattleMap = ({
 
         successTone.autostart = true;
 
-        successTone.onended = () => {
+        successTone.onstop = () => {
           console.log("ping playback ended");
-          spellTone.disconnect(); // Disconnect the player
+          successTone.disconnect(); // Disconnect the player
         };
 
         successTone.onerror = (error) => {
@@ -477,7 +477,7 @@ const BattleMap = ({
 
         failedTone.autostart = true;
 
-        failedTone.onended = () => {
+        failedTone.onstop = () => {
           console.log("ping playback ended");
           spellTone.disconnect(); // Disconnect the player
         };
@@ -514,7 +514,7 @@ const BattleMap = ({
 
         healthTone.autostart = true;
 
-        healthTone.onended = () => {
+        healthTone.onstop = () => {
           console.log("health playback ended");
           healthTone.disconnect(); // Disconnect the player
         };
@@ -570,7 +570,7 @@ const BattleMap = ({
 
           spellTone.autostart = true;
 
-          spellTone.onended = () => {
+          spellTone.onstop = () => {
             console.log("ping playback ended");
             spellTone.disconnect(); // Disconnect the player
           };
@@ -587,7 +587,7 @@ const BattleMap = ({
 
           attackTone.autostart = true;
 
-          attackTone.onended = () => {
+          attackTone.onstop = () => {
             console.log("attackTone playback ended");
             attackTone.disconnect(); // Disconnect the player
           };
@@ -609,7 +609,7 @@ const BattleMap = ({
 
         movedTone.autostart = true;
 
-        movedTone.onended = () => {
+        movedTone.onstop = () => {
           console.log("moved playback ended");
           movedTone.disconnect(); // Disconnect the player
         };
@@ -626,7 +626,7 @@ const BattleMap = ({
 
         deathTone.autostart = true;
 
-        deathTone.onended = () => {
+        deathTone.onstop = () => {
           console.log("death playback ended");
           deathTone.disconnect(); // Disconnect the player
         };
@@ -644,7 +644,7 @@ const BattleMap = ({
 
       targetedTone.autostart = true;
 
-      targetedTone.onended = () => {
+      targetedTone.onstop = () => {
         console.log("ping playback ended");
         targetedTone.disconnect(); // Disconnect the player
       };

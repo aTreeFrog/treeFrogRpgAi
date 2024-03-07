@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useContext } from "react";
+import React from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { Inter } from "next/font/google";
@@ -16,7 +17,7 @@ import SocketContext from "../context/SocketContext";
 import CustomSelect from "../components/CustomSelect"; // Import the above created component
 import TeamOrGmSelect from "../components/TeamOrGMSelect";
 import IconSelect from "../components/IconSelect";
-import MoveOnPopup from "../components/MoveOnPopup";
+import GenericPopup from "../components/GenericPopup";
 import NewScenePopup from "../components/NewScenePopup";
 import BattleMap from "../components/BattleMap";
 import { io } from "socket.io-client";
@@ -228,6 +229,8 @@ export default function Home() {
   const [usedEquipment, setUsedEquipment] = useState(null);
   let playerIconList = useRef([]);
   const [gaveEquipment, setGaveEquipment] = useState();
+  const [equipmentText, setEquipmentText] = useState();
+  const lastEqmntFoundActId = useRef();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -532,6 +535,29 @@ export default function Home() {
         setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: dallEObject.imageUrl, mode: "All", type: "image" }]);
         setUpdatingChatLog(false);
       }
+    });
+
+    chatSocket.on("equipment found", (data) => {
+
+      let sameMsg = false;
+      let actId = 0;
+      for (let user in data) {
+        if (data[user]?.activityId == lastEqmntFoundActId?.current) {
+          sameMsg = true;
+        }
+        actId = data[user]?.activityId;
+        break;
+      };
+
+      if (!sameMsg) {
+      console.log("equipment found data", data);
+      setChatLog((prevChatLog) => [
+        ...prevChatLog,
+        ...Object.values(data), // Spread the array of values from the dictionary
+      ]);
+      lastEqmntFoundActId.current = actId;
+    }
+
     });
 
     chatSocket.on("enter battle mode", (data) => {
@@ -1832,7 +1858,9 @@ export default function Home() {
                 className="absolute bottom-0 left-60 mb-6 ml-4 bg-purple-600 hover:bg-red-500 text-white font-semibold focus:outline-none transition-colors duration-300 py-2 px-4 rounded">
                 {moveOnButtonText}
               </button>
-              {showMoveOnPopup && <MoveOnPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} />}
+              {showMoveOnPopup && (
+                <GenericPopup popupText={popupText} MoveOnClose={MoveOnClose} MoveOnConfirm={MoveOnConfirm} leftText={"Yes"} rightText={"Cancel"} />
+              )}
               {players[userName]?.settingUpNewScene && messageQueue.current.length <= 0 && (
                 <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />
               )}
@@ -1902,7 +1930,8 @@ export default function Home() {
             players[userName]?.mode == "story" ||
             players[userName]?.mode == "dice" ||
             players[userName]?.mode == "startOfGame") &&
-            !floatingValue && (
+            !floatingValue &&
+            (isImageLoaded || isInitiativeImageLoaded) && (
               <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? "invisible" : ""}`}>
                 {Object.values(players)
                   .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
@@ -2024,11 +2053,10 @@ export default function Home() {
           <div className="flex flex-col space-y-4 p-6">
             {chatLog.map((message, index) => (
               <div key={`${message.messageId}-${index}`} className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}>
-                {/* Conditional rendering of the user's name for text messages */}
+                {/* Conditional rendering for text messages */}
                 {message.type === "text" && message.role === "user" && usersInServer.length > 1 && (
                   <div className="text-sm mb-1 mr-1 text-white">{userName}</div>
                 )}
-
                 {message.type === "text" ? (
                   // Text message rendering
                   <div
@@ -2046,17 +2074,28 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                ) : (
+                ) : message.type === "image" ? (
                   // Image message rendering
-                  message.type === "image" && (
-                    <img
-                      src={message.message}
-                      alt="DALL·E Generated"
-                      className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
-                      style={boxShadowStyle}
-                    />
-                  )
-                )}
+                  <img
+                    src={message.message}
+                    alt="DALL·E Generated"
+                    className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
+                    style={{ boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
+                  />
+                ) : message.type === "equipment" ? (
+                  // Equipment message rendering
+                  <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
+                    {message.message.split(" ").map((word, wordIndex) => (
+                      <span
+                        key={wordIndex}
+                        onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.type) : null)}
+                        className={`${word === message.clickableWord ? "underline cursor-pointer" : ""} mr-1`}>
+                        {word}
+                      </span>
+                    ))}
+                    {message.iconPath && <img src={message.iconPath} alt="Equipment Icon" className="inline-block ml-1" width="24" height="24" />}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

@@ -125,6 +125,7 @@ let currentAct = "";
 let currentScene = "";
 let newSceneData = "";
 let endOfSceneSummary = "";
+let equipmentFoundData = {};
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -195,6 +196,8 @@ app.prepare().then(() => {
 
       message = `${storyFile[currentAct][currentScene].Header}
 
+              Beginning: "Ease into the story. Ensure the players settle into the story before jumping into the story advancement.
+
               Proactive Storytelling: "Use the environment to suggest actions aTreeFrog might take, avoiding direct prompts for his next move."
 
               Narration: "Involve aTreeFrog in scenarios requiring his input. Whenever aTreeFrog requests to do something, determine if the move should require a dice roll and initiate one if so. Prompt for d20 rolls with modifiers like stealth or perception as needed. Use 'roll a d20 with [modifier]' to instruct."
@@ -210,10 +213,10 @@ app.prepare().then(() => {
               Dialogue: "Maintain first-person NPC dialogues for depth, ensuring aTreeFrog's interactions are immersive and contribute to the story."
 
               Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable."
-                    
-              Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
-              to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
-              to create a dynamic and interactive role-playing experience.
+
+              Finding Items: Regardless of what aTreeFrog is searching for, if there's an opportunity to discover an item, prompt for a dice roll. Upon a successful roll, uniformly respond with "You have found an item" without specifying the item's nature. This ensures consistency and suspense, as the actual item will be determined externally. This approach maintains gameplay integrity and allows for seamless integration with your external item generation mechanism.
+
+              Session Start: Welcome aTreeFrog to 'Wizards and Goblins,' setting the stage for an epic journey. Keep descriptions and exchanges brief and engaging.
               
               "Please note: All responses must adhere to a strict maximum of 50 words to ensure concise and engaging storytelling. 
               This includes descriptions, character interactions, and narrative advancements. Each output, whether setting a scene, 
@@ -222,7 +225,13 @@ app.prepare().then(() => {
               the next narrative phase."`;
 
       const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
-      let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+      let serverData = {
+        role: "system",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
       activityCount++;
       //send message to ai
       chatMessages.push(serverData);
@@ -287,7 +296,13 @@ app.prepare().then(() => {
       }
 
       const uniqueId = `user${"backend"} -activity${activityCount} -${dateStamp} `;
-      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      let serverData = {
+        role: "user",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
       activityCount++;
       //send message to ai
       chatMessages.push(serverData);
@@ -486,7 +501,11 @@ app.prepare().then(() => {
 
       //start chatMessages over again. But dont forget to add instructions to this list.
       chatMessages = [];
-      chatMessages.push({ role: "assistant", content: outputMsg, processed: true });
+      chatMessages.push({
+        role: "assistant",
+        content: outputMsg,
+        processed: true,
+      });
 
       settingUpNewScene = false;
 
@@ -525,8 +544,9 @@ app.prepare().then(() => {
             console.log("messagesFilteredForApi", messagesFilteredForApi);
 
             const data = {
-              model: "gpt-4-0125-preview",
+              model: "gpt-3.5-turbo-0125",
               messages: messagesFilteredForApi,
+              temperature: 0,
               stream: true,
             };
 
@@ -556,7 +576,11 @@ app.prepare().then(() => {
 
             console.log("made it to chat complete");
             io.to(serverRoomName).emit("chat complete", serverMessageId);
-            let completeOutput = { role: "assistant", content: outputMsg, processed: true };
+            let completeOutput = {
+              role: "assistant",
+              content: outputMsg,
+              processed: true,
+            };
             aiInOrderChatMessage.push(completeOutput);
             chatMessages.push(completeOutput);
 
@@ -755,7 +779,13 @@ app.prepare().then(() => {
 
         let message = "Game master, I stepped away from the game. Please do not include me in your story until I return.";
         const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
-        let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+        let serverData = {
+          role: "user",
+          content: message,
+          processed: false,
+          id: uniqueId,
+          mode: "All",
+        };
         awayPlayerCount++;
         //send message to users and ai
         chatMessages.push(serverData);
@@ -814,7 +844,11 @@ app.prepare().then(() => {
             const mp3 = await openai.audio.speech.create(data);
             const buffer = Buffer.from(await mp3.arrayBuffer());
             // Emit the buffer to the client
-            socket.emit("play audio", { audio: buffer.toString("base64"), sequence: currentSequence, messageId: msg.messageId }); //ToDo. for specific user
+            socket.emit("play audio", {
+              audio: buffer.toString("base64"),
+              sequence: currentSequence,
+              messageId: msg.messageId,
+            }); //ToDo. for specific user
           } catch (error) {
             console.error("Error:", error);
             socket.emit("error", "Error processing your audio message: ", "sequence", currentSequence);
@@ -934,8 +968,61 @@ app.prepare().then(() => {
         await askAiIfDalleCall(messagesFilteredForFunction);
       }
 
+      if (latestAssistantMessage[0].content.toLowerCase().includes("item") && !diceRollCalled) {
+        await requestAiForEquipment(messagesFilteredForFunction);
+      }
       // check if initiative roll should be called
       await askAiIfInitiative(messagesFilteredForFunction, diceRollCalled);
+    }
+
+    async function requestAiForEquipment(messagesFilteredForFunction) {
+      messagesFilteredForFunction.push({
+        role: "system",
+        content:
+          "Did you just tell all or some of the players that they found or obtained any kind of items? If so, call the function giveRandomEquipment.",
+      });
+      const equipmentData = {
+        model: "gpt-4-turbo-preview",
+        messages: messagesFilteredForFunction,
+        stream: false,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "giveRandomEquipment",
+              description: "this function will provide each needed player with obtained equipment from the game",
+              parameters: {
+                type: "object",
+                properties: {
+                  users: {
+                    type: "array",
+                    enum: ["aTreeFrog"],
+                    description: "Based on the recent conversation history. the Assistant or bot says exactly which players should receive an item.",
+                  },
+                },
+                required: ["users"],
+              },
+            },
+          },
+        ],
+        //tool_choice: { type: "function", function: { name: "giveRandomEquipment" } }, //forces model to call this function
+      };
+
+      messagesFilteredForFunction.pop(); //remove what i just added
+      const equipmentCompletion = await openai.chat.completions.create(equipmentData);
+      console.log("equipmentCompletion data", equipmentCompletion);
+      console.log("checking equipmentCompletion function call completion: ", equipmentCompletion.choices[0].finish_reason);
+
+      if (equipmentCompletion.choices[0].finish_reason == "tool_calls") {
+        functionData = equipmentCompletion.choices[0].message.tool_calls[0].function;
+        console.log("checking equipmentCompletion function call data : ", functionData);
+
+        if (functionData.name == "giveRandomEquipment") {
+          argumentsJson = JSON.parse(functionData.arguments);
+          argValue = argumentsJson.users;
+          giveRandomEquipment(argValue); 
+        }
+      }
     }
 
     async function askAiIfDalleCall(messagesFilteredForFunction) {
@@ -1069,7 +1156,9 @@ app.prepare().then(() => {
     }
 
     async function playBackgroundAudio(song) {
-      io.to(serverRoomName).emit("background music", { url: `http://localhost:3000/audio/${song}.mp3` });
+      io.to(serverRoomName).emit("background music", {
+        url: `http://localhost:3000/audio/${song}.mp3`,
+      });
     }
 
     socket.on("my user message", (msg) => {
@@ -1257,7 +1346,7 @@ app.prepare().then(() => {
             property: "currentHealth",
             description: "Mystical red liquid to heal your wounds",
           },
-          randomTeleport: {
+          RandomTeleport: {
             name: "Random Teleport",
             icon: "icons/healthpotion.svg",
             quantity: 1,
@@ -1324,11 +1413,13 @@ app.prepare().then(() => {
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
 
       // lets setup the game
-      // if (Object.keys(players).length >= playerCountForGame) {
-      //   await runFunctionAfterDelay(() => startOfGame(), 10000);
-      // }
+      if (Object.keys(players).length >= playerCountForGame) {
+        await runFunctionAfterDelay(() => startOfGame(), 10000);
+      }
 
-      enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
+      //giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
+
+      //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
 
     socket.on("obtain all users", () => {
@@ -1580,7 +1671,13 @@ app.prepare().then(() => {
     socket.on("story move on", () => {
       let message = "Activated move to next scene sequence";
       const uniqueId = `user${player.name}-activity${awayPlayerCount}-${new Date().toISOString()}`;
-      let serverData = { role: "user", content: message, processed: false, id: uniqueId, mode: "All" };
+      let serverData = {
+        role: "user",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
       io.to(serverRoomName).emit("latest user message", serverData);
 
       summarizeAndMoveOn();
@@ -1820,7 +1917,13 @@ app.prepare().then(() => {
     console.log("battleRoundAISummary message ", message);
 
     const uniqueId = `user${"system"} -activity${activityCount} -${new Date().toISOString()} `;
-    let serverData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+    let serverData = {
+      role: "system",
+      content: message,
+      processed: false,
+      id: uniqueId,
+      mode: "All",
+    };
     activityCount++;
     //send message to ai
     //chatMessages.push(serverData);
@@ -2097,7 +2200,11 @@ app.prepare().then(() => {
     if (playersWithinMeleeDistance.length > 0) {
       // If one or more players are within sword distance, randomly select one and attack
       const target = playersWithinMeleeDistance[Math.floor(Math.random() * playersWithinMeleeDistance.length)];
-      return { action: "meleeAttack", target, moveTo: { x: enemy.xPosition, y: enemy.yPosition } };
+      return {
+        action: "meleeAttack",
+        target,
+        moveTo: { x: enemy.xPosition, y: enemy.yPosition },
+      };
     } else {
       // Select a random player to target for potential bow attack or movement
       const target = playersArray[Math.floor(Math.random() * playersArray.length)];
@@ -2108,7 +2215,11 @@ app.prepare().then(() => {
       // When deciding to move closer within bow range, pass true for withinBowRange
       if (distance <= 56 && distance > 7) {
         // Within bow range but not adjacent, randomly decide to move closer or stay
-        return { action: "rangeAttack", target, moveTo: moveCloser(enemy, target, true) };
+        return {
+          action: "rangeAttack",
+          target,
+          moveTo: moveCloser(enemy, target, true),
+        };
       } else if (distance > 60) {
         // Too far for either attack, move closer up to 28 feet
         const moveTo = moveCloser(enemy, target);
@@ -2394,6 +2505,7 @@ app.prepare().then(() => {
 
     Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable.
 
+    Finding Items: Regardless of what aTreeFrog is searching for, if there's an opportunity to discover an item, prompt for a dice roll. Upon a successful roll, uniformly respond with "You have found an item" without specifying the item's nature. This ensures consistency and suspense, as the actual item will be determined externally. This approach maintains gameplay integrity and allows for seamless integration with your external item generation mechanism.
     Responses should be detailed yet concise, particularly at the start, to draw the player into the scene, 
     with subsequent interactions kept under 50 words for a dynamic and engaging role-playing experience. 
     The narrative should flow directly from the accumulated story, enhancing the sense of immersion and 
@@ -2406,7 +2518,13 @@ app.prepare().then(() => {
     the next narrative phase."`;
 
     const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
-    newSceneData = { role: "system", content: message, processed: false, id: uniqueId, mode: "All" };
+    newSceneData = {
+      role: "system",
+      content: message,
+      processed: false,
+      id: uniqueId,
+      mode: "All",
+    };
     activityCount++;
     //send message to ai
     setTimeout(() => {
@@ -2468,6 +2586,95 @@ app.prepare().then(() => {
 
     console.log("image: ", image.data);
   }
+
+  function selectRandomEquipment() {
+    let equipmentScene = ["Health"]; // Default value
+    if (storyFile && storyFile[currentAct] && storyFile[currentAct][currentScene]) {
+      equipmentScene = storyFile[currentAct][currentScene].DiscoverableEquipment || ["Health"];
+    }
+    const randomIndex = Math.floor(Math.random() * equipmentScene.length);
+    const randomKey = equipmentScene[randomIndex];
+    return equipment[randomKey];
+  }
+
+  // function summarizeEquipmentFound(equipmentData) {
+
+  //   let msg = ``;
+
+  //   // no players received equipment, so don't say anything
+  //   if (Object.keys(equipmentData).length < 1) {
+  //     return;
+  //   }
+
+  //   Object.entries(equipmentData).forEach(([player, data]) => {
+
+  //     msg += `${player} received ${data.quantity} ${data.item} `;
+
+  //   });
+
+  // }
+
+  async function giveRandomEquipment(playerNames) {
+    equipmentFoundData = {};
+    let amount = 1;
+    const activityDate = new Date().toISOString();
+
+    if (typeof playerNames === "string") {
+      //ai sent the users as a string with , seperated. instead of an array. So need to filter
+      var namesArray = playerNames.split(",");
+    } else {
+      var namesArray = playerNames;
+    }
+
+    for (var i = 0; i < namesArray.length; i++) {
+      let user = namesArray[i].trim();
+      if (players.hasOwnProperty(user)) {
+        const chosenEquipment = selectRandomEquipment();
+
+        console.log("chosenEquipment", chosenEquipment);
+
+        // always give a bunch of health potions
+        if (chosenEquipment.name == "Health") {
+          amount = 5;
+        }
+
+        equipmentFoundData[user] = {
+          role: "assistant",
+          message: `${user} received ${amount} ${chosenEquipment.name}`,
+          clickableWord: chosenEquipment.name,
+          iconPath: chosenEquipment.icon,
+          mode: "All",
+          type: "equipment",
+          activityId: activityCount,
+        };
+
+        console.log("equipmentFoundData ", equipmentFoundData);
+
+        if (players[user]?.equipment[chosenEquipment.name]) {
+          // Increase the quantity of the existing equipment item
+          players[user].equipment[chosenEquipment.name].quantity += amount;
+        } else {
+          // Add the equipment item with the needed quantity
+          players[user].equipment[chosenEquipment.name] = {
+            ...equipment[chosenEquipment],
+            quantity: amount,
+          };
+        }
+
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${activityDate} `;
+      }
+    }
+
+    activityCount++;
+    io.to(serverRoomName).emit("players objects", players);
+
+    if (Object.keys(equipmentFoundData).length > 0) {
+      io.to(serverRoomName).emit("equipment found", equipmentFoundData);
+    }
+  }
+
+  //toDo: figure out when and how to give health potions
+  async function giveHealthPotion(playerNames) {}
 
   async function checkPlayersState() {
     let anyPlayerRoll = false;

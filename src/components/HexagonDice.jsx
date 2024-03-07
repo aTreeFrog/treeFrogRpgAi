@@ -184,7 +184,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
 
       spinTone.autostart = true;
 
-      spinTone.onended = () => {
+      spinTone.onstop = () => {
         spinTone.disconnect();
       };
 
@@ -203,7 +203,7 @@ const HexagonDice = ({ diceStates, setDiceStates, floatingValue, setFloatingValu
 
       // landTone.autostart = true;
 
-      // landTone.onended = () => {
+      // landTone.onstop = () => {
       //   spellTone.disconnect(); // Disconnect the player
       // };
 
