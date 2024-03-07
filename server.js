@@ -196,6 +196,8 @@ app.prepare().then(() => {
 
       message = `${storyFile[currentAct][currentScene].Header}
 
+              Beginning: "Ease into the story. Ensure the players settle into the story before jumping into the story advancement.
+
               Proactive Storytelling: "Use the environment to suggest actions aTreeFrog might take, avoiding direct prompts for his next move."
 
               Narration: "Involve aTreeFrog in scenarios requiring his input. Whenever aTreeFrog requests to do something, determine if the move should require a dice roll and initiate one if so. Prompt for d20 rolls with modifiers like stealth or perception as needed. Use 'roll a d20 with [modifier]' to instruct."
@@ -212,11 +214,9 @@ app.prepare().then(() => {
 
               Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable."
 
-              Finding items: "If anytime in the game you want to provide the player with a found item, such as secret equipment, potions, scrolls. Anything the player could potentially find, or be given if necessary. First ask to do a dice roll, and if the player is successful, only respond with "you have found an item". Ensure you only respond with "you have found an item".
-                    
-              Begin with a comprehensive, engaging description of the setting, welcoming the player by name, aTreeFrog, 
-              to an epic journey in 'Wizards and Goblins'. Keep subsequent responses concise, aiming for under 50 words, 
-              to create a dynamic and interactive role-playing experience.
+              Finding Items: Regardless of what aTreeFrog is searching for, if there's an opportunity to discover an item, prompt for a dice roll. Upon a successful roll, uniformly respond with "You have found an item" without specifying the item's nature. This ensures consistency and suspense, as the actual item will be determined externally. This approach maintains gameplay integrity and allows for seamless integration with your external item generation mechanism.
+
+              Session Start: Welcome aTreeFrog to 'Wizards and Goblins,' setting the stage for an epic journey. Keep descriptions and exchanges brief and engaging.
               
               "Please note: All responses must adhere to a strict maximum of 50 words to ensure concise and engaging storytelling. 
               This includes descriptions, character interactions, and narrative advancements. Each output, whether setting a scene, 
@@ -544,8 +544,9 @@ app.prepare().then(() => {
             console.log("messagesFilteredForApi", messagesFilteredForApi);
 
             const data = {
-              model: "gpt-4-0125-preview",
+              model: "gpt-3.5-turbo-0125",
               messages: messagesFilteredForApi,
+              temperature: 0,
               stream: true,
             };
 
@@ -967,7 +968,7 @@ app.prepare().then(() => {
         await askAiIfDalleCall(messagesFilteredForFunction);
       }
 
-      if (latestAssistantMessage[0].content.toLowerCase().includes("found an item") && !diceRollCalled) {
+      if (latestAssistantMessage[0].content.toLowerCase().includes("item") && !diceRollCalled) {
         await requestAiForEquipment(messagesFilteredForFunction);
       }
       // check if initiative roll should be called
@@ -978,10 +979,10 @@ app.prepare().then(() => {
       messagesFilteredForFunction.push({
         role: "system",
         content:
-          "Based on the recent chat. Some players found some equipment. Call the function giveRandomEquipment with the players that should have received items",
+          "Did you just tell all or some of the players that they found or obtained any kind of items? If so, call the function giveRandomEquipment.",
       });
       const equipmentData = {
-        model: "gpt-3.5-turbo-1106",
+        model: "gpt-4-turbo-preview",
         messages: messagesFilteredForFunction,
         stream: false,
         tools: [
@@ -1018,8 +1019,8 @@ app.prepare().then(() => {
 
         if (functionData.name == "giveRandomEquipment") {
           argumentsJson = JSON.parse(functionData.arguments);
-          promptValue = argumentsJson.prompt;
-          giveRandomEquipment(promptValue); 
+          argValue = argumentsJson.users;
+          giveRandomEquipment(argValue); 
         }
       }
     }
@@ -2504,7 +2505,7 @@ app.prepare().then(() => {
 
     Guideline for Responses: "Keep all responses under 50 words to maintain engagement and pace. Ensure every part of the narrative builds towards the next scene, incorporating d20 rolls where applicable.
 
-    Finding items: "If anytime in the game you want to provide the player with a found item, such as secret equipment, potions, scrolls. Anything the player could potentially find, or be given if necessary. First ask to do a dice roll, and if the player is successful, only respond with "you have found an item". Ensure you only respond with "you have found an item".
+    Finding Items: Regardless of what aTreeFrog is searching for, if there's an opportunity to discover an item, prompt for a dice roll. Upon a successful roll, uniformly respond with "You have found an item" without specifying the item's nature. This ensures consistency and suspense, as the actual item will be determined externally. This approach maintains gameplay integrity and allows for seamless integration with your external item generation mechanism.
     Responses should be detailed yet concise, particularly at the start, to draw the player into the scene, 
     with subsequent interactions kept under 50 words for a dynamic and engaging role-playing experience. 
     The narrative should flow directly from the accumulated story, enhancing the sense of immersion and 
@@ -2644,6 +2645,7 @@ app.prepare().then(() => {
           iconPath: chosenEquipment.icon,
           mode: "All",
           type: "equipment",
+          activityId: activityCount,
         };
 
         console.log("equipmentFoundData ", equipmentFoundData);

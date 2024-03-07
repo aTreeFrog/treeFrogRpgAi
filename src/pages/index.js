@@ -230,6 +230,7 @@ export default function Home() {
   let playerIconList = useRef([]);
   const [gaveEquipment, setGaveEquipment] = useState();
   const [equipmentText, setEquipmentText] = useState();
+  const lastEqmntFoundActId = useRef();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -537,11 +538,26 @@ export default function Home() {
     });
 
     chatSocket.on("equipment found", (data) => {
+
+      let sameMsg = false;
+      let actId = 0;
+      for (let user in data) {
+        if (data[user]?.activityId == lastEqmntFoundActId?.current) {
+          sameMsg = true;
+        }
+        actId = data[user]?.activityId;
+        break;
+      };
+
+      if (!sameMsg) {
       console.log("equipment found data", data);
       setChatLog((prevChatLog) => [
         ...prevChatLog,
         ...Object.values(data), // Spread the array of values from the dictionary
       ]);
+      lastEqmntFoundActId.current = actId;
+    }
+
     });
 
     chatSocket.on("enter battle mode", (data) => {

@@ -450,7 +450,7 @@ const BattleMap = ({
 
         successTone.onstop = () => {
           console.log("ping playback ended");
-          spellTone.disconnect(); // Disconnect the player
+          successTone.disconnect(); // Disconnect the player
         };
 
         successTone.onerror = (error) => {
