@@ -14,7 +14,9 @@
             "CharacterInteraction": "As Theo and aTreeFrog observe goblins starting their assault on the village, they ready themselves for a surprise attack from the shadows. Request a d20 roll from aTreeFrog for each stealth attack, applying stealth or dexterity modifiers. A successful roll signifies a goblin defeated quietly, allowing them to move on to the next group. Detail the goblins' invasion, showcasing their havoc on the village. After each successful attack, Theo, impressed by aTreeFrog's prowess, hints at his secret clan dedicated to combating such threats, suggesting aTreeFrog's potential membership. Repeat this process until a failed roll reveals their location, triggering a battle that starts with a d20 initiative roll.",
             "StoryAdvancement": "Continue the sequence of stealth attacks until a failure to remain hidden leads to direct combat. After resolving the battle, regardless of its outcome, have Theo say to aTreeFrog he needs him to join his guild and then make it clear that this action transitions the story with an explicit 'END OF SCENE.'",
             "BattleMap": "nighttime_grassland",
-            "DiscoverableEquipment": ["Health", "RandomTeleport"]
+            "DiscoverableEquipment": ["Health", "RandomTeleport"],
+            "locationName": "Forestheart Grove",
+            "locationDetails": "Nestled in an ancient, snow-draped forest, Forestheart Grove serves as a hidden refuge for wood elves and woodland creatures. Here, under the quiet canopy, elves and nature live in harmony, bonded by the land's deep magic in the silent night."
         }
     }
 }
