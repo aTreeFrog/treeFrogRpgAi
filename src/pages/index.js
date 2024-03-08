@@ -234,6 +234,7 @@ export default function Home() {
   const [equipmentText, setEquipmentText] = useState();
   const lastEqmntFoundActId = useRef();
   const [equipmentInfo, setEquipmentInfo] = useState();
+  const [gameTab, setGameTab] = useState("Custom Text");
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -693,6 +694,24 @@ export default function Home() {
         };
       }
     });
+
+    if (prevPlayersData.current && players[userName]?.shortRests > prevPlayersData.current[userName]?.shortRests) {
+      const shortRestTone = new Tone.Player({
+        url: "/audio/short_rest.wav",
+      }).toDestination();
+
+      shortRestTone.autostart = true;
+
+      shortRestTone.onstop = () => {
+        console.log("short rest playback ended");
+        // Disconnect the 
+        shortRestTone.disconnect(); 
+      };
+
+      shortRestTone.onerror = (error) => {
+        console.error("Error with audio playback", error);
+      };
+    }
 
     prevPlayersData.current = players;
   }, [players]);
@@ -1743,6 +1762,10 @@ export default function Home() {
       audioChunks.current = [];
       mediaRecorder.stop();
     }
+
+    if (!isCustomTextOpen) {
+      setGameTab("Custom Text");
+    }
   }, [isAudioOpen, isCustomTextOpen]);
 
   const handleEndTurn = (name) => {
@@ -1803,6 +1826,10 @@ export default function Home() {
 
       return newState;
     });
+  };
+
+  const handleShortRest = () => {
+    chatSocket.emit("short rest", userName);
   };
 
   return (
@@ -2292,39 +2319,104 @@ export default function Home() {
           </div>
         )}
         {isCustomTextOpen && (
-          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
-            <div className="grid grid-cols-3 gap-2 all-cells">
-              {/* Render cells */}
-              {customTextCells.map((content, index) =>
-                content ? (
-                  // Cell with text and cancel area
-                  <div key={index} className="flex items-center gap-1">
-                    {/* Cell with text */}
-                    <button
-                      className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
-                      disabled={diceStates.d20.isGlowActive}
-                      onClick={() => handleCellClick(content)}>
-                      {content}
-                    </button>
-                    {/* Cancel button */}
-                    <button className=" all-cells text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>
-                      X
-                    </button>
-                  </div>
-                ) : (
-                  // Input cell
-                  <input
-                    key={index}
-                    type="text"
-                    placeholder="Type here..."
-                    maxLength={50}
-                    onKeyDown={newTextEnterKeyDown}
-                    onBlur={(e) => handleBlur(index, e.target.value)}
-                    className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
-                  />
-                )
-              )}
+          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500 min-h-[135px]">
+            <div className="flex justify-center items-center gap-2 mb-4">
+              {["Custom Text", "Actions", "Location"].map((tabName) => (
+                <button
+                  key={tabName}
+                  className={`tab-button px-2 py-1 text-sm font-semibold border-2 border-transparent rounded-full transition-colors duration-300
+                                ${gameTab === tabName ? "bg-purple-800" : "hover:bg-gray-900 opacity-80"}`}
+                  onClick={() => setGameTab(tabName)}>
+                  {tabName}
+                </button>
+              ))}
             </div>
+            {gameTab === "Custom Text" && (
+              <div className="grid grid-cols-3 gap-2 all-cells">
+                {/* Render cells */}
+                {customTextCells.map((content, index) =>
+                  content ? (
+                    // Cell with text and cancel area
+                    <div key={index} className="flex items-center gap-1">
+                      {/* Cell with text */}
+                      <button
+                        className="all-cells flex-grow p-2 rounded text-white bg-gray-600  hover:font-semibold hover:bg-gray-500  focus:outline-none transition-colors duration-300"
+                        disabled={diceStates.d20.isGlowActive}
+                        onClick={() => handleCellClick(content)}>
+                        {content}
+                      </button>
+                      {/* Cancel button */}
+                      <button className=" all-cells text-red-500 p-2 rounded" onClick={() => deleteCellContent(index)}>
+                        X
+                      </button>
+                    </div>
+                  ) : (
+                    // Input cell
+                    <input
+                      key={index}
+                      type="text"
+                      placeholder="Type here..."
+                      maxLength={50}
+                      onKeyDown={newTextEnterKeyDown}
+                      onBlur={(e) => handleBlur(index, e.target.value)}
+                      className="word-cell all-cells p-2 bg-gray-700 rounded text-white"
+                    />
+                  )
+                )}
+              </div>
+            )}
+            {gameTab === "Actions" && (
+              <div className="grid grid-cols-3 gap-2">
+                {/* Render cells */}
+                <button
+                  className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600  focus:outline-none transition-colors duration-300"
+                  disabled={diceStates.d20.isGlowActive || players[userName]?.shortRests > 1 || players[userName]?.mode=="battle" || players[userName]?.mode=="initiative"}
+                  onClick={() => handleShortRest()}>
+                  <div className="flex">
+                    <span className="mt-1">Short</span>
+                    <img className="mx-0.5" src="/icons/sandglass.svg" width="34" height="34"></img>
+                    <span className="mt-1"> Rest</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className={`w-3 h-3 rounded-full mr-2 ${players[userName]?.shortRests > 0 ? "bg-green-500" : "bg-gray-500"}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${players[userName]?.shortRests > 1 ? "bg-green-500" : "bg-gray-500"}`}></div>
+                  </div>
+                </button>
+                <button
+                  className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
+                  disabled={diceStates.d20.isGlowActive || players[userName]?.shortRests > 1 || players[userName]?.mode=="battle" || players[userName]?.mode=="initiative"}
+                  onClick={() => handleCellClick(content)}>
+                  <div className="flex">
+                    <span className="mt-1">Long</span>
+                    <img className="mx-1" src="/icons/fire.svg" width="34" height="34"></img>
+                    <span className="mt-1"> Rest</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className={`w-3 h-3 rounded-full ${players[userName]?.longRests > 0 ? "bg-green-500" : "bg-gray-500"}`}></div>
+                  </div>
+                </button>
+                <button
+                  className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
+                  disabled={diceStates.d20.isGlowActive}
+                  onClick={() => handleCellClick(content)}>
+                  <div className="flex">
+                    <span className="mt-1">Step</span>
+                    <img className="mx-1 flipped-svg" src="/icons/dragon.svg" width="34" height="34"></img>
+                    <span className="mt-1"> Away</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className={`w-3 h-3 rounded-full ${players[userName]?.away ? "bg-green-500" : "bg-gray-500"}`}></div>
+                  </div>
+                </button>
+              </div>
+            )}
+            {gameTab === "Location" && (
+              <div className="max-h-[200px] overflow-y-auto items-center scrollable-container">
+                <div className="text-white font-bold">{players[userName]?.story?.locationName}</div>
+                <img src={`location/${players[userName]?.story?.act}${players[userName]?.story?.scene}.png`} width="350" height="250"></img>
+                <div className=" flex text-white">{players[userName]?.story?.locationDetails}</div>
+              </div>
+            )}
           </div>
         )}
         {isAudioOpen && (

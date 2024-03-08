@@ -171,6 +171,8 @@ app.prepare().then(() => {
   io.on("connection", (socket) => {
     function startOfGame() {
       const dateStamp = new Date().toISOString();
+      currentAct = "Act1";
+      currentScene = "Scene1";
       game.mode = "startOfGame";
       game.battleGrid = null;
       game.image = null;
@@ -186,14 +188,17 @@ app.prepare().then(() => {
           players[user].pingXPosition = null;
           players[user].pingYPosition = null;
           players[user].mode = "startOfGame";
+          players[user].shortRests = 0;
+          players[user].longRests = 0;
+          players[user].story.act = currentAct;
+          players[user].story.scene = currentScene;
+          players[user].story.locationName = storyFile[currentAct][currentScene].locationName;
+          players[user].story.locationDetails = storyFile[currentAct][currentScene].locationDetails;
           players[user].backgroundColor = "bg-black";
           players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
           players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
         }
       }
-
-      currentAct = "Act1";
-      currentScene = "Scene1";
 
       message = `${storyFile[currentAct][currentScene].Header}
       
@@ -1353,6 +1358,14 @@ app.prepare().then(() => {
         away: false,
         class: "Wizard",
         race: "Elf",
+        story: {
+          act: null,
+          scene: null,
+          locationName: "",
+          locationDetails: "",
+        },
+        shortRests: 0,
+        longRests: 0,
         distance: 28,
         attacks: {
           staff: {
@@ -1452,11 +1465,11 @@ app.prepare().then(() => {
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
 
       // lets setup the game
-      // if (Object.keys(players).length >= playerCountForGame) {
-      //   await runFunctionAfterDelay(() => startOfGame(), 10000);
-      // }
+      if (Object.keys(players).length >= playerCountForGame) {
+        await runFunctionAfterDelay(() => startOfGame(), 5000);
+      }
 
-      giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
+      //giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
 
       //enterBattleMode("ForestRiver", "Black_Vortex", "goblin", 3); ////////////FOR TESTING!!!!//////////////////////
     });
@@ -1476,13 +1489,28 @@ app.prepare().then(() => {
         if (data.equipmentData.name == "Health") {
           const impactNumber = parseInt(data.equipmentData.impact, 10);
           players[data.name].currentHealth = Math.min(players[data.name].maxHealth, players[data.name].currentHealth + impactNumber);
-          players[data.name].battleMode.usedPotion = true;
-          players[data.name].battleMode.actionAttempted = true;
+
+          if (players[data.name].mode == "battle") {
+            players[data.name].battleMode.usedPotion = true;
+            players[data.name].battleMode.actionAttempted = true;
+          }
         }
       }
       players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${internalDate}`;
       activityCount++;
       console.log("player equipment used ", players[data.name]);
+      io.emit("players objects", players);
+    });
+
+    socket.on("short rest", (user) => {
+
+      if (players.hasOwnProperty(user) && players[user]?.mode != "battle" && players[user]?.mode != "initiative") {
+        players[user].currentHealth = Math.min(players[user].maxHealth, players[user].currentHealth + 10);
+        players[user].shortRests += 1;
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        activityCount++;
+      }
+      
       io.emit("players objects", players);
     });
 
@@ -2492,6 +2520,11 @@ app.prepare().then(() => {
 
   function startOfNextScene(summaryMsg = "") {
     const dateStamp = new Date().toISOString();
+
+    const nextSceneInfo = findNextScene(currentAct, currentScene, storyFile);
+    currentAct = nextSceneInfo.nextAct;
+    currentScene = nextSceneInfo.nextScene;
+
     game.mode = "nextScene";
     game.battleGrid = null;
     game.image = null;
@@ -2507,6 +2540,12 @@ app.prepare().then(() => {
         players[user].pingXPosition = null;
         players[user].pingYPosition = null;
         players[user].mode = "story";
+        players[user].shortRests = 0;
+        players[user].longRests = 0;
+        players[user].story.act = currentAct;
+        players[user].story.scene = currentScene;
+        players[user].story.locationName = storyFile[currentAct][currentScene].locationName;
+        players[user].story.locationDetails = storyFile[currentAct][currentScene].locationDetails;
         players[user].settingUpNewScene = true;
         players[user].backgroundColor = "bg-black";
         players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
@@ -2516,10 +2555,6 @@ app.prepare().then(() => {
 
     activityCount++;
     io.to(serverRoomName).emit("players objects", players);
-
-    const nextSceneInfo = findNextScene(currentAct, currentScene, storyFile);
-    currentAct = nextSceneInfo.nextAct;
-    currentScene = nextSceneInfo.nextScene;
 
     message = `Last Scene Summary: [${summaryMsg}]
     
