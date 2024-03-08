@@ -2299,7 +2299,7 @@ export default function Home() {
         {isCustomTextOpen && (
           <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500 min-h-[135px]">
             <div className="flex justify-center items-center gap-2 mb-4">
-              {["Custom Text", "Actions", "Map"].map((tabName) => (
+              {["Custom Text", "Actions", "Location"].map((tabName) => (
                 <button
                   key={tabName}
                   className={`tab-button px-2 py-1 text-sm font-semibold border-2 border-transparent rounded-full transition-colors duration-300
@@ -2376,6 +2376,13 @@ export default function Home() {
                     <span className="mt-1"> Away</span>
                   </div>
                 </button>
+              </div>
+            )}
+            {gameTab === "Location" && (
+              <div className="max-h-[200px] overflow-y-auto items-center">
+                <div className="text-white font-bold">{players[userName]?.story?.locationName}</div>
+                <img src={`location/${players[userName]?.story?.act}${players[userName]?.story?.scene}.png`} width="350" height="250"></img>
+                <div className=" flex text-white">{players[userName]?.story?.locationDetails}</div>
               </div>
             )}
           </div>
