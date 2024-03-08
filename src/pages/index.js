@@ -687,6 +687,7 @@ export default function Home() {
         pingTone.onstop = () => {
           console.log("ping playback ended");
           pingTone.disconnect(); // Disconnect the player
+          pingTone.dispose();
         };
 
         pingTone.onerror = (error) => {
@@ -706,6 +707,7 @@ export default function Home() {
         console.log("short rest playback ended");
         // Disconnect the 
         shortRestTone.disconnect(); 
+        shortRestTone.dispose();
       };
 
       shortRestTone.onerror = (error) => {
@@ -1641,6 +1643,7 @@ export default function Home() {
         potionTone.onstop = () => {
           console.log("potion playback ended");
           potionTone.disconnect(); // Disconnect the player
+          potionTone.dispose();
         };
 
         potionTone.onerror = (error) => {
@@ -1800,12 +1803,14 @@ export default function Home() {
       thankYouTone.onstop = () => {
         console.log("potion playback ended");
         thankYouTone.disconnect(); // Disconnect the player
+        thankYouTone.dispose();
       };
 
       thankYouTone.onerror = (error) => {
         console.error("Error with audio playback", error);
       };
       whooshTone.disconnect(); // Disconnect the player
+      whooshTone.dispose();
     };
 
     whooshTone.onerror = (error) => {
