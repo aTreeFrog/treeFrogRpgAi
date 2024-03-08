@@ -190,6 +190,7 @@ app.prepare().then(() => {
           players[user].mode = "startOfGame";
           players[user].shortRests = 0;
           players[user].longRests = 0;
+          players[user].longRestRequest = false;
           players[user].story.act = currentAct;
           players[user].story.scene = currentScene;
           players[user].story.locationName = storyFile[currentAct][currentScene].locationName;
@@ -1366,6 +1367,7 @@ app.prepare().then(() => {
         },
         shortRests: 0,
         longRests: 0,
+        longRestRequest: false,
         distance: 28,
         attacks: {
           staff: {
@@ -1503,14 +1505,34 @@ app.prepare().then(() => {
     });
 
     socket.on("short rest", (user) => {
-
       if (players.hasOwnProperty(user) && players[user]?.mode != "battle" && players[user]?.mode != "initiative") {
         players[user].currentHealth = Math.min(players[user].maxHealth, players[user].currentHealth + 10);
         players[user].shortRests += 1;
         players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         activityCount++;
       }
-      
+
+      io.emit("players objects", players);
+    });
+
+    socket.on("long rest request", (user) => {
+      if (players.hasOwnProperty(user) && players[user]?.mode != "battle" && players[user]?.mode != "initiative") {
+        players[user].longRestRequest = true;
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        activityCount++;
+      }
+
+      io.emit("players objects", players);
+    });
+
+    socket.on("cancel long rest request", () => {
+      const actDate = new Date().toISOString();
+
+      Object.entries(players).forEach(([userName, playerData]) => {
+        playerData.longRestRequest = false;
+        playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${actDate}`;
+      });
+
       io.emit("players objects", players);
     });
 
@@ -1751,7 +1773,7 @@ app.prepare().then(() => {
     });
 
     socket.on("player moved", (data) => {
-      if (players.hasOwnProperty(data.name)) {
+      if (players.hasOwnProperty(data?.name)) {
         //calculate distance moved
         // Old position
         let oldX = players[data.name].xPosition;
@@ -2009,7 +2031,7 @@ app.prepare().then(() => {
     const completion = await openai.chat.completions.create(data);
     dalleSummaryMsg = completion.choices[0].message.content;
     console.log("dalle summary msg: ", dalleSummaryMsg);
-    createDallEImage(dalleSummaryMsg);   /////////////////TURN BACK ON!!!/////////////////////////////////////
+    createDallEImage(dalleSummaryMsg); /////////////////TURN BACK ON!!!/////////////////////////////////////
   }
 
   async function nextInLine() {
@@ -2542,6 +2564,7 @@ app.prepare().then(() => {
         players[user].mode = "story";
         players[user].shortRests = 0;
         players[user].longRests = 0;
+        players[user].longRestRequest = false;
         players[user].story.act = currentAct;
         players[user].story.scene = currentScene;
         players[user].story.locationName = storyFile[currentAct][currentScene].locationName;
@@ -2755,6 +2778,7 @@ app.prepare().then(() => {
     let anyPlayerInitiativeRoll = false;
     let inInitiativeMode = false;
     let allPlayersReadyNewScene = true;
+    let allPlayersLongRestReady = true;
     Object.entries(players).forEach(async ([userName, playerData]) => {
       // check if any player is in iniative mode, means game is in iniative mode
       if (playerData?.type == "player" && playerData?.mode == "initiative") {
@@ -2783,6 +2807,10 @@ app.prepare().then(() => {
       // if a new scene is ready and all active players said there ready for the new scene, go to next scene.
       if ((settingUpNextScene && playerData?.type == "player" && !playerData.away && !playerData.newSceneReady) || !playerData.settingUpNewScene) {
         allPlayersReadyNewScene = false;
+      }
+
+      if (!playerData?.longRestRequest && playerData?.type == "player") {
+        allPlayersLongRestReady = false;
       }
     });
 
@@ -2813,6 +2841,18 @@ app.prepare().then(() => {
       assignBattleTurnOrder(players);
 
       console.log("battlemode players: ", players);
+    }
+
+    if (allPlayersLongRestReady) {
+      Object.entries(players).forEach(([userName, playerData]) => {
+        if (playerData.type == "player") {
+          playerData.mode == "longRest";
+          playerData.currentHealth = playerData.maxHealth;
+          playerData.longRests += 1;
+          playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        }
+      });
+      activityCount++;
     }
 
     console.log("update");

@@ -26,7 +26,8 @@ import KnifeCutText from "../components/KnifeCutText";
 import player from "../../lib/objects/player";
 import { cloneDeep } from "lodash";
 import { equipment } from "../../lib/objects/equipment";
-import EquipmentPopup from "@/components/equipmentPopup";
+import EquipmentPopup from "@/components/EquipmentPopup";
+import LongRestPopup from "@/components/LongRestPopup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -235,6 +236,7 @@ export default function Home() {
   const lastEqmntFoundActId = useRef();
   const [equipmentInfo, setEquipmentInfo] = useState();
   const [gameTab, setGameTab] = useState("Custom Text");
+  const [longRestPopup, setLongRestPopup] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -672,6 +674,7 @@ export default function Home() {
       playerIconList.current = [];
     }
 
+    let allPlayersLongRest = true;
     Object.entries(players).forEach(([playerName, playerData]) => {
       //if any player made a new ping position, set ping audio.
       if (
@@ -694,6 +697,10 @@ export default function Home() {
           console.error("Error with audio playback", error);
         };
       }
+
+      if (!playerData?.longRestRequest && playerData?.type == "player") {
+        allPlayersLongRest = false;
+      }
     });
 
     if (prevPlayersData.current && players[userName]?.shortRests > prevPlayersData.current[userName]?.shortRests) {
@@ -705,14 +712,18 @@ export default function Home() {
 
       shortRestTone.onstop = () => {
         console.log("short rest playback ended");
-        // Disconnect the 
-        shortRestTone.disconnect(); 
+        // Disconnect the
+        shortRestTone.disconnect();
         shortRestTone.dispose();
       };
 
       shortRestTone.onerror = (error) => {
         console.error("Error with audio playback", error);
       };
+    }
+
+    if (allPlayersLongRest) {
+      setLongRestPopup(false);
     }
 
     prevPlayersData.current = players;
@@ -1837,6 +1848,15 @@ export default function Home() {
     chatSocket.emit("short rest", userName);
   };
 
+  const handleLongRest = (user) => {
+    chatSocket.emit("long rest request", user);
+  };
+
+  const cancelLongRest = () => {
+    chatSocket.emit("cancel long rest");
+    setLongRestPopup(false);
+  };
+
   return (
     <div
       className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
@@ -1906,6 +1926,13 @@ export default function Home() {
                 players[userName]?.mode != "battle" &&
                 players[userName]?.mode != "initiative" &&
                 messageQueue.current.length <= 0 && <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />}
+              {(Object.values(players).some((player) => player.longRestRequest) || longRestPopup) &&
+                players[userName]?.mode != "battle" &&
+                players[userName]?.mode != "initiative" &&
+                players[userName]?.mode != "longRest" &&
+                !players[userName]?.longRestRequest && (
+                  <LongRestPopup handleLongRest={handleLongRest} cancelLongRest={cancelLongRest} players={players} userName={userName} />
+                )}
             </div>
             {/* Floating Jitsi Meeting Panel */}
             <div
@@ -2375,7 +2402,12 @@ export default function Home() {
                 {/* Render cells */}
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600  focus:outline-none transition-colors duration-300"
-                  disabled={diceStates.d20.isGlowActive || players[userName]?.shortRests > 1 || players[userName]?.mode=="battle" || players[userName]?.mode=="initiative"}
+                  disabled={
+                    diceStates.d20.isGlowActive ||
+                    players[userName]?.shortRests > 1 ||
+                    players[userName]?.mode == "battle" ||
+                    players[userName]?.mode == "initiative"
+                  }
                   onClick={() => handleShortRest()}>
                   <div className="flex">
                     <span className="mt-1">Short</span>
@@ -2389,8 +2421,13 @@ export default function Home() {
                 </button>
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
-                  disabled={diceStates.d20.isGlowActive || players[userName]?.shortRests > 1 || players[userName]?.mode=="battle" || players[userName]?.mode=="initiative"}
-                  onClick={() => handleCellClick(content)}>
+                  disabled={
+                    diceStates.d20.isGlowActive ||
+                    players[userName]?.shortRests > 1 ||
+                    players[userName]?.mode == "battle" ||
+                    players[userName]?.mode == "initiative"
+                  }
+                  onClick={() => setLongRestPopup((longRestPopup) => !longRestPopup)}>
                   <div className="flex">
                     <span className="mt-1">Long</span>
                     <img className="mx-1" src="/icons/fire.svg" width="34" height="34"></img>
