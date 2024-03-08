@@ -706,21 +706,6 @@ export default function Home() {
         console.log("short rest playback ended");
         // Disconnect the 
         shortRestTone.disconnect(); 
-
-        const healthTone = new Tone.Player({
-          url: "/audio/ever_vingelance.wav",
-        }).toDestination();
-
-        healthTone.autostart = true;
-
-        healthTone.onstop = () => {
-          console.log("health playback ended");
-          healthTone.disconnect(); // Disconnect the player
-        };
-
-        healthTone.onerror = (error) => {
-          console.error("Error with audio playback", error);
-        };
       };
 
       shortRestTone.onerror = (error) => {
