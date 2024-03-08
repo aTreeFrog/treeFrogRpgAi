@@ -322,7 +322,7 @@ export default function Home() {
       }).toDestination();
       // newAudio.current.connect(reverb);
 
-      newAudio.current.onEnded = () => {
+      newAudio.current.onended = () => {
         audio.current = false; // Clear the current audio
         expectedSequence.current++;
       };
