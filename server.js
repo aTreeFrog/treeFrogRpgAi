@@ -188,6 +188,8 @@ app.prepare().then(() => {
           players[user].pingXPosition = null;
           players[user].pingYPosition = null;
           players[user].mode = "startOfGame";
+          players[user].shortRests = 0;
+          players[user].longRests = 0;
           players[user].story.act = currentAct;
           players[user].story.scene = currentScene;
           players[user].story.locationName = storyFile[currentAct][currentScene].locationName;
@@ -1362,6 +1364,8 @@ app.prepare().then(() => {
           locationName: "",
           locationDetails: "",
         },
+        shortRests: 0,
+        longRests: 0,
         distance: 28,
         attacks: {
           staff: {
@@ -1495,6 +1499,18 @@ app.prepare().then(() => {
       players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${internalDate}`;
       activityCount++;
       console.log("player equipment used ", players[data.name]);
+      io.emit("players objects", players);
+    });
+
+    socket.on("short rest", (user) => {
+
+      if (players.hasOwnProperty(user) && players[user]?.mode != "battle" && players[user]?.mode != "initiative") {
+        players[user].currentHealth = Math.min(players[user].maxHealth, players[user].currentHealth + 10);
+        players[user].shortRests += 1;
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        activityCount++;
+      }
+      
       io.emit("players objects", players);
     });
 
@@ -2524,6 +2540,8 @@ app.prepare().then(() => {
         players[user].pingXPosition = null;
         players[user].pingYPosition = null;
         players[user].mode = "story";
+        players[user].shortRests = 0;
+        players[user].longRests = 0;
         players[user].story.act = currentAct;
         players[user].story.scene = currentScene;
         players[user].story.locationName = storyFile[currentAct][currentScene].locationName;

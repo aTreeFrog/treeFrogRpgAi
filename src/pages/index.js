@@ -695,6 +695,39 @@ export default function Home() {
       }
     });
 
+    if (prevPlayersData.current && players[userName]?.shortRests > prevPlayersData.current[userName]?.shortRests) {
+      const shortRestTone = new Tone.Player({
+        url: "/audio/short_rest.wav",
+      }).toDestination();
+
+      shortRestTone.autostart = true;
+
+      shortRestTone.onstop = () => {
+        console.log("short rest playback ended");
+        // Disconnect the 
+        shortRestTone.disconnect(); 
+
+        const healthTone = new Tone.Player({
+          url: "/audio/ever_vingelance.wav",
+        }).toDestination();
+
+        healthTone.autostart = true;
+
+        healthTone.onstop = () => {
+          console.log("health playback ended");
+          healthTone.disconnect(); // Disconnect the player
+        };
+
+        healthTone.onerror = (error) => {
+          console.error("Error with audio playback", error);
+        };
+      };
+
+      shortRestTone.onerror = (error) => {
+        console.error("Error with audio playback", error);
+      };
+    }
+
     prevPlayersData.current = players;
   }, [players]);
 
@@ -1810,6 +1843,10 @@ export default function Home() {
     });
   };
 
+  const handleShortRest = () => {
+    chatSocket.emit("short rest", userName);
+  };
+
   return (
     <div
       className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
@@ -2348,22 +2385,29 @@ export default function Home() {
                 {/* Render cells */}
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600  focus:outline-none transition-colors duration-300"
-                  disabled={diceStates.d20.isGlowActive}
-                  onClick={() => handleCellClick(content)}>
+                  disabled={diceStates.d20.isGlowActive || players[userName]?.shortRests > 1 || players[userName]?.mode=="battle" || players[userName]?.mode=="initiative"}
+                  onClick={() => handleShortRest()}>
                   <div className="flex">
                     <span className="mt-1">Short</span>
                     <img className="mx-0.5" src="/icons/sandglass.svg" width="34" height="34"></img>
                     <span className="mt-1"> Rest</span>
                   </div>
+                  <div className="flex justify-center">
+                    <div className={`w-3 h-3 rounded-full mr-2 ${players[userName]?.shortRests > 0 ? "bg-green-500" : "bg-gray-500"}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${players[userName]?.shortRests > 1 ? "bg-green-500" : "bg-gray-500"}`}></div>
+                  </div>
                 </button>
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
-                  disabled={diceStates.d20.isGlowActive}
+                  disabled={diceStates.d20.isGlowActive || players[userName]?.shortRests > 1 || players[userName]?.mode=="battle" || players[userName]?.mode=="initiative"}
                   onClick={() => handleCellClick(content)}>
                   <div className="flex">
                     <span className="mt-1">Long</span>
                     <img className="mx-1" src="/icons/fire.svg" width="34" height="34"></img>
                     <span className="mt-1"> Rest</span>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className={`w-3 h-3 rounded-full ${players[userName]?.longRests > 0 ? "bg-green-500" : "bg-gray-500"}`}></div>
                   </div>
                 </button>
                 <button
@@ -2375,11 +2419,14 @@ export default function Home() {
                     <img className="mx-1 flipped-svg" src="/icons/dragon.svg" width="34" height="34"></img>
                     <span className="mt-1"> Away</span>
                   </div>
+                  <div className="flex justify-center">
+                    <div className={`w-3 h-3 rounded-full ${players[userName]?.away ? "bg-green-500" : "bg-gray-500"}`}></div>
+                  </div>
                 </button>
               </div>
             )}
             {gameTab === "Location" && (
-              <div className="max-h-[200px] overflow-y-auto items-center">
+              <div className="max-h-[200px] overflow-y-auto items-center scrollable-container">
                 <div className="text-white font-bold">{players[userName]?.story?.locationName}</div>
                 <img src={`location/${players[userName]?.story?.act}${players[userName]?.story?.scene}.png`} width="350" height="250"></img>
                 <div className=" flex text-white">{players[userName]?.story?.locationDetails}</div>
