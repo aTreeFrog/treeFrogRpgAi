@@ -108,7 +108,7 @@ export default function AudioInput({ isAudioOpen, setIsAudioOpen, chatSocket, se
     }, []);
 
     return (
-        < div class={`flex flex-col justify-center items-center -mt-3 ${isRecording ? 'bg-purple-900' : 'bg-gray-900'}  p-6 rounded-lg border border-gray-500 space-y-4`} >
+        < div class={`flex flex-col justify-center items-center ${isRecording ? 'bg-purple-900' : 'bg-gray-900'}  p-6 rounded-lg border border-gray-500 space-y-4`} >
 
             <button id="audioCircle" className={`audio-circle flex justify-center items-center text-white font-semibold relative px-4 bg-gray-500 inline-block overflow-visible whitespace-nowrap ${isRecording ? 'animate-grow-shrink' : ''}`}
                 disabled={diceRollsActive}

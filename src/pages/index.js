@@ -55,7 +55,7 @@ export default function Home() {
   const [inputTextHeight, setInputTextHeight] = useState(20);
   const textareaRef = useRef(null);
   const [isCustomTextOpen, setIsCustomTextOpen] = useState(false);
-  const [customTextCells, setCustomTextCells] = useState(["I jump away", "I check for magic", "I sneak by", "I yell Guards", ""]);
+  const [customTextCells, setCustomTextCells] = useState(["lets go", "I check for magic", ""]);
   const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [lastAudioInputSequence, setLastAudioInputSequence] = useState(100000); // some high value for init
   const [shouldStopAi, setShouldStopAi] = useState(false);
@@ -322,7 +322,7 @@ export default function Home() {
       }).toDestination();
       // newAudio.current.connect(reverb);
 
-      newAudio.current.onended = () => {
+      newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
         expectedSequence.current++;
       };
@@ -332,7 +332,7 @@ export default function Home() {
         audio.current = false;
       };
 
-      newAudio.current.onstop = () => {
+      newAudio.current.onended = () => {
         newAudio.current.disconnect(); // Disconnect the player
         newAudio.current.dispose();
       };
@@ -2324,7 +2324,7 @@ export default function Home() {
           </div>
         )}
         {isCustomTextOpen && (
-          <div className="-mt-3 text-white bg-gray-800 p-4 rounded-lg border border-gray-500 min-h-[135px]">
+          <div className="text-white bg-gray-800 p-4 rounded-lg border border-gray-500">
             <div className="flex justify-center items-center gap-2 mb-4">
               {["Custom Text", "Actions", "Location"].map((tabName) => (
                 <button
@@ -2416,9 +2416,9 @@ export default function Home() {
               </div>
             )}
             {gameTab === "Location" && (
-              <div className="max-h-[200px] overflow-y-auto items-center scrollable-container">
+              <div className=" overflow-y-auto items-center scrollable-container">
                 <div className="text-white font-bold">{players[userName]?.story?.locationName}</div>
-                <img src={`location/${players[userName]?.story?.act}${players[userName]?.story?.scene}.png`} width="350" height="250"></img>
+                <img src={`location/${players[userName]?.story?.act}${players[userName]?.story?.scene}.png`} width="300" height="200"></img>
                 <div className=" flex text-white">{players[userName]?.story?.locationDetails}</div>
               </div>
             )}

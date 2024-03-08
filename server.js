@@ -577,7 +577,7 @@ app.prepare().then(() => {
               content: item.content,
             }));
 
-            const tempContent = `Before responding, Remember to follow the prompt instructions given at the start of this chat history.`;
+            const tempContent = `Before responding, Remember to follow the prompt instructions given at the start of this chat history. and ease into the story. Let the players make decisions.`;
 
             messagesFilteredForApi.push({
               role: "system",
