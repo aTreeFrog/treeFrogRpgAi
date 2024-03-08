@@ -1114,7 +1114,7 @@ app.prepare().then(() => {
           argumentsJson = JSON.parse(functionData.arguments);
           promptValue = argumentsJson.prompt;
           if (!dallECallModifier) {
-            //createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
+            createDallEImage(promptValue); ////////////TURN BACK ON!!!////////////////
           }
           dallECallModifier = !dallECallModifier; //toggle modifier back and forth to cut dall e image calls in half
         }
@@ -2009,7 +2009,7 @@ app.prepare().then(() => {
     const completion = await openai.chat.completions.create(data);
     dalleSummaryMsg = completion.choices[0].message.content;
     console.log("dalle summary msg: ", dalleSummaryMsg);
-    //createDallEImage(dalleSummaryMsg);   /////////////////TURN BACK ON!!!/////////////////////////////////////
+    createDallEImage(dalleSummaryMsg);   /////////////////TURN BACK ON!!!/////////////////////////////////////
   }
 
   async function nextInLine() {
