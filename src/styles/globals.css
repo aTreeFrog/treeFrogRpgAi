@@ -327,7 +327,7 @@ body,
   }
 
   to {
-    transform: rotate(2000deg);
+    transform: rotate(1000deg);
   }
 }
 
@@ -1046,15 +1046,151 @@ textarea {
 }
 
 .action-buttons {
-  box-shadow: inset 0 0 10px #FBBF24; /* Amber inner glow */
-  background: #5A3E36;
+  box-shadow: inset 0 0 10px #fbbf24; /* Amber inner glow */
+  background: #5a3e36;
 }
 
 .action-buttons:hover {
-    background: #3E2C28; /* Even darker brown on hover */
-  }
+  background: #3e2c28; /* Even darker brown on hover */
+}
 
-  .flipped-svg {
-    transform: scaleX(-1);
+.flipped-svg {
+  transform: scaleX(-1);
+}
+
+/* styles/MoonAnimation.module.css */
+.moon-container {
+  position: fixed; /* Use fixed to ensure it's relative to the viewport */
+  top: 1%;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  pointer-events: none; /* Ensures clicks pass through */
+  z-index: 1; /* Adjust as needed, but keep it low to not cover other UI elements */
+}
+
+.moon {
+  width: 100px;
+  height: 100px;
+  background-image: url("/icons/moon.svg");
+  background-size: cover;
+  position: absolute;
+  animation: slideAndFade 30s linear forwards;
+  pointer-events: none;
+}
+
+@keyframes slideAndFade {
+  0% {
+    transform: translateX(-120%); /* Ensure it starts off-screen */
+    opacity: 0;
   }
-  
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(120vw); /* Ensure it exits off-screen */
+    opacity: 0;
+  }
+}
+
+
+.starry-background {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.starry-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    /* Layer 1 - Sparse, small stars */
+    radial-gradient(white 1px, transparent 1.5px),
+    /* Layer 2 - Medium stars */
+    radial-gradient(white 1.5px, transparent 2.5px),
+    /* Layer 3 - Large, glowing stars */
+    radial-gradient(rgba(255, 255, 255, 0.6) 2px, transparent 5px);
+  background-size: 
+    200px 200px,
+    400px 400px,
+    600px 600px;
+  background-position: 
+    0 0, 
+    50px 50px, 
+    100px 100px;
+}
+
+.starry-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image: 
+    radial-gradient(rgba(255, 255, 255, 0.8) 2px, transparent 2px),
+    radial-gradient(rgba(255, 255, 255, 0.9) 1.5px, transparent 1.5px),
+    radial-gradient(rgba(255, 255, 255, 0.7) 2.5px, transparent 2.5px);
+  background-size: 
+    100px 100px,
+    200px 200px,
+    300px 300px;
+  background-position: 
+    -50px -50px, 
+    100px 100px, 
+    150px 150px;
+  animation: twinkle 3s infinite ease-in-out alternate,
+             twinkle 4s infinite 2s ease-in-out alternate,
+             twinkle 5s infinite 4s ease-in-out alternate;
+  background-repeat: no-repeat;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+
+
+.star-wars-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: black;
+  perspective: 300px;
+}
+
+.star-wars-container::before,
+.star-wars-container::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  background: white;
+  box-shadow: 0 0 1px #fff, 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff, 0 0 5px #fff, 1000px 1000px #fff, -1000px -1000px #fff, 500px 500px #fff,
+    -500px -500px #fff, 750px 250px #fff, -750px -250px #fff, 250px 750px #fff, -250px -750px #fff;
+  animation: move-stars 10s linear forwards; /* Changed to 'forwards' */
+}
+
+@keyframes move-stars {
+  from {
+    transform: translateZ(0);
+  }
+  to {
+    transform: translateZ(300px);
+  }
+}

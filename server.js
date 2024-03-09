@@ -197,6 +197,7 @@ app.prepare().then(() => {
           players[user].story.locationDetails = storyFile[currentAct][currentScene].locationDetails;
           players[user].backgroundColor = "bg-black";
           players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
+          players[user].backgroundAudioSecond = null;
           players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
         }
       }
@@ -300,6 +301,7 @@ app.prepare().then(() => {
           players[user].mode = "postBattle";
           players[user].backgroundColor = "bg-black";
           players[user].backgroundAudio = `http://localhost:3000/audio/Dhaka.mp3`;
+          players[user].backgroundAudioSecond = null;
           players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
         }
       }
@@ -425,6 +427,7 @@ app.prepare().then(() => {
           players[user].battleMode.enemyAttackAttempt = AttackAttempt.INIT;
           players[user].battleMode.targeted = false;
           players[user].backgroundAudio = backgroundSong;
+          players[user].backgroundAudioSecond = null;
 
           players[user].diceStates.d20 = {
             value: [],
@@ -676,6 +679,7 @@ app.prepare().then(() => {
             players[user].newSceneReady = false;
             players[user].backgroundColor = "bg-black";
             players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
+            players[user].backgroundAudioSecond = null;
             players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
           }
         }
@@ -2572,6 +2576,7 @@ app.prepare().then(() => {
         players[user].settingUpNewScene = true;
         players[user].backgroundColor = "bg-black";
         players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
+        players[user].backgroundAudioSecond = null;
         players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
       }
     }
@@ -2846,9 +2851,12 @@ app.prepare().then(() => {
     if (allPlayersLongRestReady) {
       Object.entries(players).forEach(([userName, playerData]) => {
         if (playerData.type == "player") {
-          playerData.mode == "longRest";
+          playerData.mode = "longRest";
           playerData.currentHealth = playerData.maxHealth;
           playerData.longRests += 1;
+          playerData.longRestRequest = false;
+          playerData.backgroundAudio = "/audio/bonfire.wav"
+          playerData.backgroundAudioSecond = "/audio/night_forest.wav"
           playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         }
       });
