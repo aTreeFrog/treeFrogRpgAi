@@ -880,15 +880,17 @@ app.prepare().then(() => {
     // TURN BACK ON WHEN YOU ARE READY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     socket.on("audio message", async (msg) => {
       async function processQueue() {
+        let narrator = "onyx";
         if (shouldContinue[socket.id] && queue.length > 0) {
           const msg = queue.shift();
           const currentSequence = sequenceNumber++;
+
           try {
             console.log("audio is getting called?");
             console.log("audio msg: ", msg);
             const data = {
               model: "tts-1",
-              voice: "onyx",
+              voice: narrator,
               input: msg.message,
             };
             const mp3 = await openai.audio.speech.create(data);
@@ -924,6 +926,16 @@ app.prepare().then(() => {
     socket.on("new scene ready", async (playerName) => {
       if (players.hasOwnProperty(playerName)) {
         players[playerName].newSceneReady = true;
+        players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        activityCount++;
+        io.to(serverRoomName).emit("players objects", players);
+      }
+    });
+
+    socket.on("long rest response", (data) => {
+      if (players.hasOwnProperty(data.name)) {
+        players[playerName].story.longRestSceneOutcome = data.response;
+        players[playerName].mode = "endOfLongRest";
         players[playerName].activityId = `user${playerName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         activityCount++;
         io.to(serverRoomName).emit("players objects", players);

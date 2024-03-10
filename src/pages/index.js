@@ -241,6 +241,7 @@ export default function Home() {
   const [gameTab, setGameTab] = useState("Custom Text");
   const [longRestPopup, setLongRestPopup] = useState(false);
   const [longRestImageLoaded, setLongRestImageLoaded] = useState(false);
+  const [longRestSelect, setLongRestSelect] = useState(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -307,26 +308,30 @@ export default function Home() {
       //newAudio.current.volume.value = 1;
       //newAudio.current.volume = 1;
 
-      // Pitch shifting to lower the voice
-      // Adjust the pitch shift value as needed
-      // const pitchShift = new Tone.PitchShift({
-      //   pitch: -1, // Try different values, like -8, -10, etc.
-      //   windowSize: 0.0 // Experiment with this value
-      // }).toDestination();
-      // newAudio.current.connect(pitchShift);
+      // console.log("players[userName]?.mode ", prevPlayersData.current[userName]?.mode);
+      // if (prevPlayersData.current[userName]?.mode == "longRest") {
+      //   // Pitch shifting to lower the voice
+      //   // Adjust the pitch shift value as needed
+      //   console.log("pitch shift happening");
+      //   const pitchShift = new Tone.PitchShift({
+      //     pitch: -1, // Try different values, like -8, -10, etc.
+      //     windowSize: 0.0 // Experiment with this value
+      //   }).toDestination();
+      //   newAudio.current.connect(pitchShift);
 
-      // const lowPassFilter = new Tone.Filter({
-      //   frequency: 5000, // Hz, adjust as needed
-      //   type: 'lowpass'
-      // }).toDestination();
-      // newAudio.current.connect(lowPassFilter);
+      //   const lowPassFilter = new Tone.Filter({
+      //     frequency: 5000, // Hz, adjust as needed
+      //     type: 'lowpass'
+      //   }).toDestination();
+      //   newAudio.current.connect(lowPassFilter);
 
-      // Adding reverb for a more ominous effect
-      const reverb = new Tone.Reverb({
-        decay: 1, // Reverb decay time in seconds
-        wet: 0.1, // Mix between the source and the reverb signal
-      }).toDestination();
-      // newAudio.current.connect(reverb);
+      //   // Adding reverb for a more ominous effect
+      //   const reverb = new Tone.Reverb({
+      //     decay: 1, // Reverb decay time in seconds
+      //     wet: 0.1, // Mix between the source and the reverb signal
+      //   }).toDestination();
+      //   newAudio.current.connect(reverb);
+      // }
 
       newAudio.current.onstop = () => {
         audio.current = false; // Clear the current audio
@@ -1155,7 +1160,16 @@ export default function Home() {
     //   setCancelButton(0);
     // } else {
 
-    // Call the async function
+    // check if long rest selection made
+    if (longRestSelect) {
+      const data = {
+        name: userName,
+        response: longRestSelect.value,
+      }
+      chatSocket.emit("long rest response", data)
+      setLongRestSelect(null);
+      return;
+    }
 
     //see if data is coming from dice roll completion, audio message or normal text, or none at all.
     let chatMsgData = "";
@@ -1633,6 +1647,10 @@ export default function Home() {
     setDiceSelectionOption(option);
   };
 
+  const handleLongRestSelection = (option) => {
+    setLongRestSelect(option);
+  }
+
   const options = [
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
@@ -1645,6 +1663,11 @@ export default function Home() {
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
+  ];
+
+  const longRestOptions = [
+    { value: "Accept", label: "Accept" },
+    { value: "Reject", label: "Reject" },
   ];
 
   const handleTeamGmChange = (option) => {
@@ -2328,7 +2351,28 @@ export default function Home() {
               </button>
               {/* Make sure the input container can grow and the button stays aligned */}
               <div className="flex items-center" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
-                {diceStates.d20.isGlowActive ? (
+                {players[userName]?.mode === "longRest" ? (
+                  <>
+                  <textarea
+                    className="bg-transparent text-white focus:outline-none"
+                    placeholder=""
+                    value={"I will"}
+                    readOnly
+                    style={{
+                      maxWidth: "70px",
+                      minHeight: "10px",
+                      marginRight: "1px",
+                      marginLeft: "15px",
+                    }}
+                    rows={1}
+                    ref={textareaRef}></textarea>
+                  <CustomSelect
+                    options={longRestOptions}
+                    value={longRestSelect}
+                    onChange={handleLongRestSelection}
+                  />
+                </>
+                ) : diceStates.d20.isGlowActive ? (
                   <>
                     <textarea
                       className="bg-transparent text-white focus:outline-none"
@@ -2340,7 +2384,7 @@ export default function Home() {
                         minHeight: "10px",
                         marginRight: "1px",
                         marginLeft: "15px",
-                      }} // Set a fixed width
+                      }}
                       rows={1}
                       ref={textareaRef}></textarea>
                     <CustomSelect
@@ -2366,15 +2410,16 @@ export default function Home() {
                   </>
                 )}
               </div>
+
               <button
                 type="submit"
                 style={{ position: "relative", zIndex: 1 }}
                 className={`${
-                  !diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption)
+                  !diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption) ||  (players[userName]?.mode == "longRest" && longRestSelect)
                     ? "bg-purple-600 hover:bg-purple-700"
                     : "bg-grey-700 hover:bg-grey-700"
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-                disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate}>
+                disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate || (players[userName]?.mode == "longRest" && !longRestSelect)}>
                 {messageQueue.current.length > 0 ? "▮▮" : "Send"}
               </button>
             </div>
