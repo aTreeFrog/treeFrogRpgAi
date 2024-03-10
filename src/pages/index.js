@@ -28,6 +28,7 @@ import { cloneDeep } from "lodash";
 import { equipment } from "../../lib/objects/equipment";
 import EquipmentPopup from "@/components/EquipmentPopup";
 import LongRestPopup from "@/components/LongRestPopup";
+import e from "cors";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -180,6 +181,7 @@ export default function Home() {
   const { chatSocket, userName } = useContext(SocketContext);
   const diceTone = useRef(null);
   const backgroundTone = useRef(null);
+  const backgroundToneSecond = useRef(null);
   const [diceSelectionOption, setDiceSelectionOption] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const speechTurnedOffMusic = useRef(false);
@@ -189,6 +191,7 @@ export default function Home() {
     label: "All",
   });
   const musicThreadControlActive = useRef(false);
+  const musicThreadControlActiveSecond = useRef(false);
   const [enableCellButton, setEnableCellButton] = useState(true);
   const [showMoveOnPopup, setShowMoveOnPopup] = useState(false);
   const storyModePopupWarning = "Are you sure?\n AI will wrap up scene and move onto next act.";
@@ -237,6 +240,7 @@ export default function Home() {
   const [equipmentInfo, setEquipmentInfo] = useState();
   const [gameTab, setGameTab] = useState("Custom Text");
   const [longRestPopup, setLongRestPopup] = useState(false);
+  const [longRestImageLoaded, setLongRestImageLoaded] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -535,7 +539,7 @@ export default function Home() {
 
       console.log("prevPlayersData.current[userName]?.mode", prevPlayersData.current[userName]?.mode);
 
-      if (prevPlayersData.current[userName]?.mode == "battle") {
+      if (prevPlayersData.current[userName]?.mode == "battle" || prevPlayersData.current[userName]?.mode == "longRest") {
         console.log("battle dall e image");
         setUpdatingChatLog(true);
         setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: dallEObject.imageUrl, mode: "All", type: "image" }]);
@@ -726,6 +730,12 @@ export default function Home() {
       setLongRestPopup(false);
     }
 
+    if (players[userName].mode == "longRest") {
+      const img = new window.Image();
+      img.src = "/images/bonfire_group.png";
+      img.onload = () => setLongRestImageLoaded(true);
+    }
+
     prevPlayersData.current = players;
   }, [players]);
 
@@ -802,8 +812,20 @@ export default function Home() {
       console.log("Background audio changed to:", players[userName].backgroundAudio);
       resumeAudioContext();
       PlayBackgroundAudio(players[userName].backgroundAudio);
+    } else if (backgroundTone.current && backgroundTone.current.state === "started") {
+      backgroundTone.current.stop();
+      backgroundTone.current = null;
     }
-  }, [players[userName]?.backgroundAudio]);
+
+    if (players[userName]?.backgroundAudioSecond) {
+      console.log("Background audio changed to:", players[userName].backgroundAudio);
+      resumeAudioContext();
+      PlayBackgroundAudioSecond(players[userName].backgroundAudioSecond);
+    } else if (backgroundToneSecond.current && backgroundToneSecond.current.state === "started") {
+      backgroundToneSecond.current.stop();
+      backgroundToneSecond.current = null;
+    }
+  }, [players[userName]?.backgroundAudio, players[userName]?.backgroundAudioSecond]);
 
   let lastMessage = [];
   // Function to process a single oldest message from the queue
@@ -908,6 +930,45 @@ export default function Home() {
       // Allow new music to be played after a short delay
       setTimeout(() => {
         musicThreadControlActive.current = false;
+      }, 100); // Adjust this delay as needed
+    }
+  };
+
+  const PlayBackgroundAudioSecond = async (data) => {
+    if (musicThreadControlActiveSecond.current) {
+      console.log("Music already getting prepped");
+      return;
+    }
+
+    musicThreadControlActiveSecond.current = true;
+
+    try {
+      // Stop any existing background music
+      if (backgroundToneSecond.current && backgroundToneSecond.current.state === "started") {
+        await backgroundToneSecond.current.stop();
+        backgroundToneSecond.current = null;
+      }
+
+      // Double-check if another thread has started the music
+      if (musicThreadControlActiveSecond.current) {
+        Tone.start();
+        console.log("PlayBackgroundAudio data: ", data);
+        await Tone.loaded(); // Ensure Tone.js is ready
+
+        backgroundToneSecond.current = new Tone.Player({
+          url: data,
+          loop: true,
+        }).toDestination();
+
+        backgroundToneSecond.current.volume.value = -10;
+        backgroundToneSecond.current.autostart = true;
+      }
+    } catch (error) {
+      console.error("Error in playing audio", error);
+    } finally {
+      // Allow new music to be played after a short delay
+      setTimeout(() => {
+        musicThreadControlActiveSecond.current = false;
       }, 100); // Adjust this delay as needed
     }
   };
@@ -1862,6 +1923,11 @@ export default function Home() {
       className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
         players[userName]?.backgroundColor ? players[userName].backgroundColor : "bg-gray-900"
       }`}>
+      {players[userName]?.mode == "longRest" && (
+        <div className="moon-container absolute top-0 left-0 w-full z-100">
+          <div className="moon"></div>
+        </div>
+      )}
       {/* Left Box */}
       <div className="flex-1 max-w-[30%] border border-white">
         {awayMode ? (
@@ -1930,7 +1996,7 @@ export default function Home() {
                 players[userName]?.mode != "battle" &&
                 players[userName]?.mode != "initiative" &&
                 players[userName]?.mode != "longRest" &&
-                !players[userName]?.longRestRequest && (
+                !Object.values(players).every((player) => player.longRestRequest) && (
                   <LongRestPopup handleLongRest={handleLongRest} cancelLongRest={cancelLongRest} players={players} userName={userName} />
                 )}
             </div>
@@ -1975,6 +2041,9 @@ export default function Home() {
                 Roll for Initiative
               </div>
             </div>
+          )}
+          {longRestImageLoaded && players[userName]?.mode == "longRest" && !pendingDiceUpdate && (
+            <img src="/images/bonfire_group.png" alt="DALL·E Generated" className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12" />
           )}
           {players[userName]?.mode == "battle" && (
             <>
@@ -2112,9 +2181,10 @@ export default function Home() {
       <div
         className={`flex-1 max-w-[30%] p-4 relative flex flex-col h-[100vh] border border-white ${
           players[userName]?.backgroundColor ? "transition-bg-color " + players[userName].backgroundColor : "transition-bg-color bg-gray-800"
-        }`}>
+        } 
+        `}>
         {/* Sticky Header */}
-        <h1 className="sticky top-0 z-10 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">
+        <h1 className="sticky top-0 break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center pt-0 pb-5 font-semibold focus:outline-none text-3xl md:text-4xl">
           Game Master
         </h1>
         {/* Scrollable Content */}
@@ -2174,6 +2244,11 @@ export default function Home() {
           {players[userName]?.mode == "battle" && !players[userName]?.battleMode?.yourTurn && (
             <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
               Not your turn, only team sees your message
+            </div>
+          )}
+          {players[userName]?.mode == "longRest" && (
+            <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
+              GM messages are currently private; others won't see.
             </div>
           )}
 
@@ -2425,7 +2500,8 @@ export default function Home() {
                     diceStates.d20.isGlowActive ||
                     players[userName]?.shortRests > 1 ||
                     players[userName]?.mode == "battle" ||
-                    players[userName]?.mode == "initiative"
+                    players[userName]?.mode == "initiative" ||
+                    messageQueue.current.length > 0
                   }
                   onClick={() => setLongRestPopup((longRestPopup) => !longRestPopup)}>
                   <div className="flex">
