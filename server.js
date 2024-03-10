@@ -121,6 +121,7 @@ let playerCountForGame = 1;
 let settingUpNextScene = false;
 let dallECallModifier = false; //alternate to cut dall e calls in half
 let storyFile;
+let longRestFile;
 let currentAct = "";
 let currentScene = "";
 let newSceneData = "";
@@ -1368,6 +1369,9 @@ app.prepare().then(() => {
           scene: null,
           locationName: "",
           locationDetails: "",
+          longRestStory: "",
+          longRestScene: "",
+          longRestSceneOutcome: "",
         },
         shortRests: 0,
         longRests: 0,
@@ -1469,6 +1473,11 @@ app.prepare().then(() => {
 
       const storyData = path.join(__dirname, `lib/story.json`);
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
+      const longRestData = path.join(__dirname, `lib/longRest.json`);
+      longRestFile = JSON.parse(fs.readFileSync(longRestData, "utf8"));
+
+
+      console.log("longRestFile", longRestFile);
 
       // lets setup the game
       if (Object.keys(players).length >= playerCountForGame) {
@@ -2544,6 +2553,105 @@ app.prepare().then(() => {
     }
   }
 
+  function longRestNextScene(currentScene, story) {
+    const sceneKeys = Object.keys(story).sort(); // Sort scenes to ensure order
+    const currentSceneIndex = sceneKeys.indexOf(currentScene);
+
+    if (currentSceneIndex < sceneKeys.length - 1) {
+      // Next scene in the current act
+      return {
+        nextScene: sceneKeys[currentSceneIndex + 1],
+      };
+    } else {
+      // End of the story
+      return null;
+    }
+  }
+
+  async function playLongRestScene(player, multiplePlayers) {
+    const msg = `You are a dungeon master for a mystical realm role playing game. Here are your instructions: 
+      
+      Header: ${longRestFile[player?.story?.longRestStory][player.story.longRestScene].Header}
+      
+      Player Name: The name of the player you are speaking to is ${player.name}. This is the only player in the game.
+
+      Objective: ${longRestFile[player?.story?.longRestStory][player.story.longRestScene].Objective}
+
+      ResponseDetails: ${longRestFile[player?.story?.longRestStory][player.story.longRestScene].ResponseDetails}
+
+      Output Length: Keep your output to less than 200 words.
+      
+      `;
+
+    if (multiplePlayers) {
+      msg += `First Sentence: Start the output with the following: ${player.name} only you can hear this message. Your friends are unaware of this upcoming discussion.`
+    }
+    
+    let msgFiltered = [{
+      role: "system",
+      content: msg,
+    }];
+
+    const data = {
+      model: "gpt-4-0125-preview",
+      messages: msgFiltered,
+      stream: true,
+    };
+
+    msgActivityCount++;
+    serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
+
+    const completion = await openai.chat.completions.create(data);
+
+    for await (const chunk of completion) {
+
+      let outputStream = {
+        message: chunk.choices[0]?.delta?.content || "",
+        messageId: serverMessageId,
+        role: "assistant",
+      };
+
+      io.to(clients[player.name]).emit("chat message", outputStream || "");
+    }
+
+    io.to(clients[player.name]).emit("chat complete");
+  }
+
+  function startOfLongRest(summaryMsg = "") {
+    const actDate = new Date().toISOString();
+    let keys = Object.keys(longRestFile);
+    let previouslySelectedKey = null;
+
+    let multiplePlayers = Object.keys(players).length > 1
+    
+
+    Object.entries(players).forEach(async ([userName, playerData]) => {
+      if (playerData.type == "player") {
+        if (playerData?.story?.longRestStory.length < 1) {
+          // randomly select a long rest story
+          let selectableKeys = previouslySelectedKey ? keys.filter((key) => key !== previouslySelectedKey) : keys;
+          // Select a random key from the filtered keys
+          const randomKey = selectableKeys[Math.floor(Math.random() * selectableKeys.length)];
+          // Store the randomly selected key for the next iteration
+          previouslySelectedKey = randomKey;
+          // Access the randomly selected property
+          const randomRestStory = longRestFile[randomKey];
+
+          playerData.story.longRestStory = randomKey;
+          playerData.story.longRestScene = "Scene1";
+        } else {
+          const nextSceneInfo = longRestNextScene(playerData.story.longRestStory, longRestFile);
+          currentScene = nextSceneInfo.nextScene;
+          playerData.story.longRestScene = currentScene;
+        }
+        players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${actDate} `;
+        io.to(serverRoomName).emit("players objects", players);
+
+        playLongRestScene(playerData, multiplePlayers); // dont put await here, so it does it quick for each player without waiting
+      }
+    });
+  }
+
   function startOfNextScene(summaryMsg = "") {
     const dateStamp = new Date().toISOString();
 
@@ -2784,7 +2892,9 @@ app.prepare().then(() => {
     let inInitiativeMode = false;
     let allPlayersReadyNewScene = true;
     let allPlayersLongRestReady = true;
+    let activePlayers = false;
     Object.entries(players).forEach(async ([userName, playerData]) => {
+      activePlayers = true;
       // check if any player is in iniative mode, means game is in iniative mode
       if (playerData?.type == "player" && playerData?.mode == "initiative") {
         inInitiativeMode = true;
@@ -2848,19 +2958,21 @@ app.prepare().then(() => {
       console.log("battlemode players: ", players);
     }
 
-    if (allPlayersLongRestReady) {
+    if (allPlayersLongRestReady && activePlayers) {
       Object.entries(players).forEach(([userName, playerData]) => {
         if (playerData.type == "player") {
           playerData.mode = "longRest";
           playerData.currentHealth = playerData.maxHealth;
           playerData.longRests += 1;
           playerData.longRestRequest = false;
-          playerData.backgroundAudio = "/audio/bonfire.wav"
-          playerData.backgroundAudioSecond = "/audio/night_forest.wav"
+          playerData.backgroundAudio = "/audio/bonfire.wav";
+          playerData.backgroundAudioSecond = "/audio/night_forest.wav";
           playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
         }
       });
       activityCount++;
+      io.to(serverRoomName).emit("players objects", players);
+      await runFunctionAfterDelay(() => startOfLongRest(), 5000);
     }
 
     console.log("update");

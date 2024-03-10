@@ -539,7 +539,7 @@ export default function Home() {
 
       console.log("prevPlayersData.current[userName]?.mode", prevPlayersData.current[userName]?.mode);
 
-      if (prevPlayersData.current[userName]?.mode == "battle") {
+      if (prevPlayersData.current[userName]?.mode == "battle" || prevPlayersData.current[userName]?.mode == "longRest") {
         console.log("battle dall e image");
         setUpdatingChatLog(true);
         setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: dallEObject.imageUrl, mode: "All", type: "image" }]);
@@ -2246,6 +2246,11 @@ export default function Home() {
               Not your turn, only team sees your message
             </div>
           )}
+          {players[userName]?.mode == "longRest" && (
+            <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
+              GM messages are currently private; others won't see.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
             <button
@@ -2495,7 +2500,8 @@ export default function Home() {
                     diceStates.d20.isGlowActive ||
                     players[userName]?.shortRests > 1 ||
                     players[userName]?.mode == "battle" ||
-                    players[userName]?.mode == "initiative"
+                    players[userName]?.mode == "initiative" ||
+                    messageQueue.current.length > 0
                   }
                   onClick={() => setLongRestPopup((longRestPopup) => !longRestPopup)}>
                   <div className="flex">
