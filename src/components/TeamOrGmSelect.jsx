@@ -119,6 +119,7 @@ const TeamOrGmSelect = ({ options, onChange, value }) => {
             menuPlacement="top"
             menuPosition="fixed"
             components={{ DropdownIndicator }}
+            isSearchable={false}
         />
     );
 };

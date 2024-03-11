@@ -35,7 +35,8 @@ const CustomSelect = ({ options, onChange, value }) => {
         }),
         valueContainer: provided => ({
             ...provided,
-            padding: '0 6px',
+            padding: '0 2px',
+            transform: 'translateY(-2px)', // This moves the content up by 2 pixels
             display: 'flex',
             alignItems: 'center',
         }),
@@ -105,12 +106,13 @@ const CustomSelect = ({ options, onChange, value }) => {
             options={options}
             onChange={handleChange}
             value={selectedOption}
-            menuPlacement="auto"
+            menuPlacement="top"
             menuPosition="fixed"
             components={{ DropdownIndicator }}
             placeholder=""
             onMenuOpen={handleMenuOpen}
             onMenuClose={handleMenuClose}
+            isSearchable={false}
         />
     );
 };

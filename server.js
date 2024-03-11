@@ -880,16 +880,19 @@ app.prepare().then(() => {
     // TURN BACK ON WHEN YOU ARE READY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     socket.on("audio message", async (msg) => {
       async function processQueue() {
+        let narrator = "onyx";
         if (shouldContinue[socket.id] && queue.length > 0) {
           const msg = queue.shift();
           const currentSequence = sequenceNumber++;
+
           try {
             console.log("audio is getting called?");
             console.log("audio msg: ", msg);
             const data = {
               model: "tts-1",
-              voice: "onyx",
+              voice: narrator,
               input: msg.message,
+              speed: 1,
             };
             const mp3 = await openai.audio.speech.create(data);
             const buffer = Buffer.from(await mp3.arrayBuffer());
@@ -928,6 +931,65 @@ app.prepare().then(() => {
         activityCount++;
         io.to(serverRoomName).emit("players objects", players);
       }
+    });
+
+    socket.on("long rest response", (data) => {
+      let longRestData = {};
+      if (!players.hasOwnProperty(data.name)) {
+        return;
+      }
+      players[data.name].story.longRestSceneOutcome = data.response;
+
+      if (players[data.name].story.longRestSceneOutcome.toLowerCase() == "accept") {
+        const increase = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].Increase;
+        const increaseAmount = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].IncreaseAmount;
+        const increaseIcon = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].IncreaseIcon;
+        const decrease = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].Decrease;
+        const decreaseAmount = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].DecreaseAmount;
+        const decreaseIcon = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].DecreaseIcon;
+
+        if (increase.toLowerCase() != "n/a") {
+          players[data.name][increase] += increaseAmount;
+          activityCount++;
+
+          longRestData["increase"] = {
+            role: "assistant",
+            message: `${data.name} increased ${increase} by ${increaseAmount}`,
+            iconPath: increaseIcon,
+            mode: "All",
+            type: "longRestOutcome",
+            activityId: activityCount,
+            player: data.name,
+          };
+        }
+
+        if (decrease.toLowerCase() != "n/a") {
+          players[data.name][decrease] -= decreaseAmount;
+          activityCount++;
+
+          longRestData["decrease"] = {
+            role: "assistant",
+            message: `${data.name} decreased ${decrease} by ${decreaseAmount}`,
+            iconPath: decreaseIcon,
+            mode: "All",
+            type: "longRestOutcome",
+            activityId: activityCount,
+            player: data.name,
+          };
+        }
+
+        if (increase.toLowerCase() != "n/a" || decrease.toLowerCase() != "n/a") {
+          players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+          activityCount++;
+          io.to(serverRoomName).emit("character alteration", longRestData);
+        }
+      }
+
+      players[data.name].mode = "endOfLongRest";
+      players[data.name].story.longRestImage = null;
+      players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+      activityCount++;
+      io.to(serverRoomName).emit("players objects", players);
     });
 
     async function checkForFunctionCall() {
@@ -1371,6 +1433,7 @@ app.prepare().then(() => {
           locationDetails: "",
           longRestStory: "",
           longRestScene: "",
+          longRestImage: null,
           longRestSceneOutcome: "",
         },
         shortRests: 0,
@@ -1475,7 +1538,6 @@ app.prepare().then(() => {
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
       const longRestData = path.join(__dirname, `lib/longRest.json`);
       longRestFile = JSON.parse(fs.readFileSync(longRestData, "utf8"));
-
 
       console.log("longRestFile", longRestFile);
 
@@ -2584,13 +2646,15 @@ app.prepare().then(() => {
       `;
 
     if (multiplePlayers) {
-      msg += `First Sentence: Start the output with the following: ${player.name} only you can hear this message. Your friends are unaware of this upcoming discussion.`
+      msg += `First Sentence: Start the output with the following: ${player.name} only you can hear this message. Your friends are unaware of this upcoming discussion.`;
     }
-    
-    let msgFiltered = [{
-      role: "system",
-      content: msg,
-    }];
+
+    let msgFiltered = [
+      {
+        role: "system",
+        content: msg,
+      },
+    ];
 
     const data = {
       model: "gpt-4-0125-preview",
@@ -2604,7 +2668,6 @@ app.prepare().then(() => {
     const completion = await openai.chat.completions.create(data);
 
     for await (const chunk of completion) {
-
       let outputStream = {
         message: chunk.choices[0]?.delta?.content || "",
         messageId: serverMessageId,
@@ -2622,8 +2685,7 @@ app.prepare().then(() => {
     let keys = Object.keys(longRestFile);
     let previouslySelectedKey = null;
 
-    let multiplePlayers = Object.keys(players).length > 1
-    
+    let multiplePlayers = Object.keys(players).length > 1;
 
     Object.entries(players).forEach(async ([userName, playerData]) => {
       if (playerData.type == "player") {
@@ -2639,11 +2701,14 @@ app.prepare().then(() => {
 
           playerData.story.longRestStory = randomKey;
           playerData.story.longRestScene = "Scene1";
+          playerData.story.longRestImage = longRestFile[randomKey]["Scene1"].ImageUrl;
         } else {
           const nextSceneInfo = longRestNextScene(playerData.story.longRestStory, longRestFile);
           currentScene = nextSceneInfo.nextScene;
           playerData.story.longRestScene = currentScene;
+          playerData.story.longRestImage = longRestFile[randomKey][currentScene].ImageUrl;
         }
+        playerData.story.longRestSceneOutcome = null;
         players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${actDate} `;
         io.to(serverRoomName).emit("players objects", players);
 
@@ -2972,7 +3037,7 @@ app.prepare().then(() => {
       });
       activityCount++;
       io.to(serverRoomName).emit("players objects", players);
-      await runFunctionAfterDelay(() => startOfLongRest(), 5000);
+      await runFunctionAfterDelay(() => startOfLongRest(), 7000);
     }
 
     console.log("update");
