@@ -237,11 +237,13 @@ export default function Home() {
   const [gaveEquipment, setGaveEquipment] = useState();
   const [equipmentText, setEquipmentText] = useState();
   const lastEqmntFoundActId = useRef();
+  const lastCharacterAltActId = useRef();
   const [equipmentInfo, setEquipmentInfo] = useState();
   const [gameTab, setGameTab] = useState("Custom Text");
   const [longRestPopup, setLongRestPopup] = useState(false);
   const [longRestImageLoaded, setLongRestImageLoaded] = useState(false);
   const [longRestSelect, setLongRestSelect] = useState(null);
+  const [longRestSceneImageLoaded, setLongRestSceneImageLoaded] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -544,7 +546,7 @@ export default function Home() {
 
       console.log("prevPlayersData.current[userName]?.mode", prevPlayersData.current[userName]?.mode);
 
-      if (prevPlayersData.current[userName]?.mode == "battle" || prevPlayersData.current[userName]?.mode == "longRest") {
+      if (prevPlayersData.current[userName]?.mode == "battle") {
         console.log("battle dall e image");
         setUpdatingChatLog(true);
         setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: dallEObject.imageUrl, mode: "All", type: "image" }]);
@@ -570,6 +572,48 @@ export default function Home() {
           ...Object.values(data), // Spread the array of values from the dictionary
         ]);
         lastEqmntFoundActId.current = actId;
+      }
+    });
+
+    chatSocket.on("character alteration", (data) => {
+      let sameMsg = false;
+      let actId = 0;
+      let player = null;
+      for (let info in data) {
+        if (data[info]?.activityId == lastCharacterAltActId?.current) {
+          sameMsg = true;
+        }
+        actId = data[info]?.activityId;
+        player = data[info]?.player;
+        break;
+      }
+
+      if (!sameMsg) {
+        console.log("character alteration data", data);
+        setChatLog((prevChatLog) => [
+          ...prevChatLog,
+          ...Object.values(data), // Spread the array of values from the dictionary
+        ]);
+        lastCharacterAltActId.current = actId;
+
+        // if the user client was the one who got the character alteration, set audio
+        if (player == userName) {
+          const statusTone = new Tone.Player({
+            url: "/audio/attack_success.wav",
+          }).toDestination();
+
+          statusTone.autostart = true;
+
+          statusTone.onstop = () => {
+            console.log("character alteration playback ended");
+            statusTone.disconnect(); // Disconnect the player
+            statusTone.dispose();
+          };
+
+          statusTone.onerror = (error) => {
+            console.error("Error with audio playback", error);
+          };
+        }
       }
     });
 
@@ -739,6 +783,18 @@ export default function Home() {
       const img = new window.Image();
       img.src = "/images/bonfire_group.png";
       img.onload = () => setLongRestImageLoaded(true);
+    }
+
+    if (players[userName]?.story?.longRestImage?.length > 1) {
+      const img = new window.Image();
+      img.src = players[userName]?.story?.longRestImage;
+      img.onload = () => {
+        setTimeout(() => {
+          setLongRestSceneImageLoaded(true);
+        }, 7000);
+      };
+    } else {
+      setLongRestSceneImageLoaded(false);
     }
 
     prevPlayersData.current = players;
@@ -1165,8 +1221,8 @@ export default function Home() {
       const data = {
         name: userName,
         response: longRestSelect.value,
-      }
-      chatSocket.emit("long rest response", data)
+      };
+      chatSocket.emit("long rest response", data);
       setLongRestSelect(null);
       return;
     }
@@ -1649,7 +1705,7 @@ export default function Home() {
 
   const handleLongRestSelection = (option) => {
     setLongRestSelect(option);
-  }
+  };
 
   const options = [
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
@@ -2048,7 +2104,7 @@ export default function Home() {
               <img
                 src={dalleImageUrl}
                 alt="DALL·E Generated"
-                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12"
+                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text"
                 style={boxShadowStyle}
               />
             )}
@@ -2057,7 +2113,7 @@ export default function Home() {
               <img
                 src={players[userName].battleMode.initiativeImageUrl}
                 alt="DALL·E Generated"
-                className="h-auto mx-auto rounded-lg relative w-4/5 md:w-3/4 mx-auto shadow-lg md:mt-12"
+                className="h-auto mx-auto rounded-lg relative w-4/5 md:w-3/4 mx-auto shadow-lg md:mt-12 blur-text"
                 style={boxShadowStyle}
               />
               <div className="overlay-text" style={{ top: "40%", left: "39%" }}>
@@ -2065,8 +2121,19 @@ export default function Home() {
               </div>
             </div>
           )}
-          {longRestImageLoaded && players[userName]?.mode == "longRest" && !pendingDiceUpdate && (
-            <img src="/images/bonfire_group.png" alt="DALL·E Generated" className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12" />
+          {longRestImageLoaded && players[userName]?.mode == "longRest" && !longRestSceneImageLoaded && !pendingDiceUpdate && (
+            <img
+              src="/images/bonfire_group.png"
+              alt="DALL·E Generated"
+              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text"
+            />
+          )}
+          {players[userName]?.mode == "longRest" && longRestSceneImageLoaded && !pendingDiceUpdate && (
+            <img
+              src={players[userName]?.story?.longRestImage}
+              alt="DALL·E Generated"
+              className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text"
+            />
           )}
           {players[userName]?.mode == "battle" && (
             <>
@@ -2252,10 +2319,16 @@ export default function Home() {
                         key={wordIndex}
                         onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.clickableWord) : null)}
                         className={`${word === message.clickableWord ? "underline cursor-pointer" : ""} mr-1 font-semibold`}>
-                        {word}
+                        {message.message}
                       </span>
                     ))}
                     {message.iconPath && <img src={message.iconPath} alt="Equipment Icon" className="inline-block ml-1" width="24" height="24" />}
+                  </div>
+                ) : message.type === "longRestOutcome" ? (
+                  // Equipment message rendering
+                  <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
+                    <span>{message.message}</span>
+                    {message.iconPath && <img src={message.iconPath} alt="Long Rest Icon" className="inline-block ml-1" width="24" height="24" />}
                   </div>
                 ) : null}
               </div>
@@ -2271,7 +2344,7 @@ export default function Home() {
           )}
           {players[userName]?.mode == "longRest" && (
             <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
-              GM messages are currently private; others won't see.
+              The GM is speaking privately to you. Others can't see.
             </div>
           )}
 
@@ -2353,25 +2426,21 @@ export default function Home() {
               <div className="flex items-center" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
                 {players[userName]?.mode === "longRest" ? (
                   <>
-                  <textarea
-                    className="bg-transparent text-white focus:outline-none"
-                    placeholder=""
-                    value={"I will"}
-                    readOnly
-                    style={{
-                      maxWidth: "70px",
-                      minHeight: "10px",
-                      marginRight: "1px",
-                      marginLeft: "15px",
-                    }}
-                    rows={1}
-                    ref={textareaRef}></textarea>
-                  <CustomSelect
-                    options={longRestOptions}
-                    value={longRestSelect}
-                    onChange={handleLongRestSelection}
-                  />
-                </>
+                    <textarea
+                      className="bg-transparent text-white focus:outline-none"
+                      placeholder=""
+                      value={"I will"}
+                      readOnly
+                      style={{
+                        maxWidth: "70px",
+                        minHeight: "10px",
+                        marginRight: "1px",
+                        marginLeft: "15px",
+                      }}
+                      rows={1}
+                      ref={textareaRef}></textarea>
+                    <CustomSelect options={longRestOptions} value={longRestSelect} onChange={handleLongRestSelection} />
+                  </>
                 ) : diceStates.d20.isGlowActive ? (
                   <>
                     <textarea
@@ -2415,11 +2484,17 @@ export default function Home() {
                 type="submit"
                 style={{ position: "relative", zIndex: 1 }}
                 className={`${
-                  !diceStates.d20.isGlowActive || (diceStates.d20.isGlowActive && diceSelectionOption) ||  (players[userName]?.mode == "longRest" && longRestSelect)
+                  !diceStates.d20.isGlowActive ||
+                  (diceStates.d20.isGlowActive && diceSelectionOption) ||
+                  (players[userName]?.mode == "longRest" && longRestSelect)
                     ? "bg-purple-600 hover:bg-purple-700"
                     : "bg-grey-700 hover:bg-grey-700"
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
-                disabled={(diceStates.d20.isGlowActive && !diceSelectionOption) || pendingDiceUpdate || (players[userName]?.mode == "longRest" && !longRestSelect)}>
+                disabled={
+                  (diceStates.d20.isGlowActive && !diceSelectionOption) ||
+                  pendingDiceUpdate ||
+                  (players[userName]?.mode == "longRest" && !longRestSelect)
+                }>
                 {messageQueue.current.length > 0 ? "▮▮" : "Send"}
               </button>
             </div>
