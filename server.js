@@ -983,24 +983,23 @@ app.prepare().then(() => {
           activityCount++;
           io.to(serverRoomName).emit("character alteration", longRestData);
         }
-
       }
 
       // end of scene statement to the player
       const msg = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].EndOfScene;
       msgActivityCount++;
       serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
-  
+
       const outputStream = {
-          message: msg,
-          messageId: serverMessageId,
-          role: "assistant",
+        message: msg,
+        messageId: serverMessageId,
+        role: "assistant",
       };
 
       console.log("end of long rest msg", outputStream);
-  
+
       io.to(clients[data.name]).emit("chat message", outputStream || "");
-      
+
       players[data.name].mode = "endOfLongRest";
       players[data.name].story.longRestImage = null;
       players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
@@ -1034,6 +1033,7 @@ app.prepare().then(() => {
           model: "gpt-3.5-turbo-1106",
           messages: latestAssistantMessage,
           stream: false,
+          tool_choice: {"type": "function", "function": {"name": "sendDiceRollMessage"}},
           tools: [
             {
               type: "function",
@@ -1070,9 +1070,11 @@ app.prepare().then(() => {
 
         latestAssistantMessage.pop(); //remove what i just added
         const completion = await openai.chat.completions.create(data);
+        console.log("roll dice response: ", completion);
+        console.log("roll dice response tool call: ", completion.choices[0].message.tool_calls[0].function);
         console.log("checking function call completion: ", completion.choices[0].finish_reason);
 
-        if (completion.choices[0].finish_reason == "tool_calls") {
+        // if (completion.choices[0].finish_reason == "tool_calls") {
           functionData = completion.choices[0].message.tool_calls[0].function;
           console.log("checking function call data : ", functionData);
 
@@ -1086,7 +1088,7 @@ app.prepare().then(() => {
 
             // return; //dont check for any other function to get called
           }
-        }
+        // }
       }
 
       // if not in battle mode, see if dalle image should be called.
@@ -1096,7 +1098,7 @@ app.prepare().then(() => {
         await askAiIfDalleCall(messagesFilteredForFunction);
       }
 
-      if (latestAssistantMessage[0].content.toLowerCase().includes("item") && !diceRollCalled) {
+      if (latestAssistantMessage[0].content.toLowerCase().includes("item") && (latestAssistantMessage[0].content.toLowerCase().includes("found") || latestAssistantMessage[0].content.toLowerCase().includes("obtained")) && !diceRollCalled) {
         await requestAiForEquipment(messagesFilteredForFunction);
       }
       // check if initiative roll should be called
@@ -1113,6 +1115,7 @@ app.prepare().then(() => {
         model: "gpt-4-turbo-preview",
         messages: messagesFilteredForFunction,
         stream: false,
+        tool_choice: {"type": "function", "function": {"name": "giveRandomEquipment"}},
         tools: [
           {
             type: "function",
@@ -1140,8 +1143,9 @@ app.prepare().then(() => {
       const equipmentCompletion = await openai.chat.completions.create(equipmentData);
       console.log("equipmentCompletion data", equipmentCompletion);
       console.log("checking equipmentCompletion function call completion: ", equipmentCompletion.choices[0].finish_reason);
+      console.log("checking equipmentCompletion function call completion: ", equipmentCompletion.choices[0].message.tool_calls[0].function);
 
-      if (equipmentCompletion.choices[0].finish_reason == "tool_calls") {
+      // if (equipmentCompletion.choices[0].finish_reason == "tool_calls") {
         functionData = equipmentCompletion.choices[0].message.tool_calls[0].function;
         console.log("checking equipmentCompletion function call data : ", functionData);
 
@@ -1150,7 +1154,7 @@ app.prepare().then(() => {
           argValue = argumentsJson.users;
           giveRandomEquipment(argValue);
         }
-      }
+      // }
     }
 
     async function askAiIfDalleCall(messagesFilteredForFunction) {
@@ -1223,6 +1227,7 @@ app.prepare().then(() => {
           model: "gpt-3.5-turbo-1106",
           messages: messagesFilteredForFunction,
           stream: false,
+          tool_choice: {"type": "function", "function": {"name": "enterBattleMode"}},
           tools: [
             ///////////mapName, backgroundMusic, enemyType, enemyCount
             {
@@ -1266,8 +1271,9 @@ app.prepare().then(() => {
         messagesFilteredForFunction.pop(); //remove what i just added
         const completion = await openai.chat.completions.create(data);
         console.log("checking function call completion: ", completion.choices[0].finish_reason);
+        console.log("initiative completion function response: ", completion.choices[0].message.tool_calls[0].function);
 
-        if (completion.choices[0].finish_reason == "tool_calls") {
+        // if (completion.choices[0].finish_reason == "tool_calls") {
           functionData = completion.choices[0].message.tool_calls[0].function;
           console.log("checking function call data : ", functionData);
 
@@ -1279,7 +1285,7 @@ app.prepare().then(() => {
             enemyCountValue = argumentsJson.enemyCount;
             enterBattleMode(mapNameValue, backgroundMusicValue, enemyTypeValue, enemyCountValue); // no await because theres the active counter going on dont want to block
           }
-        }
+        // }
       }
     }
 
@@ -2733,6 +2739,40 @@ app.prepare().then(() => {
     });
   }
 
+  function longRestToStory() {
+
+    const dateStamp = new Date().toISOString();
+    activityCount++;
+
+    Object.entries(players).forEach(async ([userName, playerData]) => {
+
+      playerData.mode = "story";
+      playerData.story.longRestSceneOutcome = null;
+      playerData.longRestRequest = false;
+      defaultPlayersBattleInitMode(userName);
+      players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${dateStamp} `;
+
+    });
+
+    io.to(serverRoomName).emit("players objects", players);
+
+    const message = "the players in the game just finished a long rest. We're going to continue the story where we left off. But first, summarize what recently happened, then ask the players what they would like to do next."
+    
+    const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
+    let serverData = {
+      role: "system",
+      content: message,
+      processed: false,
+      id: uniqueId,
+      mode: "All",
+    };
+    activityCount++;
+    //send message to ai
+    chatMessages.push(serverData);
+
+
+  }
+
   function startOfNextScene(summaryMsg = "") {
     const dateStamp = new Date().toISOString();
 
@@ -3054,7 +3094,13 @@ app.prepare().then(() => {
       });
       activityCount++;
       io.to(serverRoomName).emit("players objects", players);
-      await runFunctionAfterDelay(() => startOfLongRest(), 7000);
+      await runFunctionAfterDelay(() => startOfLongRest(), 4000);
+    }
+
+    const playersPresent = Object.values(players).filter((player) => player.type === "player");
+
+    if (playersPresent.length > 0 && playersPresent.every((player) => player.mode === "endOfLongRest")) {
+        await runFunctionAfterDelay(() => longRestToStory(), 4000);
     }
 
     console.log("update");
