@@ -28,7 +28,7 @@ import { cloneDeep } from "lodash";
 import { equipment } from "../../lib/objects/equipment";
 import EquipmentPopup from "@/components/EquipmentPopup";
 import LongRestPopup from "@/components/LongRestPopup";
-import e from "cors";
+import EndOfRestPopup from"@/components/EndOfRestPopup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -1707,6 +1707,14 @@ export default function Home() {
     setLongRestSelect(option);
   };
 
+  const forceLongRestComplete = (name) => {
+    const data = {
+      name: name,
+      response: "Reject",
+    };
+    chatSocket.emit("long rest response", data);
+  };
+
   const options = [
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
     { value: "20 + 2 Modifier", label: "20 + 2 Modifier" },
@@ -2071,13 +2079,16 @@ export default function Home() {
                 players[userName]?.mode != "battle" &&
                 players[userName]?.mode != "initiative" &&
                 messageQueue.current.length <= 0 && <NewScenePopup newSceneReady={newSceneReady} players={players} userName={userName} />}
-              {(Object.values(players).some((player) => player.longRestRequest) || longRestPopup) &&
+              {(Object.values(players).some((player) => player?.longRestRequest) || longRestPopup) &&
                 players[userName]?.mode != "battle" &&
                 players[userName]?.mode != "initiative" &&
                 players[userName]?.mode != "longRest" &&
                 !Object.values(players).every((player) => player.longRestRequest) && (
                   <LongRestPopup handleLongRest={handleLongRest} cancelLongRest={cancelLongRest} players={players} userName={userName} />
                 )}
+              {players[userName]?.mode == "endOfLongRest" && !Object.values(players).every((player) => player?.mode == "endOfLongRest") && (
+                <EndOfRestPopup forceLongRestComplete={forceLongRestComplete} players={players} />
+              )}
             </div>
             {/* Floating Jitsi Meeting Panel */}
             <div
@@ -2311,7 +2322,7 @@ export default function Home() {
                     className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
                     style={{ boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
                   />
-                ) : (message.type === "equipment" && messageQueue.current.length <= 0) ? (
+                ) : message.type === "equipment" && messageQueue.current.length <= 0 ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     {message.message.split(" ").map((word, wordIndex) => (
@@ -2324,7 +2335,7 @@ export default function Home() {
                     ))}
                     {message.iconPath && <img src={message.iconPath} alt="Equipment Icon" className="inline-block ml-1" width="24" height="24" />}
                   </div>
-                ) : (message.type === "longRestOutcome" && messageQueue.current.length <= 0) ? (
+                ) : message.type === "longRestOutcome" && messageQueue.current.length <= 0 ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     <span>{message.message}</span>
@@ -2493,7 +2504,7 @@ export default function Home() {
                 disabled={
                   (diceStates.d20.isGlowActive && !diceSelectionOption) ||
                   pendingDiceUpdate ||
-                  (players[userName]?.mode == "longRest" && !longRestSelect)
+                  (players[userName]?.mode == "longRest" && (!longRestSelect || messageQueue.current.length > 0))
                 }>
                 {messageQueue.current.length > 0 ? "▮▮" : "Send"}
               </button>
@@ -2618,7 +2629,7 @@ export default function Home() {
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
                   disabled={
                     diceStates.d20.isGlowActive ||
-                    players[userName]?.shortRests > 1 ||
+                    players[userName]?.longRests > 0 ||
                     players[userName]?.mode == "battle" ||
                     players[userName]?.mode == "initiative" ||
                     messageQueue.current.length > 0

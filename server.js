@@ -983,8 +983,24 @@ app.prepare().then(() => {
           activityCount++;
           io.to(serverRoomName).emit("character alteration", longRestData);
         }
+
       }
 
+      // end of scene statement to the player
+      const msg = longRestFile[players[data.name]?.story?.longRestStory][players[data.name]?.story.longRestScene].EndOfScene;
+      msgActivityCount++;
+      serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
+  
+      const outputStream = {
+          message: msg,
+          messageId: serverMessageId,
+          role: "assistant",
+      };
+
+      console.log("end of long rest msg", outputStream);
+  
+      io.to(clients[data.name]).emit("chat message", outputStream || "");
+      
       players[data.name].mode = "endOfLongRest";
       players[data.name].story.longRestImage = null;
       players[data.name].activityId = `user${data.name}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
