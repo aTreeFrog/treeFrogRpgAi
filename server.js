@@ -2902,6 +2902,7 @@ app.prepare().then(() => {
     }
 
     for (var i = 0; i < namesArray.length; i++) {
+      equipmentFoundData = {};
       let user = namesArray[i].trim();
       if (players.hasOwnProperty(user)) {
         const chosenEquipment = selectRandomEquipment();

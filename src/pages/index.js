@@ -2311,20 +2311,20 @@ export default function Home() {
                     className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
                     style={{ boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
                   />
-                ) : message.type === "equipment" ? (
+                ) : (message.type === "equipment" && messageQueue.current.length <= 0) ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     {message.message.split(" ").map((word, wordIndex) => (
                       <span
-                        key={wordIndex}
+                        key={`${word}-${wordIndex}`} // More unique key
                         onClick={() => (word === message.clickableWord ? handleEquipmentClick(message.clickableWord) : null)}
                         className={`${word === message.clickableWord ? "underline cursor-pointer" : ""} mr-1 font-semibold`}>
-                        {message.message}
+                        {word}
                       </span>
                     ))}
                     {message.iconPath && <img src={message.iconPath} alt="Equipment Icon" className="inline-block ml-1" width="24" height="24" />}
                   </div>
-                ) : message.type === "longRestOutcome" ? (
+                ) : (message.type === "longRestOutcome" && messageQueue.current.length <= 0) ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     <span>{message.message}</span>
