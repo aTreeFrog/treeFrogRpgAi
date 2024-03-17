@@ -129,7 +129,6 @@ let endOfSceneSummary = "";
 let equipmentFoundData = {};
 let sceneRules = "";
 
-
 serverRoomName = "WizardsAndGoblinsRoom";
 
 app.prepare().then(() => {
@@ -765,15 +764,18 @@ app.prepare().then(() => {
           };
           waitingForRolls = true;
 
-          //ToDo: lots of bugs here, figure it out!!!!!!!!!!!!!
-          // players[user].timers.duration = 240;
-          // players[user].timers.enabled = true;
-          // //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-          // waitAndCall(
-          //   players[user].timers.duration,
-          //   () => forceResetCheck(players[user]),
-          //   () => players[user].timers.enabled
-          // );
+          if (activePlayers > 0) {
+            ///////CHANGE THIS to 1!!!!!!!!!!
+
+            players[user].timers.duration = 100;
+            players[user].timers.enabled = true;
+            //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+            waitAndCall(
+              players[user].timers.duration,
+              () => forceResetCheck(players[user], players[user].activityId),
+              () => players[user].timers.enabled
+            );
+          }
         }
       }
 
@@ -824,32 +826,43 @@ app.prepare().then(() => {
 
     // if timer expired and player is still active, set them to away and not active and
     // send default dice roll message to AI to take them out of the game.
-    function forceResetCheck(player) {
-      if (player?.active) {
+    function forceResetCheck(player, prevActivityId) {
+      if (player?.active && player.activityId == prevActivityId) {
         console.log("forceResetCheck");
 
-        let message = "Game master, I stepped away from the game. Please do not include me in your story until I return.";
-        const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
-        let serverData = {
-          role: "user",
-          content: message,
-          processed: false,
-          id: uniqueId,
-          mode: "All",
-        };
-        awayPlayerCount++;
-        //send message to users and ai
-        chatMessages.push(serverData);
-        io.to(serverRoomName).emit("latest user message", serverData);
-        responseSent.set(serverData.id, true);
-        makePlayerInactive(player);
+        for (let key in players) {
+          if (players.hasOwnProperty(key) && !players[key].away && players[key].type == "player") {
+            activePlayers++;
+          }
+        }
+
+        if (activePlayers > 1) { 
+          let message = `For information only: The character ${player.name} stepped away from the game.`;
+          const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
+          let serverData = {
+            role: "system",
+            content: message,
+            processed: false,
+            id: uniqueId,
+            mode: "All",
+          };
+          awayPlayerCount++;
+          //send message to users and ai
+          chatMessages.push(serverData);
+          makePlayerInactive(player);
+      }
+        
+        //io.to(serverRoomName).emit("latest user message", serverData);
+        //responseSent.set(serverData.id, true);
       }
     }
 
     function makePlayerInactive(player) {
       player.active = false;
       player.away = true;
-      player.mode = "story";
+      if (player.mode == "dice") {
+        player.mode = "story";
+      } //ToDo: figure out how to ensure when they return the mode matches the other players.
       player.diceStates = cloneDeep(defaultDiceStates);
       player.skill = "";
       player.activeSkill = false;
@@ -1034,7 +1047,7 @@ app.prepare().then(() => {
           model: "gpt-3.5-turbo-1106",
           messages: latestAssistantMessage,
           stream: false,
-          tool_choice: {"type": "function", "function": {"name": "sendDiceRollMessage"}},
+          tool_choice: { type: "function", function: { name: "sendDiceRollMessage" } },
           tools: [
             {
               type: "function",
@@ -1076,19 +1089,19 @@ app.prepare().then(() => {
         console.log("checking function call completion: ", completion.choices[0].finish_reason);
 
         // if (completion.choices[0].finish_reason == "tool_calls") {
-          functionData = completion.choices[0].message.tool_calls[0].function;
-          console.log("checking function call data : ", functionData);
+        functionData = completion.choices[0].message.tool_calls[0].function;
+        console.log("checking function call data : ", functionData);
 
-          if (functionData.name == "sendDiceRollMessage") {
-            diceRollCalled = true;
-            argumentsJson = JSON.parse(functionData.arguments);
-            skillValue = argumentsJson.skill;
-            advantageValue = argumentsJson.advantage;
-            usersValue = argumentsJson.users;
-            await sendDiceRollMessage(skillValue, advantageValue, usersValue);
+        if (functionData.name == "sendDiceRollMessage") {
+          diceRollCalled = true;
+          argumentsJson = JSON.parse(functionData.arguments);
+          skillValue = argumentsJson.skill;
+          advantageValue = argumentsJson.advantage;
+          usersValue = argumentsJson.users;
+          await sendDiceRollMessage(skillValue, advantageValue, usersValue);
 
-            // return; //dont check for any other function to get called
-          }
+          // return; //dont check for any other function to get called
+        }
         // }
       }
 
@@ -1099,7 +1112,11 @@ app.prepare().then(() => {
         await askAiIfDalleCall(messagesFilteredForFunction);
       }
 
-      if (latestAssistantMessage[0].content.toLowerCase().includes("item") && (latestAssistantMessage[0].content.toLowerCase().includes("found") || latestAssistantMessage[0].content.toLowerCase().includes("obtained")) && !diceRollCalled) {
+      if (
+        latestAssistantMessage[0].content.toLowerCase().includes("item") &&
+        (latestAssistantMessage[0].content.toLowerCase().includes("found") || latestAssistantMessage[0].content.toLowerCase().includes("obtained")) &&
+        !diceRollCalled
+      ) {
         await requestAiForEquipment(messagesFilteredForFunction);
       }
       // check if initiative roll should be called
@@ -1116,7 +1133,7 @@ app.prepare().then(() => {
         model: "gpt-4-turbo-preview",
         messages: messagesFilteredForFunction,
         stream: false,
-        tool_choice: {"type": "function", "function": {"name": "giveRandomEquipment"}},
+        tool_choice: { type: "function", function: { name: "giveRandomEquipment" } },
         tools: [
           {
             type: "function",
@@ -1147,14 +1164,14 @@ app.prepare().then(() => {
       console.log("checking equipmentCompletion function call completion: ", equipmentCompletion.choices[0].message.tool_calls[0].function);
 
       // if (equipmentCompletion.choices[0].finish_reason == "tool_calls") {
-        functionData = equipmentCompletion.choices[0].message.tool_calls[0].function;
-        console.log("checking equipmentCompletion function call data : ", functionData);
+      functionData = equipmentCompletion.choices[0].message.tool_calls[0].function;
+      console.log("checking equipmentCompletion function call data : ", functionData);
 
-        if (functionData.name == "giveRandomEquipment") {
-          argumentsJson = JSON.parse(functionData.arguments);
-          argValue = argumentsJson.users;
-          giveRandomEquipment(argValue);
-        }
+      if (functionData.name == "giveRandomEquipment") {
+        argumentsJson = JSON.parse(functionData.arguments);
+        argValue = argumentsJson.users;
+        giveRandomEquipment(argValue);
+      }
       // }
     }
 
@@ -1228,7 +1245,7 @@ app.prepare().then(() => {
           model: "gpt-3.5-turbo-1106",
           messages: messagesFilteredForFunction,
           stream: false,
-          tool_choice: {"type": "function", "function": {"name": "enterBattleMode"}},
+          tool_choice: { type: "function", function: { name: "enterBattleMode" } },
           tools: [
             ///////////mapName, backgroundMusic, enemyType, enemyCount
             {
@@ -1275,17 +1292,17 @@ app.prepare().then(() => {
         console.log("initiative completion function response: ", completion.choices[0].message.tool_calls[0].function);
 
         // if (completion.choices[0].finish_reason == "tool_calls") {
-          functionData = completion.choices[0].message.tool_calls[0].function;
-          console.log("checking function call data : ", functionData);
+        functionData = completion.choices[0].message.tool_calls[0].function;
+        console.log("checking function call data : ", functionData);
 
-          if (functionData.name == "enterBattleMode") {
-            argumentsJson = JSON.parse(functionData.arguments);
-            mapNameValue = argumentsJson.mapName;
-            backgroundMusicValue = argumentsJson.backgroundMusic;
-            enemyTypeValue = argumentsJson.enemyType;
-            enemyCountValue = argumentsJson.enemyCount;
-            enterBattleMode(mapNameValue, backgroundMusicValue, enemyTypeValue, enemyCountValue); // no await because theres the active counter going on dont want to block
-          }
+        if (functionData.name == "enterBattleMode") {
+          argumentsJson = JSON.parse(functionData.arguments);
+          mapNameValue = argumentsJson.mapName;
+          backgroundMusicValue = argumentsJson.backgroundMusic;
+          enemyTypeValue = argumentsJson.enemyType;
+          enemyCountValue = argumentsJson.enemyCount;
+          enterBattleMode(mapNameValue, backgroundMusicValue, enemyTypeValue, enemyCountValue); // no await because theres the active counter going on dont want to block
+        }
         // }
       }
     }
@@ -1646,6 +1663,8 @@ app.prepare().then(() => {
       } else if (players[diceData.User].mode == "dice") {
         players[diceData.User].mode = "story";
         players[diceData.User].active = false;
+        players[diceData.User].timers.duration = 100;
+        players[diceData.User].timers.enabled = false;
       } else if (players[diceData.User].mode == "battle" && players[diceData.User].battleMode.attackRoll < 1) {
         players[diceData.User].battleMode.attackRoll = diceData.Total;
         players[diceData.User].battleMode.actionAttempted = true;
@@ -1845,6 +1864,8 @@ app.prepare().then(() => {
         players[userName].mode = "story";
       }
 
+      players[userName].timers.enabled = false;
+      players[userName].timers.duration = 100;
       players[userName].active = true;
       players[userName].away = false;
       players[userName].diceStates = cloneDeep(defaultDiceStates);
@@ -1855,6 +1876,19 @@ app.prepare().then(() => {
       console.log("playing again");
 
       io.to(serverRoomName).emit("players objects", players);
+
+      let message = `For information only: The character ${userName} is back in the game.`;
+      const uniqueId = `user${userName} -activity${awayPlayerCount} -${new Date().toISOString()} `;
+      let serverData = {
+        role: "system",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
+      awayPlayerCount++;
+      //send message to users and ai
+      chatMessages.push(serverData);
     });
 
     socket.on("story move on", () => {
@@ -1870,7 +1904,15 @@ app.prepare().then(() => {
       io.to(serverRoomName).emit("latest user message", serverData);
 
       summarizeAndMoveOn();
-    });
+    }); 
+
+    socket.on("player stepped away", (user) => {
+
+      if (players.hasOwnProperty(user)) {
+        forceResetCheck(players[user], players[user].activityId);
+      }
+
+    }); 
 
     socket.on("player moved", (data) => {
       if (players.hasOwnProperty(data?.name)) {
@@ -2745,24 +2787,22 @@ app.prepare().then(() => {
   }
 
   function longRestToStory() {
-
     const dateStamp = new Date().toISOString();
     activityCount++;
 
     Object.entries(players).forEach(async ([userName, playerData]) => {
-
       playerData.mode = "story";
       playerData.story.longRestSceneOutcome = null;
       playerData.longRestRequest = false;
       defaultPlayersBattleInitMode(userName);
       players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${dateStamp} `;
-
     });
 
     io.to(serverRoomName).emit("players objects", players);
 
-    const message = "the players in the game just finished a long rest. We're going to continue the story where we left off. But first, summarize what recently happened, then ask the players what they would like to do next."
-    
+    const message =
+      "the players in the game just finished a long rest. We're going to continue the story where we left off. But first, summarize what recently happened, then ask the players what they would like to do next.";
+
     const uniqueId = `user${"system"} -activity${activityCount} -${dateStamp} `;
     let serverData = {
       role: "system",
@@ -2774,8 +2814,6 @@ app.prepare().then(() => {
     activityCount++;
     //send message to ai
     chatMessages.push(serverData);
-
-
   }
 
   function startOfNextScene(summaryMsg = "") {
@@ -3105,7 +3143,7 @@ app.prepare().then(() => {
     const playersPresent = Object.values(players).filter((player) => player.type === "player");
 
     if (playersPresent.length > 0 && playersPresent.every((player) => player.mode === "endOfLongRest")) {
-        await runFunctionAfterDelay(() => longRestToStory(), 4000);
+      await runFunctionAfterDelay(() => longRestToStory(), 4000);
     }
 
     console.log("update");

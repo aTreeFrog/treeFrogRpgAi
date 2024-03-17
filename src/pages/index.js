@@ -244,6 +244,7 @@ export default function Home() {
   const [longRestImageLoaded, setLongRestImageLoaded] = useState(false);
   const [longRestSelect, setLongRestSelect] = useState(null);
   const [longRestSceneImageLoaded, setLongRestSceneImageLoaded] = useState(false);
+  const [steppedAwayButton, setSteppedAwayButton] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -658,6 +659,9 @@ export default function Home() {
 
     if (players[userName]?.away) {
       setAwayMode(true);
+      setDiceRollsInputData("");
+      setDiceSelectionOption(null);
+      setDiceStates(defaultDiceStates);
     }
 
     if (players[userName]?.mode == "dice" && players[userName]?.active && !players[userName]?.away) {
@@ -1864,7 +1868,7 @@ export default function Home() {
 
   const handleImBack = () => {
     chatSocket.emit("playing again", userName);
-    iAmBack.current = true;
+    //iAmBack.current = true;
     setAwayMode(false);
     handleSubmit({ preventDefault: () => {} });
   };
@@ -2004,6 +2008,15 @@ export default function Home() {
     chatSocket.emit("cancel long rest");
     setLongRestPopup(false);
   };
+
+  useEffect(() => {
+    if (steppedAwayButton) {
+      chatSocket.emit("player stepped away", userName);
+    } else {
+      handleImBack();
+    }
+  }, [steppedAwayButton]);
+
 
   return (
     <div
@@ -2645,7 +2658,7 @@ export default function Home() {
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
                   disabled={diceStates.d20.isGlowActive}
-                  onClick={() => handleCellClick(content)}>
+                  onClick={() => setSteppedAwayButton(!steppedAwayButton)}>
                   <div className="flex">
                     <span className="mt-1">Step</span>
                     <img className="mx-1 flipped-svg" src="/icons/dragon.svg" width="34" height="34"></img>
