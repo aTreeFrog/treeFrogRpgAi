@@ -830,13 +830,14 @@ app.prepare().then(() => {
       if (player?.active && player.activityId == prevActivityId) {
         console.log("forceResetCheck");
 
+        let checkActivePlayers = 0;
         for (let key in players) {
           if (players.hasOwnProperty(key) && !players[key].away && players[key].type == "player") {
-            activePlayers++;
+            checkActivePlayers++;
           }
         }
 
-        if (activePlayers > 1) { 
+        if (checkActivePlayers > 1) { 
           let message = `For information only: The character ${player.name} stepped away from the game.`;
           const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
           let serverData = {

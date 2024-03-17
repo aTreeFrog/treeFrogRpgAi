@@ -1870,6 +1870,7 @@ export default function Home() {
     chatSocket.emit("playing again", userName);
     //iAmBack.current = true;
     setAwayMode(false);
+    setSteppedAwayButton(false);
     handleSubmit({ preventDefault: () => {} });
   };
 
@@ -2012,8 +2013,10 @@ export default function Home() {
   useEffect(() => {
     if (steppedAwayButton) {
       chatSocket.emit("player stepped away", userName);
+      setAwayMode(true);
     } else {
       handleImBack();
+      setAwayMode(false);
     }
   }, [steppedAwayButton]);
 
