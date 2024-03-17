@@ -1194,3 +1194,26 @@ textarea {
     transform: translateZ(300px);
   }
 }
+
+
+@keyframes dots {
+  0%, 100% { content: "\00a0"; } /* Non-breaking space for consistent width */
+  25% { content: ".\00a0\00a0"; } /* One dot followed by two spaces */
+  50% { content: "..\00a0"; } /* Two dots followed by one space */
+  75% { content: "..."; } /* Three dots */
+}
+.active-dots::after {
+  content: "";
+  display: block; /* Make sure it's displayed as a block-level element so it appears on a new line */
+  animation: dots 1.5s infinite; /* Adjust the duration as needed */
+  text-align: center; /* Center the dots below the image */
+  margin-top: 5px; /* Spacing between the image and the dots */
+  color: white; /* Set the color of the dots to white */
+  position: absolute;
+  bottom: -15px; /* Adjust this value based on your layout */
+  left: 0;
+  right: 0;
+}
+
+
+

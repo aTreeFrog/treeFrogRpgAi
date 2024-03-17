@@ -129,6 +129,7 @@ let endOfSceneSummary = "";
 let equipmentFoundData = {};
 let sceneRules = "";
 
+
 serverRoomName = "WizardsAndGoblinsRoom";
 
 app.prepare().then(() => {
@@ -446,16 +447,16 @@ app.prepare().then(() => {
           waitingForRolls = true;
 
           // set this to > 1 prob but for testing keeping it at 0
-          if (activePlayers > 1) {
-            players[user].timers.duration = 120; //seconds
-            players[user].timers.enabled = true;
-            //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-            waitAndCall(
-              players[user].timers.duration,
-              () => forceResetCheck(players[user]),
-              () => players[user].timers.enabled
-            );
-          }
+          // if (activePlayers > 1) {
+          //   players[user].timers.duration = 120; //seconds
+          //   players[user].timers.enabled = true;
+          //   //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+          //   waitAndCall(
+          //     players[user].timers.duration,
+          //     () => forceResetCheck(players[user]),
+          //     () => players[user].timers.enabled
+          //   );
+          // }
         }
       }
 
@@ -1641,8 +1642,10 @@ app.prepare().then(() => {
 
       if (players[diceData.User].mode == "initiative") {
         players[diceData.User].battleMode.initiativeRoll = diceData.Total;
+        players[diceData.User].active = false;
       } else if (players[diceData.User].mode == "dice") {
         players[diceData.User].mode = "story";
+        players[diceData.User].active = false;
       } else if (players[diceData.User].mode == "battle" && players[diceData.User].battleMode.attackRoll < 1) {
         players[diceData.User].battleMode.attackRoll = diceData.Total;
         players[diceData.User].battleMode.actionAttempted = true;
@@ -2171,6 +2174,7 @@ app.prepare().then(() => {
 
     // First, find the current player, min, and max turnOrder
     Object.values(players).forEach((player) => {
+      player.active = false;
       if (player.battleMode.yourTurn) {
         //create battleRoundData for that players turn
         battleRoundData[player.name].attackAttempt = player?.battleMode?.actionAttempted;
@@ -2266,6 +2270,7 @@ app.prepare().then(() => {
     Object.values(players).forEach((player) => {
       if (player.battleMode.turnOrder === nextTurnOrder) {
         player.battleMode.yourTurn = true;
+        player.active = true;
         player.activeSkill = false;
         player.skill = "";
         player.battleMode.distanceMoved = null;

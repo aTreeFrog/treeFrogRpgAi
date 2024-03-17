@@ -2165,18 +2165,15 @@ export default function Home() {
             </>
           )}
           {/* Row of Player Images in Battle Mode */}
-          {(players[userName]?.mode == "battle" ||
-            players[userName]?.mode == "story" ||
-            players[userName]?.mode == "dice" ||
-            players[userName]?.mode == "startOfGame") &&
+          {
             !floatingValue &&
             (isImageLoaded || isInitiativeImageLoaded) && (
-              <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? "invisible" : ""}`}>
+              <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded? "invisible" : ""}`}>
                 {Object.values(players)
                   .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                   .filter((player) => player.userImageUrl)
                   .map((player, index) => (
-                    <div key={index} className="player-container relative flex flex-col items-center mx-1 w-12">
+                    <div key={index} className={`player-container relative flex flex-col items-center mx-1 w-12 ${player.active ? "active-dots" : ""}`}>
                       {" "}
                       {/* Adjusted line */}
                       <div
@@ -2234,6 +2231,7 @@ export default function Home() {
                           <IconSelect
                             options={playerIconList.current}
                             onChange={handleIconSelection}
+                            isActive={player.active}
                             yourTurn={player?.battleMode?.yourTurn}
                             player={player?.name}
                             setIconSelection={setIconSelection}
