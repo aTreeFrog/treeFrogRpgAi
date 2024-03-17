@@ -17,15 +17,21 @@ const IconOption = (props) => (
   </Option>
 );
 
-const IconSelect = ({ options, onChange, yourTurn, player, setIconSelection }) => {
+const IconSelect = ({ options, onChange, yourTurn, isActive, player, setIconSelection }) => {
   const [menuIsOpen, setMenuIsOpen] = useState(true);
   const selectRef = useRef(null);
 
   // control the users options based on which characters turn it is
   if (yourTurn && !options.some((option) => option.value === "endTurn")) {
-    options.push({ value: "endTurn", label: "End Turn" });
+    options.push({ value: "endTurn", label: "End Turn"});
   } else if (!yourTurn && options.some((option) => option.value === "endTurn")) {
     options = options.filter((option) => option.value !== "endTurn");
+  }
+
+  if (isActive && !options.some((option) => option.value === "autoRoll")) {
+    options.push({ value: "autoRoll", label: "Auto Roll", iconPath: "/icons/d20blue.svg"  });
+  } else if (!isActive && options.some((option) => option.value === "autoRoll")) {
+    options = options.filter((option) => option.value !== "autoRoll");
   }
 
   //this adds the player name to the onChange event for parent
