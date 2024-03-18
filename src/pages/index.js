@@ -28,7 +28,7 @@ import { cloneDeep } from "lodash";
 import { equipment } from "../../lib/objects/equipment";
 import EquipmentPopup from "@/components/EquipmentPopup";
 import LongRestPopup from "@/components/LongRestPopup";
-import EndOfRestPopup from"@/components/EndOfRestPopup";
+import EndOfRestPopup from "@/components/EndOfRestPopup";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -245,6 +245,7 @@ export default function Home() {
   const [longRestSelect, setLongRestSelect] = useState(null);
   const [longRestSceneImageLoaded, setLongRestSceneImageLoaded] = useState(false);
   const [steppedAwayButton, setSteppedAwayButton] = useState(false);
+  const lastPlayerStatusId = useRef(null);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -381,6 +382,15 @@ export default function Home() {
       setUpdatingChatLog(true);
       setChatLog((prevChatLog) => [...prevChatLog, { role: "user", message: data.content, mode: data.mode, type: "text" }]);
       setUpdatingChatLog(false);
+    });
+
+    chatSocket.on("player status", (data) => {
+      if (data.messageId != lastPlayerStatusId?.current) {
+        setUpdatingChatLog(true);
+        setChatLog((prevChatLog) => [...prevChatLog, { role: "assistant", message: data.message, mode: data.mode, type: "playerStatus" }]);
+        setUpdatingChatLog(false);
+      }
+      lastPlayerStatusId.current = data?.messageId;
     });
 
     const handleChatMessage = (msg) => {
@@ -662,6 +672,8 @@ export default function Home() {
       setDiceRollsInputData("");
       setDiceSelectionOption(null);
       setDiceStates(defaultDiceStates);
+    } else {
+      setAwayMode(false);
     }
 
     if (players[userName]?.mode == "dice" && players[userName]?.active && !players[userName]?.away) {
@@ -1048,8 +1060,7 @@ export default function Home() {
   };
 
   const handleKeyDown = (e) => {
-    // dont allow enter key text submission if theres a pendingDiceUpdate meaning were gonna roll soon.
-    if (!pendingDiceUpdate && !players[userName]?.settingUpNewScene) {
+    if (!pendingDiceUpdate && !players[userName]?.settingUpNewScene && !players[userName]?.away) {
       resumeAudioContext();
       // Check if the key pressed is 'Enter' and not holding the 'Shift' key (since that means new line)
       if (e.key === "Enter" && !e.shiftKey) {
@@ -1271,12 +1282,12 @@ export default function Home() {
 
     if (chatMsgData.length > 0) {
       //since you sent a message, auto say playing again
-      if (players[userName]?.away) {
-        chatSocket.emit("playing again", userName);
-      }
+      // if (players[userName]?.away) {
+      //   chatSocket.emit("playing again", userName);
+      // }
 
-      setAwayMode(false);
-      iAmBack.current = false;
+      // setAwayMode(false);
+      // iAmBack.current = false;
 
       //readyChatAndAudio();
 
@@ -1869,9 +1880,9 @@ export default function Home() {
   const handleImBack = () => {
     chatSocket.emit("playing again", userName);
     //iAmBack.current = true;
-    setAwayMode(false);
-    setSteppedAwayButton(false);
-    handleSubmit({ preventDefault: () => {} });
+    //setAwayMode(false);
+    //setSteppedAwayButton(false);
+    //handleSubmit({ preventDefault: () => {} });
   };
 
   const onTimerComplete = () => {
@@ -2010,16 +2021,20 @@ export default function Home() {
     setLongRestPopup(false);
   };
 
-  useEffect(() => {
-    if (steppedAwayButton) {
-      chatSocket.emit("player stepped away", userName);
-      setAwayMode(true);
-    } else {
+  const handleSteppedAway = () => {
+    setEnableCellButton(false);
+    if (players[userName].away) {
       handleImBack();
-      setAwayMode(false);
+      //setAwayMode(true);
+    } else {
+      chatSocket.emit("player stepped away", userName);
+      //setAwayMode(false);
     }
-  }, [steppedAwayButton]);
-
+    // Re-enable the button after 2 seconds
+    setTimeout(() => {
+      setEnableCellButton(true);
+    }, 2000);
+  };
 
   return (
     <div
@@ -2181,83 +2196,81 @@ export default function Home() {
             </>
           )}
           {/* Row of Player Images in Battle Mode */}
-          {
-            !floatingValue &&
-            (isImageLoaded || isInitiativeImageLoaded) && (
-              <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded? "invisible" : ""}`}>
-                {Object.values(players)
-                  .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
-                  .filter((player) => player.userImageUrl)
-                  .map((player, index) => (
-                    <div key={index} className={`player-container relative flex flex-col items-center mx-1 w-12 ${player.active ? "active-dots" : ""}`}>
-                      {" "}
-                      {/* Adjusted line */}
+          {!floatingValue && (isImageLoaded || isInitiativeImageLoaded) && (
+            <div className={`flex justify-center mt-4 mr-8 ${!allPlayerImagesLoaded ? "invisible" : ""}`}>
+              {Object.values(players)
+                .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
+                .filter((player) => player.userImageUrl)
+                .map((player, index) => (
+                  <div key={index} className={`player-container relative flex flex-col items-center mx-1 w-12 ${player.active ? "active-dots" : ""}`}>
+                    {" "}
+                    {/* Adjusted line */}
+                    <div
+                      className={`w-10 h-10 rounded-full overflow-hidden ${
+                        player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt != "COMPLETE" ? "player-glow-active" : ""
+                      }`}>
+                      <img
+                        src={player.userImageUrl}
+                        alt={player.name}
+                        onLoad={() => handlePlayerImageLoaded(index)}
+                        className={`w-full h-full object-cover rounded-full ${
+                          player.name === userName && player.battleMode.yourTurn ? "userpicture-effect" : ""
+                        }`}
+                        style={{
+                          border:
+                            player.name === userName && player.battleMode.yourTurn
+                              ? "4px solid yellow"
+                              : player.battleMode.yourTurn
+                              ? "2px solid white"
+                              : "none",
+                          opacity: loadBattlePlayerImages[index] ? "1" : "0",
+                        }}
+                      />
                       <div
-                        className={`w-10 h-10 rounded-full overflow-hidden ${
-                          player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt != "COMPLETE" ? "player-glow-active" : ""
-                        }`}>
-                        <img
-                          src={player.userImageUrl}
-                          alt={player.name}
-                          onLoad={() => handlePlayerImageLoaded(index)}
-                          className={`w-full h-full object-cover rounded-full ${
-                            player.name === userName && player.battleMode.yourTurn ? "userpicture-effect" : ""
-                          }`}
-                          style={{
-                            border:
-                              player.name === userName && player.battleMode.yourTurn
-                                ? "4px solid yellow"
-                                : player.battleMode.yourTurn
-                                ? "2px solid white"
-                                : "none",
-                            opacity: loadBattlePlayerImages[index] ? "1" : "0",
-                          }}
-                        />
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 0,
-                            left: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? 0 : 4,
-                            width: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? "100%" : "82%",
-                            height: Object.values(iconSelection).some((value) => value === true) ? "80%" : "100%",
-                            borderRadius: "50%",
-                            backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
-                              100 - (100 * player.currentHealth) / player.maxHealth
-                            }%, transparent ${100 - (100 * player.currentHealth) / player.maxHealth}%)`,
-                            zIndex: 2,
-                            cursor: "pointer",
-                          }}
-                          onMouseOver={() => handleMouseOver(player)}
-                          onMouseOut={() => handleMouseOut(player)}
-                          onClick={() => toggleIconSelectVisibility(player)}></div>
-                      </div>
-                      {showPlayerName[player.name] === true && !iconSelection[player.name] === true && (
-                        <div
-                          className="player-name-tooltip absolute bottom-full mb-2"
-                          style={{
-                            backgroundColor: player.type === "enemy" ? "red" : "green",
-                          }}>
-                          {" "}
-                          {/* Adjusted line for tooltip */}
-                          {player.name}
-                        </div>
-                      )}
-                      {iconSelection[player.name] === true && (
-                        <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
-                          <IconSelect
-                            options={playerIconList.current}
-                            onChange={handleIconSelection}
-                            isActive={player.active}
-                            yourTurn={player?.battleMode?.yourTurn}
-                            player={player?.name}
-                            setIconSelection={setIconSelection}
-                          />
-                        </div>
-                      )}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? 0 : 4,
+                          width: player?.battleMode?.targeted && player?.battleMode?.enemyAttackAttempt !== "COMPLETE" ? "100%" : "82%",
+                          height: Object.values(iconSelection).some((value) => value === true) ? "80%" : "100%",
+                          borderRadius: "50%",
+                          backgroundImage: `linear-gradient(to top, rgba(255, 0, 0, 0.5) ${
+                            100 - (100 * player.currentHealth) / player.maxHealth
+                          }%, transparent ${100 - (100 * player.currentHealth) / player.maxHealth}%)`,
+                          zIndex: 2,
+                          cursor: "pointer",
+                        }}
+                        onMouseOver={() => handleMouseOver(player)}
+                        onMouseOut={() => handleMouseOut(player)}
+                        onClick={() => toggleIconSelectVisibility(player)}></div>
                     </div>
-                  ))}
-              </div>
-            )}
+                    {showPlayerName[player.name] === true && !iconSelection[player.name] === true && (
+                      <div
+                        className="player-name-tooltip absolute bottom-full mb-2"
+                        style={{
+                          backgroundColor: player.type === "enemy" ? "red" : "green",
+                        }}>
+                        {" "}
+                        {/* Adjusted line for tooltip */}
+                        {player.name}
+                      </div>
+                    )}
+                    {iconSelection[player.name] === true && (
+                      <div className="absolute bottom-full mb-2" style={{ position: "relative", zIndex: 2, flexGrow: 1 }}>
+                        <IconSelect
+                          options={playerIconList.current}
+                          onChange={handleIconSelection}
+                          isActive={player.active}
+                          yourTurn={player?.battleMode?.yourTurn}
+                          player={player?.name}
+                          setIconSelection={setIconSelection}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
         <div className="container mx-auto flex flex-col items-center justify-start">
           {/* Apply negative margin or adjust padding as needed */}
@@ -2336,7 +2349,7 @@ export default function Home() {
                     className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
                     style={{ boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
                   />
-                ) : message.type === "equipment" && messageQueue.current.length <= 0 ? (
+                ) : message.type === "equipment"  ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     {message.message.split(" ").map((word, wordIndex) => (
@@ -2349,7 +2362,10 @@ export default function Home() {
                     ))}
                     {message.iconPath && <img src={message.iconPath} alt="Equipment Icon" className="inline-block ml-1" width="24" height="24" />}
                   </div>
-                ) : message.type === "longRestOutcome" && messageQueue.current.length <= 0 ? (
+                ) : message.type === "playerStatus" ? (
+                  // Equipment message rendering
+                  <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>{message.message}</div>
+                ) : message.type === "longRestOutcome" ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     <span>{message.message}</span>
@@ -2364,7 +2380,7 @@ export default function Home() {
         <div>
           {players[userName]?.mode == "battle" && !players[userName]?.battleMode?.yourTurn && (
             <div className="flex-grow flex justify-center items-center text-red-500 font-semibold text-xs -translate-x-3 translate-y-4">
-              Not your turn, only team sees your message
+              battle mode: only the team sees your messages
             </div>
           )}
           {players[userName]?.mode == "longRest" && (
@@ -2372,7 +2388,6 @@ export default function Home() {
               The GM is speaking privately to you. Others can't see.
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="mt-auto p-6 flex items-center">
             <button
               type="button"
@@ -2511,14 +2526,16 @@ export default function Home() {
                 className={`${
                   !diceStates.d20.isGlowActive ||
                   (diceStates.d20.isGlowActive && diceSelectionOption) ||
-                  (players[userName]?.mode == "longRest" && longRestSelect)
+                  (players[userName]?.mode == "longRest" && longRestSelect) ||
+                  players[userName]?.away
                     ? "bg-purple-600 hover:bg-purple-700"
                     : "bg-grey-700 hover:bg-grey-700"
                 } rounded-lg px-4 py-2 text-white font-semibold focus:outline-none transition-colors duration-300`}
                 disabled={
                   (diceStates.d20.isGlowActive && !diceSelectionOption) ||
                   pendingDiceUpdate ||
-                  (players[userName]?.mode == "longRest" && (!longRestSelect || messageQueue.current.length > 0))
+                  (players[userName]?.mode == "longRest" && (!longRestSelect || messageQueue.current.length > 0) 
+                  || players[userName]?.away)
                 }>
                 {messageQueue.current.length > 0 ? "▮▮" : "Send"}
               </button>
@@ -2660,8 +2677,8 @@ export default function Home() {
                 </button>
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
-                  disabled={diceStates.d20.isGlowActive}
-                  onClick={() => setSteppedAwayButton(!steppedAwayButton)}>
+                  disabled={diceStates.d20.isGlowActive || !enableCellButton}
+                  onClick={() => handleSteppedAway()}>
                   <div className="flex">
                     <span className="mt-1">Step</span>
                     <img className="mx-1 flipped-svg" src="/icons/dragon.svg" width="34" height="34"></img>
