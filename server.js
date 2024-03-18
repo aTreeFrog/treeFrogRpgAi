@@ -585,7 +585,7 @@ app.prepare().then(() => {
             const tempContent = `Before responding, Remember to follow the prompt instructions given at the start of this chat history. and ease into the story. Let the players make decisions.`;
 
             messagesFilteredForApi.push({
-              role: "system",
+              role: "user",
               content: tempContent,
             });
 
@@ -827,7 +827,7 @@ app.prepare().then(() => {
     // if timer expired and player is still active, set them to away and not active and
     // send default dice roll message to AI to take them out of the game.
     function forceResetCheck(player, prevActivityId) {
-      if (player?.active && player.activityId == prevActivityId) {
+      if (player.activityId == prevActivityId) {
         console.log("forceResetCheck");
 
         let checkActivePlayers = 0;
@@ -837,20 +837,32 @@ app.prepare().then(() => {
           }
         }
 
-        if (checkActivePlayers > 1) { 
-          let message = `For information only: The character ${player.name} stepped away from the game.`;
+        // for testing purposes.  CHANGE BACK to > 1 //////////////////////////////////////////////
+        if (checkActivePlayers > 0) { 
+          let message = `For information only: The character ${player.name} stepped away from the game. Please do not respond to this message.`;
           const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
           let serverData = {
-            role: "system",
+            role: "user",
             content: message,
             processed: false,
             id: uniqueId,
             mode: "All",
           };
           awayPlayerCount++;
-          //send message to users and ai
+          //send message to ai
           chatMessages.push(serverData);
           makePlayerInactive(player);
+
+          serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
+          msgActivityCount++;
+    
+          let playerLeft = {
+            message: `${player.name} has stepped away`,
+            messageId: serverMessageId,
+            mode: "All",
+          };
+    
+          io.to(serverRoomName).emit("player status", playerLeft);
       }
         
         //io.to(serverRoomName).emit("latest user message", serverData);
@@ -1327,8 +1339,8 @@ app.prepare().then(() => {
               msg.content.toLowerCase().includes("i rolled a")
             )
           ) {
-            // dont send ai message if in battle mode and user typing is not there turn
-            if (!(players[msg.player]?.mode == "battle" && !players[msg.player]?.battleMode.yourTurn)) {
+            // dont send ai message if in battle mode
+            if (!(players[msg.player]?.mode == "battle")) {
               chatMessages.push(msg);
               console.log("chatMessages: ", chatMessages);
 
@@ -1856,6 +1868,11 @@ app.prepare().then(() => {
     }
 
     socket.on("playing again", (userName) => {
+
+      if (!players.hasOwnProperty(userName)) {
+        return;
+      }
+
       //check if any players not away is in battle mode. If so, put this returned player in battle mode
       const battleModeActive = Object.values(players).some((value) => !value.away && value.mode === "battle");
 
@@ -1867,7 +1884,6 @@ app.prepare().then(() => {
 
       players[userName].timers.enabled = false;
       players[userName].timers.duration = 100;
-      players[userName].active = true;
       players[userName].away = false;
       players[userName].diceStates = cloneDeep(defaultDiceStates);
       players[userName].activeSkill = false;
@@ -1878,18 +1894,36 @@ app.prepare().then(() => {
 
       io.to(serverRoomName).emit("players objects", players);
 
-      let message = `For information only: The character ${userName} is back in the game.`;
-      const uniqueId = `user${userName} -activity${awayPlayerCount} -${new Date().toISOString()} `;
-      let serverData = {
-        role: "system",
-        content: message,
-        processed: false,
-        id: uniqueId,
+      if (players[userName].away) {
+        players[userName].away = false;
+
+        let message = `For information only: The character ${userName} is back in the game. Please do not respond to this message`;
+        const uniqueId = `user${userName} -activity${awayPlayerCount} -${new Date().toISOString()} `;
+        let serverData = {
+          role: "user",
+          content: message,
+          processed: false,
+          id: uniqueId,
+          mode: "All",
+        };
+        awayPlayerCount++;
+        //send message to users and ai
+        chatMessages.push(serverData);
+      }
+
+      io.to(serverRoomName).emit("players objects", players);
+
+      serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
+      msgActivityCount++;
+
+      let playingData = {
+        message: `${userName} has returned`,
+        messageId: serverMessageId,
         mode: "All",
       };
-      awayPlayerCount++;
-      //send message to users and ai
-      chatMessages.push(serverData);
+
+      io.to(serverRoomName).emit("player status", playingData);
+
     });
 
     socket.on("story move on", () => {
