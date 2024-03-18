@@ -1770,6 +1770,9 @@ export default function Home() {
       handleEndTurn(option.player);
     } else if (option?.selectedOption?.value?.toLowerCase() == "givehealth") {
       handleGiveEquipement("Health", 1, option.player, userName);
+    } else if (option?.selectedOption?.value?.toLowerCase() == "bringback" || option?.selectedOption?.value?.toLowerCase() == "stepaway") {
+      console.log("icon stepped away", option.player);
+      handleSteppedAway(option.player);
     }
   };
 
@@ -1877,8 +1880,8 @@ export default function Home() {
     chatSocket.emit("new scene ready", playerName);
   };
 
-  const handleImBack = () => {
-    chatSocket.emit("playing again", userName);
+  const handleImBack = (name) => {
+    chatSocket.emit("playing again", name);
     //iAmBack.current = true;
     //setAwayMode(false);
     //setSteppedAwayButton(false);
@@ -2021,13 +2024,13 @@ export default function Home() {
     setLongRestPopup(false);
   };
 
-  const handleSteppedAway = () => {
+  const handleSteppedAway = (name) => {
     setEnableCellButton(false);
-    if (players[userName].away) {
-      handleImBack();
+    if (players[name].away) {
+      handleImBack(name);
       //setAwayMode(true);
     } else {
-      chatSocket.emit("player stepped away", userName);
+      chatSocket.emit("player stepped away", name);
       //setAwayMode(false);
     }
     // Re-enable the button after 2 seconds
@@ -2052,7 +2055,7 @@ export default function Home() {
           <div className="flex items-center justify-center h-screen bg-purple-500 bg-opacity-30 backdrop-blur ">
             <div className="text-center">
               <p className="text-white text-2xl font-semibold mb-10">You stepped away</p>
-              <button onClick={handleImBack} className="bg-white text-purple-500 text-xl font-semibold py-2 px-4 rounded">
+              <button onClick={() => handleImBack(userName)} className="bg-white text-purple-500 text-xl font-semibold py-2 px-4 rounded">
                 I'm back
               </button>
             </div>
@@ -2215,7 +2218,7 @@ export default function Home() {
                         onLoad={() => handlePlayerImageLoaded(index)}
                         className={`w-full h-full object-cover rounded-full ${
                           player.name === userName && player.battleMode.yourTurn ? "userpicture-effect" : ""
-                        }`}
+                        }${player.away ? "grayscale" : ""}`}
                         style={{
                           border:
                             player.name === userName && player.battleMode.yourTurn
@@ -2261,6 +2264,8 @@ export default function Home() {
                           options={playerIconList.current}
                           onChange={handleIconSelection}
                           isActive={player.active}
+                          away={player?.away}
+                          type={player?.type}
                           yourTurn={player?.battleMode?.yourTurn}
                           player={player?.name}
                           setIconSelection={setIconSelection}
@@ -2340,6 +2345,14 @@ export default function Home() {
                         <FontAwesomeIcon icon={faHatWizard} />
                       </span>
                     )}
+                    {!wizardHatEnable && message.role === "assistant" && index === lastBotMessageIndex && (
+                      <button
+                        className="bg-green-700 hover:bg-green-800 text-white font-semibold focus:outline-none transition-colors duration-300 py-0.4 px-1 rounded ml-2"
+                        disabled={pendingDiceUpdate || players[userName]?.settingUpNewScene || players[userName]?.away}
+                      >
+                        --&gt;
+                      </button>
+                    )}
                   </div>
                 ) : message.type === "image" ? (
                   // Image message rendering
@@ -2349,7 +2362,7 @@ export default function Home() {
                     className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg mt-4 mb-4"
                     style={{ boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)" }}
                   />
-                ) : message.type === "equipment"  ? (
+                ) : message.type === "equipment" ? (
                   // Equipment message rendering
                   <div className={`rounded-lg p-2 text-white max-w-sm flex items-center bg-blue-500`}>
                     {message.message.split(" ").map((word, wordIndex) => (
@@ -2515,7 +2528,7 @@ export default function Home() {
                       style={{ minHeight: "10px" }}
                       rows={1}
                       ref={textareaRef}
-                      disabled={pendingDiceUpdate || players[userName]?.settingUpNewScene}></textarea>
+                      disabled={pendingDiceUpdate || players[userName]?.settingUpNewScene || players[userName]?.away}></textarea>
                   </>
                 )}
               </div>
@@ -2534,8 +2547,8 @@ export default function Home() {
                 disabled={
                   (diceStates.d20.isGlowActive && !diceSelectionOption) ||
                   pendingDiceUpdate ||
-                  (players[userName]?.mode == "longRest" && (!longRestSelect || messageQueue.current.length > 0) 
-                  || players[userName]?.away)
+                  (players[userName]?.mode == "longRest" && (!longRestSelect || messageQueue.current.length > 0)) ||
+                  players[userName]?.away
                 }>
                 {messageQueue.current.length > 0 ? "▮▮" : "Send"}
               </button>
@@ -2678,7 +2691,7 @@ export default function Home() {
                 <button
                   className="flex-grow p-2 action-buttons font-semibold rounded text-white bg-gray-600 focus:outline-none transition-colors duration-300"
                   disabled={diceStates.d20.isGlowActive || !enableCellButton}
-                  onClick={() => handleSteppedAway()}>
+                  onClick={() => handleSteppedAway(userName)}>
                   <div className="flex">
                     <span className="mt-1">Step</span>
                     <img className="mx-1 flipped-svg" src="/icons/dragon.svg" width="34" height="34"></img>
