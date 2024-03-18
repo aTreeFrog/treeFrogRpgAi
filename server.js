@@ -446,16 +446,16 @@ app.prepare().then(() => {
           waitingForRolls = true;
 
           // set this to > 1 prob but for testing keeping it at 0
-          // if (activePlayers > 1) {
-          //   players[user].timers.duration = 120; //seconds
-          //   players[user].timers.enabled = true;
-          //   //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
-          //   waitAndCall(
-          //     players[user].timers.duration,
-          //     () => forceResetCheck(players[user]),
-          //     () => players[user].timers.enabled
-          //   );
-          // }
+          if (activePlayers > 1) {
+            players[user].timers.duration = 140;
+            players[user].timers.enabled = true;
+            //dont put await, or it doesnt finish since upstream in my messageque im not doing await in the checkforfunction call
+            waitAndCall(
+              players[user].timers.duration,
+              () => forceResetCheck(players[user], players[user].activityId),
+              () => players[user].timers.enabled
+            );
+          }
         }
       }
 
@@ -765,7 +765,7 @@ app.prepare().then(() => {
           waitingForRolls = true;
 
           if (activePlayers > 0) {
-            ///////CHANGE THIS to 1!!!!!!!!!!
+            ///////CHANGE THIS to 1!!!!!!!!!!/////////////////////////////
 
             players[user].timers.duration = 100;
             players[user].timers.enabled = true;
@@ -857,7 +857,7 @@ app.prepare().then(() => {
           msgActivityCount++;
     
           let playerLeft = {
-            message: `${player.name} has stepped away`,
+            message: `${player.name} stepped away`,
             messageId: serverMessageId,
             mode: "All",
           };
@@ -875,7 +875,8 @@ app.prepare().then(() => {
       player.away = true;
       if (player.mode == "dice") {
         player.mode = "story";
-      } //ToDo: figure out how to ensure when they return the mode matches the other players.
+      }
+      //ToDo: figure out how to ensure when they return the mode matches the other players.
       player.diceStates = cloneDeep(defaultDiceStates);
       player.skill = "";
       player.activeSkill = false;
@@ -1881,7 +1882,6 @@ app.prepare().then(() => {
       } else {
         players[userName].mode = "story";
       }
-
       players[userName].timers.enabled = false;
       players[userName].timers.duration = 100;
       players[userName].away = false;
