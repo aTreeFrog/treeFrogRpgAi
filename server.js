@@ -128,6 +128,7 @@ let newSceneData = "";
 let endOfSceneSummary = "";
 let equipmentFoundData = {};
 let sceneRules = "";
+let skipNextCheck = false;
 
 serverRoomName = "WizardsAndGoblinsRoom";
 
@@ -553,6 +554,10 @@ app.prepare().then(() => {
       //need to call function to determine which scene we need to setup next.
     }
 
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     async function processMessages() {
       while (true) {
         if (!waitingForUser && !waitingForRolls && !settingUpNewScene && !processingMessage && !settingUpNextScene) {
@@ -561,6 +566,25 @@ app.prepare().then(() => {
           let unprocessedUserMessages = chatMessages.filter(
             (message) => (message.role === "user" || message.role === "system") && !message.processed
           );
+
+          // New condition: Check if all players are in "story" mode and there are more than one player
+          // and there are unprocessed user messages. If `skipCheck` is false, perform the check.
+          const allPlayersInStoryMode = Object.values(players).every((player) => (player.mode === "story" || player.mode === "startOfGame"));
+          const moreThanOnePlayer = Object.keys(players).length > 0; /// change this back to 1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!/////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+          if (!skipNextCheck && allPlayersInStoryMode && moreThanOnePlayer && unprocessedUserMessages.length > 0) {
+            console.log("made it to delay ai response");
+            await delay(5000); // "Block" for 5 seconds (in an async way)
+            processingMessage = false; // Make sure to set this to false before exiting
+            skipNextCheck = true;
+            processMessages(); // Call this function again without the check
+            return; // Exit the current call to avoid proceeding with message processing
+          }
+
+          // Reset skipNextCheck to false after it has been used to skip once
+          if (skipNextCheck) {
+            skipNextCheck = false;
+          }
 
           if (unprocessedUserMessages.length > 0) {
             unprocessedUserMessages.forEach((message) => {
@@ -838,7 +862,7 @@ app.prepare().then(() => {
         }
 
         // for testing purposes.  CHANGE BACK to > 1 //////////////////////////////////////////////
-        if (checkActivePlayers > 0) { 
+        if (checkActivePlayers > 0) {
           let message = `For information only: The character ${player.name} stepped away from the game. Please do not respond to this message.`;
           const uniqueId = `user${player.name} -activity${awayPlayerCount} -${new Date().toISOString()} `;
           let serverData = {
@@ -855,16 +879,16 @@ app.prepare().then(() => {
 
           serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
           msgActivityCount++;
-    
+
           let playerLeft = {
             message: `${player.name} stepped away`,
             messageId: serverMessageId,
             mode: "All",
           };
-    
+
           io.to(serverRoomName).emit("player status", playerLeft);
-      }
-        
+        }
+
         //io.to(serverRoomName).emit("latest user message", serverData);
         //responseSent.set(serverData.id, true);
       }
@@ -1035,6 +1059,8 @@ app.prepare().then(() => {
       io.to(serverRoomName).emit("players objects", players);
     });
 
+    //ToDo: Have the function call ensure it makes array for the skill to match each player with the correct skill!!!////////////////////////////
+    /////////////////////////////////////////////////////////////////
     async function checkForFunctionCall() {
       let diceRollCalled = false;
 
@@ -1054,7 +1080,7 @@ app.prepare().then(() => {
       ) {
         latestAssistantMessage.push({
           role: "user",
-          content: "did you specifically request a user to roll a d20 dice? If so, call the sendDiceRollMessage function.",
+          content: "did you specifically request a user or multiple users to roll a d20 dice? If so, call the sendDiceRollMessage function.",
         });
         console.log("latestAssistantMessage", latestAssistantMessage);
         const data = {
@@ -1067,7 +1093,7 @@ app.prepare().then(() => {
               type: "function",
               function: {
                 name: "sendDiceRollMessage",
-                description: "function that should be called anytime the AI assistant asks a user to roll a d20 dice.",
+                description: "function that should be called anytime the AI assistant asks a user or multiple users to roll a d20 dice.",
                 parameters: {
                   type: "object",
                   properties: {
@@ -1075,7 +1101,7 @@ app.prepare().then(() => {
                       type: "string",
                       enum: ["intelligence", "investigation", "nature", "insight", "stealth", "deception"],
                       description:
-                        "Based on the latest conversation from the assistant or bot, what type of skill modifier should be added to the d20 dice roll.",
+                        "Based on the latest conversation from the assistant or bot, what type of skill modifier should be added to the d20 dice roll for each user.",
                     },
                     advantage: {
                       type: "boolean",
@@ -1869,7 +1895,6 @@ app.prepare().then(() => {
     }
 
     socket.on("playing again", (userName) => {
-
       if (!players.hasOwnProperty(userName)) {
         return;
       }
@@ -1923,7 +1948,6 @@ app.prepare().then(() => {
       };
 
       io.to(serverRoomName).emit("player status", playingData);
-
     });
 
     socket.on("story move on", () => {
@@ -1939,15 +1963,13 @@ app.prepare().then(() => {
       io.to(serverRoomName).emit("latest user message", serverData);
 
       summarizeAndMoveOn();
-    }); 
+    });
 
     socket.on("player stepped away", (user) => {
-
       if (players.hasOwnProperty(user)) {
         forceResetCheck(players[user], players[user].activityId);
       }
-
-    }); 
+    });
 
     socket.on("player moved", (data) => {
       if (players.hasOwnProperty(data?.name)) {
