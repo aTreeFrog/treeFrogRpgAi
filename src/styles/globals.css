@@ -1205,7 +1205,7 @@ textarea {
 .active-dots::after {
   content: "";
   display: block; /* Make sure it's displayed as a block-level element so it appears on a new line */
-  animation: dots 1.5s infinite; /* Adjust the duration as needed */
+  animation: dots 2s infinite; /* Adjust the duration as needed */
   text-align: center; /* Center the dots below the image */
   margin-top: 5px; /* Spacing between the image and the dots */
   color: white; /* Set the color of the dots to white */

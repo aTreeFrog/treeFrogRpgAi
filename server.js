@@ -591,6 +591,15 @@ app.prepare().then(() => {
               aiInOrderChatMessage.push(message);
             });
 
+            dateStamp = new Date().toISOString();
+            // make arrow button not true in case, since AI is outtputing a message
+            Object.entries(players).forEach(([userName, playerData]) => {
+              playerData.arrowContinue = false;
+              playerData.activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+            });
+            activityCount++;
+            io.to(serverRoomName).emit("players objects", players);
+
             let outputMsg = "";
             chatMessages.forEach((message) => {
               message.processed = true;
@@ -1267,6 +1276,42 @@ app.prepare().then(() => {
       }
     }
 
+    function arrowContinueProcess(user) {
+
+      let message = `the players requests you to gently nudge the story forward, ensuring only a slight progression towards the designated plot development. The aim is to actively incorporate the players into the narrative's advancement while keeping the movement concise, allowing room for the players to resume engaging directly with the story through text responses soon after. Proceed with the narrative in a manner that subtly advances the plot, enriching the player's experience with the anticipation of what comes next. If fitting, request a D20 roll for the players to resolve any immediate actions or decisions. This approach ensures the story advances incrementally, inviting the players to re-engage actively with the unfolding events."`;
+      const uniqueId = `user${user} -activity${activityCount} -${new Date().toISOString()} `;
+      let serverData = {
+        role: "user",
+        content: message,
+        processed: false,
+        id: uniqueId,
+        mode: "All",
+      };
+      activityCount++;
+      //send message to users and ai
+      chatMessages.push(serverData);
+      
+
+      const numOfPlayers = Object.values(players).filter((player) => player.type == "player").length;
+      if (numOfPlayers > 1) {
+
+        serverMessageId = `user - Assistant - activity - ${msgActivityCount} -${new Date().toISOString()} `;
+        msgActivityCount++;
+
+        let playingData = {
+          message: `${user} pressed continue button`,
+          messageId: serverMessageId,
+          mode: "All",
+        };
+
+        io.to(serverRoomName).emit("player status", playingData);
+
+    }
+
+
+
+    }
+
     async function askAiIfInitiative(messagesFilteredForFunction, diceRollCalled) {
       let latestAssistantMessage = [messagesFilteredForFunction.findLast((item) => item.role === "assistant")];
 
@@ -1604,6 +1649,7 @@ app.prepare().then(() => {
           attackSound: null,
           deathSound: null,
         },
+        arrowContinue: false,
       };
 
       players[userName] = newPlayer;
@@ -1689,6 +1735,19 @@ app.prepare().then(() => {
       });
 
       io.emit("players objects", players);
+    });
+
+    socket.on("arrow continue", (user) => {
+
+      if (players.hasOwnProperty(user) && players[user]?.mode != "battle" && players[user]?.mode != "initiative" && !players[user]?.arrowContinue) {
+        players[user].arrowContinue = true;
+        players[user].away = false;
+        players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${new Date().toISOString()}`;
+        activityCount++;
+        io.emit("players objects", players);
+        arrowContinueProcess(user);
+      }
+
     });
 
     socket.on("D20 Dice Roll Complete", async (diceData) => {
