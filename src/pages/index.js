@@ -246,6 +246,7 @@ export default function Home() {
   const [longRestSceneImageLoaded, setLongRestSceneImageLoaded] = useState(false);
   const [steppedAwayButton, setSteppedAwayButton] = useState(false);
   const lastPlayerStatusId = useRef(null);
+  const playerContinueBtnCount = useRef(0);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -387,7 +388,7 @@ export default function Home() {
     chatSocket.on("player status", (data) => {
       if (data.messageId != lastPlayerStatusId?.current) {
         setUpdatingChatLog(true);
-        setChatLog((prevChatLog) => [...prevChatLog, { role: "assistant", message: data.message, mode: data.mode, type: "playerStatus" }]);
+        setChatLog((prevChatLog) => [...prevChatLog, { role: "system", message: data.message, mode: data.mode, type: "playerStatus" }]);
         setUpdatingChatLog(false);
       }
       lastPlayerStatusId.current = data?.messageId;
@@ -675,6 +676,11 @@ export default function Home() {
     } else {
       setAwayMode(false);
     }
+
+    // number of players that pressed the continue count
+    playerContinueBtnCount.current = Object.values(players).filter((player) => player.arrowContinue).length;
+    console.log("playerContinueBtnCount.current", playerContinueBtnCount.current);
+    console.log("lastBotMessageIndex", lastBotMessageIndex);
 
     if (players[userName]?.mode == "dice" && players[userName]?.active && !players[userName]?.away) {
       if (messageQueue.current.length > 0) {
@@ -2039,6 +2045,10 @@ export default function Home() {
     }, 2000);
   };
 
+  const arrowContinueClick = (name) => {
+    chatSocket.emit("arrow continue", name);
+  };
+
   return (
     <div
       className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
@@ -2205,7 +2215,7 @@ export default function Home() {
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter((player) => player.userImageUrl)
                 .map((player, index) => (
-                  <div key={index} className={`player-container relative flex flex-col items-center mx-1 w-12 ${player.active ? "active-dots" : ""}`}>
+                  <div key={index} className={`player-container relative flex flex-col items-center mx-1 w-12 ${(player.active && messageQueue.current.length <=0) ? "active-dots" : ""}`}>
                     {" "}
                     {/* Adjusted line */}
                     <div
@@ -2345,13 +2355,23 @@ export default function Home() {
                         <FontAwesomeIcon icon={faHatWizard} />
                       </span>
                     )}
-                    {!wizardHatEnable && message.role === "assistant" && index === lastBotMessageIndex && (
-                      <button
-                        className="bg-green-700 hover:bg-green-800 text-white font-semibold focus:outline-none transition-colors duration-300 py-0.4 px-1 rounded ml-2"
-                        disabled={pendingDiceUpdate || players[userName]?.settingUpNewScene || players[userName]?.away}
-                      >
-                        --&gt;
-                      </button>
+                    {(!wizardHatEnable || playerContinueBtnCount.current > 0) && message.role === "assistant" && index === lastBotMessageIndex && (
+                      <>
+                        <button
+                          className={`${players[userName]?.arrowContinue ? "bg-orange-700 hover:bg-orange-800" : "bg-green-700 hover:bg-green-800"}
+                            text-white font-semibold focus:outline-none transition-colors duration-300 py-0.4 px-1 rounded ml-2 transform translate-y-0.5`}
+                          disabled={
+                            pendingDiceUpdate ||
+                            players[userName]?.settingUpNewScene ||
+                            players[userName]?.away || (
+                            players[userName]?.mode != "story" &&
+                            players[userName]?.mode != "startOfGame")
+                          }
+                          onClick={() => arrowContinueClick(userName)}>
+                          <img src="/icons/rightarrow.svg" width="18" height="18"></img>
+                        </button>
+                        {playerContinueBtnCount.current > 0 && <span className="ml-1 mb-2">{playerContinueBtnCount.current}</span>}
+                      </>
                     )}
                   </div>
                 ) : message.type === "image" ? (
