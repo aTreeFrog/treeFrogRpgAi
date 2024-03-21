@@ -201,6 +201,8 @@ app.prepare().then(() => {
           players[user].backgroundAudio = `http://localhost:3000/audio/the_chamber.mp3`;
           players[user].backgroundAudioSecond = null;
           players[user].activityId = `user${user}-game${serverRoomName}-activity${activityCount}-${dateStamp}`;
+          players[user].quests.scene.title = storyFile[currentAct][currentScene].QuestTitle;
+          players[user].quests.scene.description = storyFile[currentAct][currentScene].QuestDescription;
         }
       }
 
@@ -1650,6 +1652,18 @@ app.prepare().then(() => {
           deathSound: null,
         },
         arrowContinue: false,
+        quests: {
+          primary: {
+            title: null,
+            description: null,
+          },
+          scene: {
+            title: null,
+            description: null,
+          },
+          activeSideQuests: null,
+          completedQuests: null
+        },
       };
 
       players[userName] = newPlayer;

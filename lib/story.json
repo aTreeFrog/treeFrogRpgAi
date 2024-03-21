@@ -7,7 +7,9 @@
             "BattleMap": "nighttime_grassland",
             "DiscoverableEquipment": ["Health", "RandomTeleport"],
             "locationName": "Forestheart Grove",
-            "locationDetails": "Nestled in an ancient, snow-draped forest, Forestheart Grove serves as a hidden refuge for wood elves and woodland creatures. Here, under the quiet canopy, elves and nature live in harmony, bonded by the land's deep magic in the silent night."
+            "locationDetails": "Nestled in an ancient, snow-draped forest, Forestheart Grove serves as a hidden refuge for wood elves and woodland creatures. Here, under the quiet canopy, elves and nature live in harmony, bonded by the land's deep magic in the silent night.",
+            "QuestTitle": "Whispers of Forestheart",
+            "QuestDescription": "Speak with Theo, the bartender, to learn about Forestheart Grove's secrets and gather intelligence on the looming goblin threat."
         },
         "Scene2" : {
             "Header": "As the Dungeon Master in 'Wizards and Goblins, an AI-based Role Playing Game,' you continue the journey with aTreeFrog, a wizard male elf, into the unfolding adventure. Drawing from the previous scene's summary, seamlessly weave the narrative forward without indicating a new scene start.",
