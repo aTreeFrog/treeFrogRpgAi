@@ -29,6 +29,7 @@ import { equipment } from "../../lib/objects/equipment";
 import EquipmentPopup from "@/components/EquipmentPopup";
 import LongRestPopup from "@/components/LongRestPopup";
 import EndOfRestPopup from "@/components/EndOfRestPopup";
+import QuestsSheet from "@/components/QuestsSheet";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -247,6 +248,7 @@ export default function Home() {
   const [steppedAwayButton, setSteppedAwayButton] = useState(false);
   const lastPlayerStatusId = useRef(null);
   const playerContinueBtnCount = useRef(0);
+  const [leftTab, setLeftTab] = useState("Character Sheet");
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -2075,29 +2077,49 @@ export default function Home() {
             {" "}
             {/* Adjusted for spacing */}
             <div>
-              <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">
+              {/* <h1 className="break-words bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text text-center py-3 font-bold text-3xl md:text-4xl">
                 Character
-              </h1>
-              <div>
-                <CharacterSheet
-                  name="Aragorn"
-                  race="Human"
-                  characterClass="Ranger"
-                  level="5"
-                  activeSkill={activeSkill}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  player={players[userName]}
-                  selectedRow={selectedRow}
-                  setSelectedRow={setSelectedRow}
-                  equipmentRow={equipmentRow}
-                  setEquipmentRow={setEquipmentRow}
-                  isD20Spinning={isD20Spinning}
-                  setUsedEquipment={setUsedEquipment}
-                  players={players}
-                  setGaveEquipment={setGaveEquipment}
-                />
+              </h1> */}
+              <div className="flex justify-center items-center gap-2 text-white mt-3">
+                {["Character Sheet", "Quests", "NPCs", "Settings"].map((leftTabName) => (
+                  <button
+                    key={leftTabName}
+                    className={`tab-button px-2 py-1 text-sm font-semibold border-2 border-transparent rounded-full transition-colors duration-300
+                                ${leftTab === leftTabName ? "bg-emerald-700" : "hover:bg-emerald-900 opacity-80"}`}
+                    onClick={() => setLeftTab(leftTabName)}>
+                    {leftTabName}
+                  </button>
+                ))}
               </div>
+              {leftTab === "Character Sheet" && (
+                <div className="mt-6">
+                  <CharacterSheet
+                    name="Aragorn"
+                    race="Human"
+                    characterClass="Ranger"
+                    level="5"
+                    activeSkill={activeSkill}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
+                    player={players[userName]}
+                    selectedRow={selectedRow}
+                    setSelectedRow={setSelectedRow}
+                    equipmentRow={equipmentRow}
+                    setEquipmentRow={setEquipmentRow}
+                    isD20Spinning={isD20Spinning}
+                    setUsedEquipment={setUsedEquipment}
+                    players={players}
+                    setGaveEquipment={setGaveEquipment}
+                  />
+                </div>
+              )}
+              {leftTab === "Quests" && (
+                <div className="mt-6">
+                  <QuestsSheet
+                    player = {players[userName]}
+                  />
+                </div>
+              )}
             </div>
             {/* Toggle Meeting Panel Button */}
             <div className="flex">
@@ -2215,7 +2237,11 @@ export default function Home() {
                 .sort((a, b) => a.battleMode?.turnOrder - b.battleMode?.turnOrder)
                 .filter((player) => player.userImageUrl)
                 .map((player, index) => (
-                  <div key={index} className={`player-container relative flex flex-col items-center mx-1 w-12 ${(player.active && messageQueue.current.length <=0) ? "active-dots" : ""}`}>
+                  <div
+                    key={index}
+                    className={`player-container relative flex flex-col items-center mx-1 w-12 ${
+                      player.active && messageQueue.current.length <= 0 ? "active-dots" : ""
+                    }`}>
                     {" "}
                     {/* Adjusted line */}
                     <div
@@ -2363,9 +2389,8 @@ export default function Home() {
                           disabled={
                             pendingDiceUpdate ||
                             players[userName]?.settingUpNewScene ||
-                            players[userName]?.away || (
-                            players[userName]?.mode != "story" &&
-                            players[userName]?.mode != "startOfGame")
+                            players[userName]?.away ||
+                            (players[userName]?.mode != "story" && players[userName]?.mode != "startOfGame")
                           }
                           onClick={() => arrowContinueClick(userName)}>
                           <img src="/icons/rightarrow.svg" width="18" height="18"></img>
