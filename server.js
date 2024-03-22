@@ -1661,8 +1661,18 @@ app.prepare().then(() => {
             title: null,
             description: null,
           },
-          activeSideQuests: null,
-          completedQuests: null
+          activeSideQuests: [{
+            title: "test title",
+            description: "test description",
+          },
+          {
+            title: "test title2",
+            description: "test description2",
+          }],
+          completedQuests: {
+            title: null,
+            description: null,
+          },
         },
       };
 
