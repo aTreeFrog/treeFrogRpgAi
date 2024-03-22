@@ -18,6 +18,12 @@ body,
   /* Glowing effect */
 }
 
+.quest-glow {
+  /* or other display as necessary */
+  filter: drop-shadow(0 0 10px rgba(122, 52, 1, 0.5));
+  /* Glowing effect */
+}
+
 .userpicture-effect {
   box-shadow: 0 0 10px yellow;
   filter: drop-shadow(0 0 10px rgba(204, 85, 0, 0.6));

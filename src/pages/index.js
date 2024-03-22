@@ -248,7 +248,8 @@ export default function Home() {
   const [steppedAwayButton, setSteppedAwayButton] = useState(false);
   const lastPlayerStatusId = useRef(null);
   const playerContinueBtnCount = useRef(0);
-  const [leftTab, setLeftTab] = useState("Character Sheet");
+  const [leftTab, setLeftTab] = useState("Quests");
+  const [sideQPicked, setSideQPicked] = useState();
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -821,7 +822,17 @@ export default function Home() {
       setLongRestSceneImageLoaded(false);
     }
 
+    //logic to set left tab selection
+    if(players[userName]?.battleMode?.yourTurn && !prevPlayersData.current[userName]?.battleMode?.yourTurn) {
+      setLeftTab("Character Sheet");
+    } else if (players[userName]?.mode == "story" && prevPlayersData.current[userName]?.mode != "story" && prevPlayersData.current[userName]?.mode != "dice") {
+      setLeftTab("Quests");
+    } else if (players[userName]?.mode == "dice" && prevPlayersData.current[userName]?.mode != "dice") {
+      setLeftTab("Character Sheet");
+    }
+
     prevPlayersData.current = players;
+    
   }, [players]);
 
   useEffect(() => {
@@ -2081,11 +2092,11 @@ export default function Home() {
                 Character
               </h1> */}
               <div className="flex justify-center items-center gap-2 text-white mt-3">
-                {["Character Sheet", "Quests", "NPCs", "Settings"].map((leftTabName) => (
+                {["Quests", "Character Sheet", "NPCs", "Settings"].map((leftTabName) => (
                   <button
                     key={leftTabName}
                     className={`tab-button px-2 py-1 text-sm font-semibold border-2 border-transparent rounded-full transition-colors duration-300
-                                ${leftTab === leftTabName ? "bg-emerald-700" : "hover:bg-emerald-900 opacity-80"}`}
+                                ${leftTab === leftTabName ? "bg-stone-700" : "hover:bg-stone-900 opacity-80"}`}
                     onClick={() => setLeftTab(leftTabName)}>
                     {leftTabName}
                   </button>
@@ -2117,6 +2128,8 @@ export default function Home() {
                 <div className="mt-6">
                   <QuestsSheet
                     player = {players[userName]}
+                    sideQPicked={sideQPicked}
+                    setSideQPicked={setSideQPicked}
                   />
                 </div>
               )}
@@ -2342,6 +2355,8 @@ export default function Home() {
                 isD20Spinning={isD20Spinning}
                 setIsD20Spinning={setIsD20Spinning}
               />
+            </div>
+            <div>
             </div>
           </div>
         </div>
