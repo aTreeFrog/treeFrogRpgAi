@@ -250,6 +250,8 @@ export default function Home() {
   const playerContinueBtnCount = useRef(0);
   const [leftTab, setLeftTab] = useState("Quests");
   const [sideQPicked, setSideQPicked] = useState();
+  const [currentImage, setCurrentImage] = useState(dalleImageUrl); // The image currently displayed
+  const [isdalleLoading, setIsDalleLoading] = useState(false);
 
   // Whenever chatLog updates, update the ref
   useEffect(() => {
@@ -823,16 +825,20 @@ export default function Home() {
     }
 
     //logic to set left tab selection
-    if(players[userName]?.battleMode?.yourTurn && !prevPlayersData.current[userName]?.battleMode?.yourTurn) {
+    if (prevPlayersData.current && players[userName]?.battleMode?.yourTurn && !prevPlayersData.current[userName]?.battleMode?.yourTurn) {
       setLeftTab("Character Sheet");
-    } else if (players[userName]?.mode == "story" && prevPlayersData.current[userName]?.mode != "story" && prevPlayersData.current[userName]?.mode != "dice") {
+    } else if (
+      prevPlayersData.current &&
+      players[userName]?.mode == "story" &&
+      prevPlayersData.current[userName]?.mode != "story" &&
+      prevPlayersData.current[userName]?.mode != "dice"
+    ) {
       setLeftTab("Quests");
-    } else if (players[userName]?.mode == "dice" && prevPlayersData.current[userName]?.mode != "dice") {
+    } else if (prevPlayersData.current && players[userName]?.mode == "dice" && prevPlayersData.current[userName]?.mode != "dice") {
       setLeftTab("Character Sheet");
     }
 
     prevPlayersData.current = players;
-    
   }, [players]);
 
   useEffect(() => {
@@ -1374,13 +1380,36 @@ export default function Home() {
   }, [shouldStopAi]);
 
   //preload dalle image
-  useEffect(() => {
-    if (dalleImageUrl) {
-      const img = new window.Image();
-      img.src = dalleImageUrl;
-      img.onload = () => setIsImageLoaded(true);
-    }
-  }, [dalleImageUrl]);
+  // useEffect(() => {
+  //   setdalleLoaded(false);
+  //   setImageLoading(true);
+  //   if (dalleImageUrl) {
+  //     const img = new window.Image();
+  //     img.src = dalleImageUrl;
+  //     img.onload = () => { 
+  //       setIsImageLoaded(true);
+  //       setCurrentImage(dalleImageUrl)
+  //       setdalleLoaded(true);
+  //     };
+  //   }
+  // }, [dalleImageUrl]);
+
+  // Update the next image whenever the dalleImageUrl changes
+useEffect(() => {
+
+    setIsDalleLoading(true); // Start loading the new image
+
+    const img = new window.Image();
+    img.src = dalleImageUrl;
+    img.onload = () => {
+      setIsImageLoaded(true);
+      setTimeout(() => {
+        setCurrentImage(dalleImageUrl);
+        setIsDalleLoading(false); // Trigger the fade-in effect for the next image
+      }, 100); 
+    };
+  
+}, [dalleImageUrl]);
 
   const resetUserTextForm = () => {
     // Reset the textarea after form submission
@@ -2062,6 +2091,12 @@ export default function Home() {
     chatSocket.emit("arrow continue", name);
   };
 
+  // const handleDalleImage = () => {
+  //   setdalleLoaded(true);
+  //   setImageLoading(false); // Image has loaded
+  //   setCurrentImage(dalleImageUrl); // Update the current image to the new on
+  // };
+
   return (
     <div
       className={`flex justify-center items-start h-screen overflow-hidden transition-bg-color ${
@@ -2126,11 +2161,7 @@ export default function Home() {
               )}
               {leftTab === "Quests" && (
                 <div className="mt-6">
-                  <QuestsSheet
-                    player = {players[userName]}
-                    sideQPicked={sideQPicked}
-                    setSideQPicked={setSideQPicked}
-                  />
+                  <QuestsSheet player={players[userName]} sideQPicked={sideQPicked} setSideQPicked={setSideQPicked} />
                 </div>
               )}
             </div>
@@ -2190,14 +2221,20 @@ export default function Home() {
             (players[userName]?.mode == "story" ||
               players[userName]?.mode == "dice" ||
               players[userName]?.mode == "postBattle" ||
-              players[userName]?.mode == "startOfGame") && (
-              <img
-                src={dalleImageUrl}
-                alt="DALL·E Generated"
-                className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text"
-                style={boxShadowStyle}
-              />
-            )}
+              players[userName]?.mode == "startOfGame") && currentImage && (
+                  <img
+                    src={currentImage}
+                    alt="Current Image"
+                    className={`w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text transition-opacity duration-1000 ${isdalleLoading ? 'fade-out' : 'fade-in'}`}
+                  />
+                )}
+                {/* {nextImage && isdalleLoading && (
+                  <img
+                    src={nextImage}
+                    alt="Next Image"
+                    className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text fade-in"
+                  />
+                )} */}
           {isInitiativeImageLoaded && players[userName]?.mode == "initiative" && !pendingDiceUpdate && (
             <div className="fade-in">
               <img
@@ -2356,8 +2393,7 @@ export default function Home() {
                 setIsD20Spinning={setIsD20Spinning}
               />
             </div>
-            <div>
-            </div>
+            <div></div>
           </div>
         </div>
       </div>
