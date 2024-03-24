@@ -30,6 +30,7 @@ import EquipmentPopup from "@/components/EquipmentPopup";
 import LongRestPopup from "@/components/LongRestPopup";
 import EndOfRestPopup from "@/components/EndOfRestPopup";
 import QuestsSheet from "@/components/QuestsSheet";
+import SmallMap from "../components/SmallMap";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -213,6 +214,7 @@ export default function Home() {
   const [updatingChatLog, setUpdatingChatLog] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isInitiativeImageLoaded, setIsInitiativeImageLoaded] = useState(false);
+  const [isMapImageLoaded, setIsMapImageLoaded] = useState(false);
   const [shadowDomColor, setShadowDomColor] = useState();
   const [gameObject, setGameObject] = useState();
   const prevPlayersData = useRef();
@@ -740,6 +742,11 @@ export default function Home() {
         latestDiceMsg.current = players[userName];
         updateDiceStates(players[userName]); // Update immediately if messageQueue is empty
       }
+    } else if (players[userName]?.mode == "smallMap") {
+      setShadowDomColor(players[userName]?.backgroundColor);
+      const img = new window.Image();
+      img.src = players[userName].smallMap.imageUrl;
+      img.onload = () => setIsMapImageLoaded(true);
     }
 
     if (!players[userName]?.equipment["Health"] || players[userName]?.equipment["Health"]?.quantity < 1) {
@@ -1386,7 +1393,7 @@ export default function Home() {
   //   if (dalleImageUrl) {
   //     const img = new window.Image();
   //     img.src = dalleImageUrl;
-  //     img.onload = () => { 
+  //     img.onload = () => {
   //       setIsImageLoaded(true);
   //       setCurrentImage(dalleImageUrl)
   //       setdalleLoaded(true);
@@ -1395,8 +1402,7 @@ export default function Home() {
   // }, [dalleImageUrl]);
 
   // Update the next image whenever the dalleImageUrl changes
-useEffect(() => {
-
+  useEffect(() => {
     setIsDalleLoading(true); // Start loading the new image
 
     const img = new window.Image();
@@ -1406,10 +1412,9 @@ useEffect(() => {
       setTimeout(() => {
         setCurrentImage(dalleImageUrl);
         setIsDalleLoading(false); // Trigger the fade-in effect for the next image
-      }, 100); 
+      }, 100);
     };
-  
-}, [dalleImageUrl]);
+  }, [dalleImageUrl]);
 
   const resetUserTextForm = () => {
     // Reset the textarea after form submission
@@ -2221,14 +2226,17 @@ useEffect(() => {
             (players[userName]?.mode == "story" ||
               players[userName]?.mode == "dice" ||
               players[userName]?.mode == "postBattle" ||
-              players[userName]?.mode == "startOfGame") && currentImage && (
-                  <img
-                    src={currentImage}
-                    alt="Current Image"
-                    className={`w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text transition-opacity duration-1000 ${isdalleLoading ? 'fade-out' : 'fade-in'}`}
-                  />
-                )}
-                {/* {nextImage && isdalleLoading && (
+              players[userName]?.mode == "startOfGame") &&
+            currentImage && (
+              <img
+                src={currentImage}
+                alt="Current Image"
+                className={`w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text transition-opacity duration-1000 ${
+                  isdalleLoading ? "fade-out" : "fade-in"
+                }`}
+              />
+            )}
+          {/* {nextImage && isdalleLoading && (
                   <img
                     src={nextImage}
                     alt="Next Image"
@@ -2261,6 +2269,17 @@ useEffect(() => {
               alt="DALL·E Generated"
               className="w-4/5 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md:mt-12 blur-text"
             />
+          )}
+        {players[userName]?.mode == "smallMap" && (
+            <>
+              <SmallMap
+                gridSpacing={45}
+                players={players}
+                userName={userName}
+                className="w-3/4 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-1 ml-5"
+              />
+              {showOverlayText && <div className="fade-in overlay-text">Safe Travels</div>}
+            </>
           )}
           {players[userName]?.mode == "battle" && (
             <>

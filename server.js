@@ -1563,6 +1563,10 @@ app.prepare().then(() => {
           longRestImage: null,
           longRestSceneOutcome: "",
         },
+        smallMap: {
+          mapUrl: null,
+          buttons: null,
+        },
         shortRests: 0,
         longRests: 0,
         longRestRequest: false,
@@ -1669,10 +1673,10 @@ app.prepare().then(() => {
             title: "test title2",
             description: "test description2",
           }],
-          completedQuests: {
+          completedQuests: [{
             title: null,
             description: null,
-          },
+          }],
         },
       };
 
@@ -1684,17 +1688,22 @@ app.prepare().then(() => {
 
       io.to(serverRoomName).emit("players objects", players);
 
+      // ToDo: put somewhere else so you dont keep re-doing this when a new player joins
       const storyData = path.join(__dirname, `lib/story.json`);
       storyFile = JSON.parse(fs.readFileSync(storyData, "utf8"));
       const longRestData = path.join(__dirname, `lib/longRest.json`);
       longRestFile = JSON.parse(fs.readFileSync(longRestData, "utf8"));
+      const smallMapsData = path.join(__dirname, `lib/smallMapsTravel.json`);
+      smallMapsFile = JSON.parse(fs.readFileSync(smallMapsData, "utf8"));
 
       console.log("longRestFile", longRestFile);
 
       // lets setup the game
-      if (Object.keys(players).length >= playerCountForGame) {
-        await runFunctionAfterDelay(() => startOfGame(), 5000);
-      }
+      // if (Object.keys(players).length >= playerCountForGame) {
+      //   await runFunctionAfterDelay(() => startOfGame(), 5000);
+      // }
+
+      smallMapMode(smallMapsFile["outskirts_of_temple_one"]);
 
       //giveRandomEquipment(["aTreeFrog"]); ///FOR TESTING!!!!//////////////////////////////////////////////////
 
@@ -2925,6 +2934,49 @@ app.prepare().then(() => {
       }
     });
   }
+
+  function smallMapMode(mapData) {
+
+    const dateStamp = new Date().toISOString();
+    activityCount++;
+
+    //update button data based on player information
+
+    console.log("smallMapMode", mapData);
+
+    mapData.Buttons.forEach((element, index) => {
+      console.log("element", element);
+      element.Name = storyFile[mapData.Act][element.Scene].QuestTitle;
+      //if any player completed that mission mark it as completed
+      if (Object.values(players).some((player) => player?.quests?.completedQuests.includes(element.Name))) {
+        element.Completed = True;
+      }
+      //add button description as well from the story.json file
+      element.Description = storyFile[mapData.Act][element.Scene].ButtonDescription;
+    });
+
+    Object.entries(players).forEach(async ([userName, playerData]) => {
+      if (playerData.type == "player") {
+        console.log("player is type player");
+        playerData.mode = "smallMap";
+        playerData.story.longRestSceneOutcome = null;
+        playerData.longRestRequest = false;
+        playerData.story.act = null;
+        playerData.story.scene = null;
+        playerData.smallMap.mapUrl = mapData.ImageUrl;
+        playerData.smallMap.buttons = mapData.Buttons;
+        playerData.backgroundAudio = mapData.BackgroundAudio;
+        playerData.backgroundColor = mapData.BackgroundColor;
+        defaultPlayersBattleInitMode(userName);
+        players[userName].activityId = `user${userName}-game${serverRoomName}-activity${activityCount}-${dateStamp} `;
+      }
+    });
+
+    io.to(serverRoomName).emit("players objects", players);
+
+  }
+
+
 
   function longRestToStory() {
     const dateStamp = new Date().toISOString();

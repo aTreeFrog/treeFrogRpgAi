@@ -1,0 +1,34 @@
+{
+    "outskirts_of_temple_one": {
+        "Name": "outskirts_of_temple_one",
+        "Header": "",
+        "ImageUrl": "/smallTravelMaps/outskirts_of_temple_one.png",
+        "BackgroundColor": "",
+        "BackgroundAudio": "",
+        "Act": "Act1",
+        "Buttons": [{ 
+            "Name": "",
+            "Scene": "Scene1",
+            "Description": "",
+            "Completed": false,
+            "Dependency": "",
+            "Type": "MainQuest",
+            "Location": {
+                "X": 5,
+                "Y": 5
+            }
+            }, 
+            {
+            "Name": "",
+            "Scene": "Scene2",
+            "Description": "",
+            "Completed": false,
+            "Type": "SideQuest",
+            "Dependency": "Scene3",
+            "Location": {
+                "X": 4,
+                "Y": 2
+            }
+        }]
+    }
+}
