@@ -1,13 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Stage, Layer, Image, Line, Text, Circle, Group } from "react-konva";
 import useImage from "use-image";
 
-const SmallMap = ({
-  gridSpacing,
-  className,
-  players,
-  userName,
-}) => {
+const SmallMap = ({ gridSpacing, className, players, userName }) => {
   const [image, status] = useImage(players[userName]?.smallMap?.mapUrl);
   const [scale, setScale] = useState(1); // Default scale is 1
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -43,52 +38,100 @@ const SmallMap = ({
     return lines;
   };
 
-  // Function to draw buttons as circles
-  const drawButtons = () => {
-    if (!players[userName]?.smallMap?.buttons) return [];
+  const GlowButton = ({ button, scale, gridSpacing }) => {
+    const buttonRef = useRef();
+    const [isHovered, setIsHovered] = useState(false);
 
-    return players[userName].smallMap.buttons.map((button, index) => (
+    useEffect(() => {
+      const circle = buttonRef.current;
+      let animating = true;
+      let direction = 1;
+      let blur = 10; // Initial shadowBlur value
+
+      const animateGlow = () => {
+        if (!animating) return;
+
+        // Adjust the glow intensity
+        blur += direction * 0.5;
+        if (blur > 20 || blur < 10) {
+          direction *= -1; // Change direction at min/max values
+        }
+
+        if (circle) {
+          circle.shadowBlur(blur);
+        }
+
+        requestAnimationFrame(animateGlow);
+      };
+
+      animateGlow();
+
+      return () => {
+        animating = false; // Stop animation on component unmount
+      };
+    }, []);
+
+    return (
       <Group
-        key={index}
         x={button.Location.X * gridSpacing + gridSpacing / 2}
         y={button.Location.Y * gridSpacing + gridSpacing / 2}
-        onClick={() => console.log(button.Description)} // Example action on click
-      >
+        onClick={() => console.log(button.Description)}
+        onMouseEnter={(e) => {
+          const container = e.target.getStage().container();
+          container.style.cursor = "pointer"; // Change cursor to pointer on hover
+        }}
+        onMouseLeave={(e) => {
+          const container = e.target.getStage().container();
+          container.style.cursor = ""; // Revert cursor to default on mouse leave
+        }}>
         <Circle
-          radius={15} // Adjust the radius as needed
-          fill={"blue"} // Set fill color as needed
+          ref={buttonRef}
+          radius={20}
+          fill={"green"}
+          stroke={"white"}
+          strokeWidth={2}
+          shadowColor={"orange"}
+          shadowBlur={10}
+          shadowOpacity={0.6}
         />
         <Text
-          text={button.Name || "Button"} // Fallback text if Name is empty
+          text={button.Type || ""}
           fontSize={14}
           fontFamily={"Arial"}
-          fill={"white"} // Text color
-          offsetX={-30} // Center text horizontally. Adjust as needed based on text length
-          offsetY={-7} // Center text vertically. Adjust as needed
+          fill={"white"}
+          verticalAlign={"middle"} // Center align text vertically
+          width={40} // Correcting the width to match text centering logic
+          height={40} // Height to cover the text area
+          offsetX={11} // Adjust offsetX to properly center the text
+          offsetY={17} // Adj
         />
       </Group>
-    ));
+    );
   };
 
   const animationClass = imageLoaded ? "fade-in" : "";
 
   return (
-    <div
-      className={`${className} ${animationClass}`}
-      style={{
-        cursor: "pointer",
-      }}>
-      {imageLoaded && (
-        <Stage
-          width={scale * (image ? image.width : 0)}
-          height={scale * (image ? image.height : 0)}>
-          <Layer>
-            <Image image={image} scaleX={scale} scaleY={scale} />
-            {drawButtons()}
-          </Layer>
-        </Stage>
-      )}
-    </div>
+    <>
+      <div className={`${className} ${animationClass}`}>
+        {imageLoaded && (
+          <>
+            <Stage width={scale * (image ? image.width : 0)} height={scale * (image ? image.height : 0)}>
+              <Layer>
+                <Image image={image} scaleX={scale} scaleY={scale} />
+                {/* {drawGrid()} */}
+                {players[userName]?.smallMap?.buttons.map((button, index) => (
+                  <GlowButton key={index} button={button} scale={scale} gridSpacing={gridSpacing} />
+                ))}
+              </Layer>
+            </Stage>
+          </>
+        )}
+      </div>
+      <div className="rounded-lg border-2 border-purple-900 mt-3 bg-black bg-opacity-30 width-full ml-4 mr-4">
+        <img src="/images/wizard_mononoculars.png" style={{ width: '30%' }} className="p-3 h-auto rounded-lg shadow-lg blur-text"></img>
+      </div>
+    </>
   );
 };
 

@@ -8,26 +8,28 @@
         "Act": "Act1",
         "Buttons": [{ 
             "Name": "",
+            "Act": "Act1",
             "Scene": "Scene1",
             "Description": "",
             "Completed": false,
             "Dependency": "",
-            "Type": "MainQuest",
+            "Type": "MQ",
             "Location": {
-                "X": 5,
-                "Y": 5
+                "X": 10,
+                "Y": 2
             }
             }, 
             {
             "Name": "",
+            "Act": "Act1",
             "Scene": "Scene2",
             "Description": "",
             "Completed": false,
-            "Type": "SideQuest",
+            "Type": "SQ",
             "Dependency": "Scene3",
             "Location": {
-                "X": 4,
-                "Y": 2
+                "X": 7,
+                "Y": 4
             }
         }]
     }

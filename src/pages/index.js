@@ -2278,7 +2278,6 @@ export default function Home() {
                 userName={userName}
                 className="w-3/4 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-1 ml-5"
               />
-              {showOverlayText && <div className="fade-in overlay-text">Safe Travels</div>}
             </>
           )}
           {players[userName]?.mode == "battle" && (

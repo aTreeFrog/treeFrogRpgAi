@@ -11,6 +11,7 @@ const FormData = require("form-data");
 // Dynamically import 'node-fetch'
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const { player } = require("./lib/objects/player");
+const { completedQuests } = require("./lib/objects/completedQuests");
 const { equipment } = require("./lib/objects/equipment");
 const { game } = require("./lib/objects/game");
 const { battleRound } = require("./lib/objects/battleRound");
@@ -1666,8 +1667,8 @@ app.prepare().then(() => {
             description: null,
           },
           activeSideQuests: [{
-            title: "test title",
-            description: "test description",
+            title: null,
+            description: null,
           },
           {
             title: "test title2",
@@ -1675,6 +1676,8 @@ app.prepare().then(() => {
           }],
           completedQuests: [{
             title: null,
+            act: null,
+            scene: null,
             description: null,
           }],
         },
