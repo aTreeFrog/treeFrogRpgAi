@@ -1,0 +1,36 @@
+{
+    "outskirts_of_temple_one": {
+        "Name": "outskirts_of_temple_one",
+        "Header": "",
+        "ImageUrl": "/smallTravelMaps/outskirts_of_temple_one.png",
+        "BackgroundColor": "",
+        "BackgroundAudio": "",
+        "Act": "Act1",
+        "Buttons": [{ 
+            "Name": "",
+            "Act": "Act1",
+            "Scene": "Scene1",
+            "Description": "",
+            "Completed": false,
+            "Dependency": "",
+            "Type": "MQ",
+            "Location": {
+                "X": 10,
+                "Y": 2
+            }
+            }, 
+            {
+            "Name": "",
+            "Act": "Act1",
+            "Scene": "Scene2",
+            "Description": "",
+            "Completed": false,
+            "Type": "SQ",
+            "Dependency": "Scene3",
+            "Location": {
+                "X": 7,
+                "Y": 4
+            }
+        }]
+    }
+}
