@@ -2956,6 +2956,7 @@ app.prepare().then(() => {
       }
       //add button description as well from the story.json file
       element.Description = storyFile[mapData.Act][element.Scene].ButtonDescription;
+      element.ImageUrl = storyFile[mapData.Act][element.Scene].ButtonImageUrl;
     });
 
     Object.entries(players).forEach(async ([userName, playerData]) => {

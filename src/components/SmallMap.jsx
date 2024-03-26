@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Stage, Layer, Image, Line, Text, Circle, Group, Rect } from "react-konva";
 import useImage from "use-image";
 
-const SmallMap = ({ gridSpacing, className, players, userName }) => {
+const SmallMap = ({ gridSpacing, className, players, buttons, userName }) => {
   const [image, status] = useImage(players[userName]?.smallMap?.mapUrl);
   const [scale, setScale] = useState(1); // Default scale is 1
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hoveredButton, setHoveredButton] = useState(null);
+  const isHovered = useRef(null);
+  const selectedButton = useRef(null);
+  const selectedImageURL = useRef("/images/wizard_mononoculars.png");
 
   useEffect(() => {
     if (status === "loaded") {
@@ -66,6 +69,20 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
     loadImages();
   }, []); // Empty dependency array to run once on mount
 
+  // Handler to update the selected button and image URL
+  const handleButtonClick = (button) => {
+    console.log("handleButtonClick");
+    if (selectedButton.current === button.Name) {
+      // If the same button is clicked again, deselect it and reset the image URL
+      selectedButton.current = null;
+      selectedImageURL.current = "/images/wizard_mononoculars.png";
+    } else {
+      // Otherwise, update the selected button and its corresponding image URL
+      selectedButton.current = button.Name;
+      selectedImageURL.current = button.ImageURL; // Assume each button has an ImageURL property
+    }
+  };
+
   // Custom deep comparison function for React.memo
 
   const GlowButton = React.memo(({ button, scale, gridSpacing, setHoveredButton, hoveredButton }) => {
@@ -80,7 +97,7 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
       const tempText = new window.Konva.Text({
         text: button.Name,
         fontSize: 16,
-        fontFamily: 'Arial',
+        fontFamily: "Arial",
       });
       // Update state with actual size
       setTextSize({ width: tempText.width(), height: tempText.height() });
@@ -100,8 +117,14 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
 
     const iconPath = React.useMemo(() => getIconPath(), [getIconPath]);
     const icon = imageCacheRef.current[iconPath];
+    // Determine if the current button is the selected one
+    const isSelected = selectedButton.current === button.Name;
 
-    const isHovered = hoveredButton === button.Name;
+    if (hoveredButton === button.Name) {
+      isHovered.current = button.Name;
+    } else {
+      isHovered.current = null;
+    }
 
     // Helper function to dynamically load the SVG icon based on the button type
 
@@ -136,7 +159,7 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
       <Group
         x={button.Location.X * gridSpacing + gridSpacing / 2}
         y={button.Location.Y * gridSpacing + gridSpacing / 2}
-        onClick={() => console.log(button.Description)}
+        onClick={() => handleButtonClick(button)}
         onMouseEnter={(e) => {
           setHoveredButton(button.Name);
           const container = e.target.getStage().container();
@@ -150,8 +173,8 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
         <Circle
           // ref={buttonRef}
           radius={20}
-          fill={"blue"}
-          opacity={0.5}
+          fill={isSelected ? "green" : "blue"} // Change color based on selection
+          opacity={isSelected ? 1.0 : 0.5} // Change opacity based on selection
           // stroke={"white"}
           // strokeWidth={2}
           shadowColor={"red"}
@@ -167,7 +190,7 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
             height={30}
           />
         )}
-        {isHovered && (
+        {isHovered.current && (
           <>
             <Rect
               width={textSize.width + padding * 2} // Total width including padding
@@ -208,7 +231,7 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
               <Layer>
                 <Image image={image} scaleX={scale} scaleY={scale} />
                 {/* {drawGrid()} */}
-                {players[userName]?.smallMap?.buttons.map((button, index) => (
+                {buttons.map((button, index) => (
                   <GlowButton
                     key={button.Name}
                     button={button}
@@ -224,7 +247,7 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
         )}
       </div>
       <div className="rounded-lg border-2 border-purple-900 mt-3 bg-black bg-opacity-30 width-full ml-4 mr-4">
-        <img src="/images/wizard_mononoculars.png" style={{ width: "30%" }} className="p-3 h-auto rounded-lg shadow-lg blur-text"></img>
+        <img src={selectedImageURL.current} style={{ width: "30%" }} className="p-3 h-auto rounded-lg shadow-lg blur-text"></img>
       </div>
     </>
   );
