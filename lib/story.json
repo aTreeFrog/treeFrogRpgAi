@@ -20,6 +20,7 @@
             "BattleMap": "nighttime_grassland",
             "DiscoverableEquipment": ["Health", "RandomTeleport"],
             "locationName": "Forestheart Grove",
+            "QuestTitle": "Dance with Goblins",
             "locationDetails": "Nestled in an ancient, snow-draped forest, Forestheart Grove serves as a hidden refuge for wood elves and woodland creatures. Here, under the quiet canopy, elves and nature live in harmony, bonded by the land's deep magic in the silent night.",
             "TransistionTravelMap": "outskirts_of_temple_one",
             "ButtonDescription": "This is a test about the button description."

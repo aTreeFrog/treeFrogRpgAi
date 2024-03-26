@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Stage, Layer, Image, Line, Text, Circle, Group } from "react-konva";
+import { Stage, Layer, Image, Line, Text, Circle, Group, Rect } from "react-konva";
 import useImage from "use-image";
 
 const SmallMap = ({ gridSpacing, className, players, userName }) => {
   const [image, status] = useImage(players[userName]?.smallMap?.mapUrl);
   const [scale, setScale] = useState(1); // Default scale is 1
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hoveredButton, setHoveredButton] = useState(null);
 
   useEffect(() => {
     if (status === "loaded") {
@@ -38,38 +39,98 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
     return lines;
   };
 
-  const GlowButton = ({ button, scale, gridSpacing }) => {
-    const buttonRef = useRef();
-    const [isHovered, setIsHovered] = useState(false);
+  const imageCacheRef = useRef({});
+
+  useEffect(() => {
+    // Example loading function
+    const loadImages = async () => {
+      const iconPaths = ["/icons/sidequest.svg", "/icons/mainquest.svg"];
+      const promises = iconPaths.map(
+        (path) =>
+          new Promise((resolve, reject) => {
+            const img = new window.Image();
+            img.src = path;
+            img.onload = () => resolve({ path, img });
+            img.onerror = reject;
+          })
+      );
+
+      const images = await Promise.all(promises);
+      images.forEach(({ path, img }) => {
+        imageCacheRef.current[path] = img;
+      });
+
+      // Trigger a re-render if necessary, or update state to indicate images are loaded
+    };
+
+    loadImages();
+  }, []); // Empty dependency array to run once on mount
+
+  // Custom deep comparison function for React.memo
+
+  const GlowButton = React.memo(({ button, scale, gridSpacing, setHoveredButton, hoveredButton }) => {
+    // Add padding around the text for the background rectangle
+    const padding = 4;
+    const [textSize, setTextSize] = useState({ width: 0, height: 0 });
+    // Define the size of the text for calculating the background size. Adjust as needed.
+    // const textSize = { width: 100, height: 20 }; // Example sizes, adjust based on actual needs
 
     useEffect(() => {
-      const circle = buttonRef.current;
-      let animating = true;
-      let direction = 1;
-      let blur = 10; // Initial shadowBlur value
+      // Create a temporary Text node to measure text
+      const tempText = new window.Konva.Text({
+        text: button.Name,
+        fontSize: 16,
+        fontFamily: 'Arial',
+      });
+      // Update state with actual size
+      setTextSize({ width: tempText.width(), height: tempText.height() });
+    }, [button.Name]);
 
-      const animateGlow = () => {
-        if (!animating) return;
+    //this part prevents the flickering of the icons
+    const getIconPath = React.useCallback(() => {
+      switch (button.Type) {
+        case "SQ":
+          return "/icons/sidequest.svg";
+        case "MQ":
+          return "/icons/mainquest.svg";
+        default:
+          return ""; // default icon or empty string if none
+      }
+    }, [button.Type]);
 
-        // Adjust the glow intensity
-        blur += direction * 0.5;
-        if (blur > 20 || blur < 10) {
-          direction *= -1; // Change direction at min/max values
-        }
+    const iconPath = React.useMemo(() => getIconPath(), [getIconPath]);
+    const icon = imageCacheRef.current[iconPath];
 
-        if (circle) {
-          circle.shadowBlur(blur);
-        }
+    const isHovered = hoveredButton === button.Name;
 
-        requestAnimationFrame(animateGlow);
-      };
+    // Helper function to dynamically load the SVG icon based on the button type
 
-      animateGlow();
+    // useEffect(() => {
+    // let animating = true;
+    // let direction = 1;
+    // let blur = 10; // Initial shadowBlur value
 
-      return () => {
-        animating = false; // Stop animation on component unmount
-      };
-    }, []);
+    //   const animateGlow = () => {
+    //     if (!animating) return;
+
+    //     blur += direction * 0.5;
+    //     if (blur > 20 || blur < 10) {
+    //       direction *= -1;
+    //     }
+
+    //     if (buttonRef.current) {
+    //       buttonRef.current.shadowBlur(blur);
+    //     }
+
+    //     requestAnimationFrame(animateGlow);
+    //   };
+
+    //   animateGlow();
+
+    //   return () => {
+    //     animating = false;
+    //   };
+    // }, []);
 
     return (
       <Group
@@ -77,37 +138,64 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
         y={button.Location.Y * gridSpacing + gridSpacing / 2}
         onClick={() => console.log(button.Description)}
         onMouseEnter={(e) => {
+          setHoveredButton(button.Name);
           const container = e.target.getStage().container();
           container.style.cursor = "pointer"; // Change cursor to pointer on hover
         }}
         onMouseLeave={(e) => {
+          setHoveredButton(null);
           const container = e.target.getStage().container();
           container.style.cursor = ""; // Revert cursor to default on mouse leave
         }}>
         <Circle
-          ref={buttonRef}
+          // ref={buttonRef}
           radius={20}
-          fill={"green"}
-          stroke={"white"}
-          strokeWidth={2}
-          shadowColor={"orange"}
+          fill={"blue"}
+          opacity={0.5}
+          // stroke={"white"}
+          // strokeWidth={2}
+          shadowColor={"red"}
           shadowBlur={10}
           shadowOpacity={0.6}
         />
-        <Text
-          text={button.Type || ""}
-          fontSize={14}
-          fontFamily={"Arial"}
-          fill={"white"}
-          verticalAlign={"middle"} // Center align text vertically
-          width={40} // Correcting the width to match text centering logic
-          height={40} // Height to cover the text area
-          offsetX={11} // Adjust offsetX to properly center the text
-          offsetY={17} // Adj
-        />
+        {icon && (
+          <Image
+            image={icon}
+            x={-15} // Adjust these values to position the icon correctly
+            y={-16}
+            width={30} // Adjust if necessary to fit the circle
+            height={30}
+          />
+        )}
+        {isHovered && (
+          <>
+            <Rect
+              width={textSize.width + padding * 2} // Total width including padding
+              height={textSize.height + padding * 2} // Total height including padding
+              offsetY={45}
+              offsetX={75}
+              // x={button.Location.X * gridSpacing + gridSpacing / 2 - (textSize.width + padding * 2) / 2} // Center horizontally based on button location
+              // y={button.Location.Y * gridSpacing + gridSpacing / 2 - 45 - (textSize.height + padding * 2)} // Place above the circle
+              fill="purple"
+              cornerRadius={5}
+            />
+            <Text
+              text={button.Name}
+              fontSize={16}
+              fontFamily={"Arial"}
+              fill={"white"}
+              align={"center"}
+              offsetY={40}
+              offsetX={72}
+              // Center text in the rectangle
+              // x={button.Location.X * gridSpacing + gridSpacing / 2 - textSize.width / 2} // Adjust so text is centered within the rectangle
+              // y={button.Location.Y * gridSpacing + gridSpacing / 2 - 45 - textSize.height - padding} // Adjust so text appears in the center of the rectangle
+            />
+          </>
+        )}
       </Group>
     );
-  };
+  });
 
   const animationClass = imageLoaded ? "fade-in" : "";
 
@@ -121,7 +209,14 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
                 <Image image={image} scaleX={scale} scaleY={scale} />
                 {/* {drawGrid()} */}
                 {players[userName]?.smallMap?.buttons.map((button, index) => (
-                  <GlowButton key={index} button={button} scale={scale} gridSpacing={gridSpacing} />
+                  <GlowButton
+                    key={button.Name}
+                    button={button}
+                    scale={scale}
+                    gridSpacing={gridSpacing}
+                    setHoveredButton={setHoveredButton}
+                    hoveredButton={hoveredButton}
+                  />
                 ))}
               </Layer>
             </Stage>
@@ -129,7 +224,7 @@ const SmallMap = ({ gridSpacing, className, players, userName }) => {
         )}
       </div>
       <div className="rounded-lg border-2 border-purple-900 mt-3 bg-black bg-opacity-30 width-full ml-4 mr-4">
-        <img src="/images/wizard_mononoculars.png" style={{ width: '30%' }} className="p-3 h-auto rounded-lg shadow-lg blur-text"></img>
+        <img src="/images/wizard_mononoculars.png" style={{ width: "30%" }} className="p-3 h-auto rounded-lg shadow-lg blur-text"></img>
       </div>
     </>
   );
