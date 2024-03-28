@@ -2275,6 +2275,7 @@ export default function Home() {
               <SmallMap
                 gridSpacing={45}
                 players={players}
+                buttons={players[userName].smallMap.buttons}
                 userName={userName}
                 className="w-3/4 md:w-3/4 h-auto mx-auto rounded-lg shadow-lg md: mt-1 ml-5"
               />
