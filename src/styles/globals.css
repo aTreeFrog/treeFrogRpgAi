@@ -18,6 +18,22 @@ body,
   /* Glowing effect */
 }
 
+@keyframes pulse-glow {
+  0% {
+    filter: drop-shadow(0 0 15px rgba(216, 14, 14, 0.7));
+  }
+  50% {
+    filter: drop-shadow(0 0 25px rgba(216, 14, 14, 1));
+  }
+  100% {
+    filter: drop-shadow(0 0 15px rgba(216, 14, 14, 0.7));
+  }
+}
+
+.questbutton-glow {
+  animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
 .quest-glow {
   /* or other display as necessary */
   filter: drop-shadow(0 0 10px rgba(122, 52, 1, 0.5));
