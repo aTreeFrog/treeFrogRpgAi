@@ -14,10 +14,10 @@
             "ImageUrl": "",
             "Completed": false,
             "Dependency": "",
-            "Type": "MQ",
+            "Type": "/icons/mainquest.svg",
             "Location": {
-                "X": 10,
-                "Y": 2
+                "X": "-10%",
+                "Y": "25%"
             }
             }, 
             {
@@ -27,11 +27,11 @@
             "Description": "",
             "ImageUrl": "",
             "Completed": false,
-            "Type": "SQ",
+            "Type": "/icons/sidequest.svg",
             "Dependency": "Scene3",
             "Location": {
-                "X": 7,
-                "Y": 4
+                "X": "10%",
+                "Y": "45%"
             }
         }]
     }
